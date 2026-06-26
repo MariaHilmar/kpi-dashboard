@@ -159,6 +159,4 @@ npx vercel deploy --prod
 | [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, Excel, sync Supabase |
 | **mgi-kpi-dashboard** (este) | Visualização web dos KPIs |
 
-## Licença
 
-Projeto privado / uso interno MGI.
