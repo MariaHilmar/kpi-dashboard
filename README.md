@@ -1,36 +1,164 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MGI KPI Dashboard
 
-## Getting Started
+Dashboard web para acompanhamento de KPIs, alertas e issues dos projetos MGI. Consome dados sincronizados do GitLab via [Supabase](https://supabase.com) (Postgres + RPCs) e faz parte do ecossistema MGI junto com o pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
 
-First, run the development server:
+![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Visão geral
+
+```
+GitLab (issues/commits)
+        │
+        ▼
+mgi-kpi-pipeline  ──►  Excel  ──►  sync_supabase.py
+                                        │
+                                        ▼
+                                   Supabase (Postgres)
+                                        │
+                                        ▼
+                              mgi-kpi-dashboard (este repo)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Funcionalidades
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Área | Rota | Descrição |
+|------|------|-----------|
+| Executivo | `/` | KPIs consolidados, evolução mensal, distribuição por status/tipo/módulo |
+| Alertas | `/alertas` | Sem épico/parceria, faixa de idade, maiores lead times |
+| Análise temporal | `/temporal` | Criados × fechados × backlog líquido por mês |
+| Detalhamento | `/detalhamento` | Parceria, área funcional, lead time por módulo, KPI por tipo |
+| Qualidade | `/qualidade` | Conformidade de preenchimento e backlog aberto |
+| Sprint | `/sprint` | Visão focada no sprint selecionado nos filtros globais |
+| Equipes & Devs | `/equipes` | Volume por equipe, top desenvolvedores, merge em master |
+| Issues | `/issues` | Busca livre, paginação e filtros (estado, SLA) |
 
-## Learn More
+**Drill-down:** KPIs clicáveis (Total, Abertas, Fechadas, etc.) levam para `/issues` preservando os filtros globais da URL.
 
-To learn more about Next.js, take a look at the following resources:
+**Filtros globais:** módulo, área, tipo, prioridade, equipe, status, parceria, sprint, épico, repositório, ano e intervalos de datas — refletidos na query string e mantidos ao navegar entre páginas.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Stack
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Next.js 16** (App Router, Server Components)
+- **React 19** + **TypeScript**
+- **Tailwind CSS 4** + [GovBR Design System](https://www.gov.br/ds/)
+- **Recharts** — gráficos
+- **Supabase** — backend de dados
+- **Vitest** + Testing Library — testes unitários (~87% cobertura)
 
-## Deploy on Vercel
+## Pré-requisitos
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Node.js 20+
+- Projeto Supabase configurado (schema + RPCs — ver pasta `supabase/migrations` no workspace MGI)
+- Dados sincronizados pelo pipeline Python (`sync_supabase.py`)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Configuração local
+
+```powershell
+git clone https://github.com/MariaHilmar/mgi-kpi-dashboard.git
+cd mgi-kpi-dashboard
+npm install
+```
+
+Crie `.env.local` a partir do exemplo:
+
+```powershell
+copy .env.local.example .env.local
+```
+
+Preencha as variáveis:
+
+| Variável | Descrição |
+|----------|-----------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave pública (anon) — usada no browser |
+
+> Use apenas a **anon key** no frontend. A `service_role` fica exclusivamente no pipeline Python.
+
+Inicie o servidor de desenvolvimento:
+
+```powershell
+npm run dev
+```
+
+Acesse [http://localhost:3000](http://localhost:3000).
+
+Se as variáveis não estiverem configuradas, o dashboard exibe um banner de setup em vez de quebrar.
+
+## Scripts
+
+| Comando | Descrição |
+|---------|-----------|
+| `npm run dev` | Servidor de desenvolvimento (hot reload) |
+| `npm run build` | Build de produção |
+| `npm run start` | Servidor de produção (após `build`) |
+| `npm run lint` | ESLint |
+| `npm run test` | Testes unitários (Vitest) |
+| `npm run test:watch` | Testes em modo watch |
+| `npm run test:coverage` | Testes com relatório de cobertura |
+| `npx tsc --noEmit` | Checagem de tipos TypeScript |
+
+## Estrutura do projeto
+
+```
+mgi-kpi-dashboard/
+├── app/
+│   ├── layout.tsx              # Layout raiz (metadados, fontes)
+│   └── (dashboard)/            # Páginas do dashboard (route group)
+│       ├── layout.tsx          # Header, sidebar, filtros globais
+│       ├── page.tsx            # Executivo
+│       ├── alertas/
+│       ├── temporal/
+│       ├── detalhamento/
+│       ├── qualidade/
+│       ├── sprint/
+│       ├── equipes/
+│       └── issues/
+├── components/
+│   ├── dashboard/              # KPIs, gráficos, tabelas
+│   ├── issues/                 # Listagem e busca de issues
+│   └── layout/                 # Header GovBR, sidebar, filtros
+├── lib/
+│   ├── dashboard/              # fetchers, filters, constants, page context
+│   ├── format.ts               # Formatação pt-BR (número, data, %)
+│   ├── navigation.ts           # Menu desktop + mobile
+│   └── supabase/server.ts      # Cliente Supabase (server-only)
+├── types/database.ts           # Tipos das RPCs e views
+├── tests/                      # Vitest + Testing Library
+└── .github/workflows/ci.yml    # CI: tsc + testes
+```
+
+## CI/CD
+
+A cada push ou pull request na branch `main`, o GitHub Actions executa:
+
+1. `npm ci`
+2. `npx tsc --noEmit`
+3. `npm run test`
+
+## Deploy (Vercel)
+
+O projeto está preparado para deploy na [Vercel](https://vercel.com):
+
+1. Conecte o repositório GitHub `MariaHilmar/mgi-kpi-dashboard`
+2. Root Directory: raiz do repo (padrão)
+3. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`) no painel Vercel
+4. Framework detectado automaticamente: **Next.js**
+
+Deploy manual (CLI):
+
+```powershell
+npx vercel deploy --prod
+```
+
+## Repositórios relacionados
+
+| Repositório | Papel |
+|-------------|-------|
+| [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, Excel, sync Supabase |
+| **mgi-kpi-dashboard** (este) | Visualização web dos KPIs |
+
+## Licença
+
+Projeto privado / uso interno MGI.
