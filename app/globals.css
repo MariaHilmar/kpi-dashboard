@@ -1,26 +1,63 @@
 @import "tailwindcss";
+/* Tokens oficiais do Design System gov.br (apenas variáveis CSS, sem classes que conflitem com Tailwind) */
+@import "@govbr-ds/core/dist/core-tokens.min.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Paleta institucional gov.br */
+  --govbr-blue-warm-70: #1351b4;
+  --govbr-blue-warm-80: #0c326f;
+  --govbr-blue-warm-90: #051d41;
+  --govbr-yellow: #ffcd07;
+  --govbr-green: #168821;
+  --govbr-red: #e52207;
+  --govbr-gray-2: #f8f8f8;
+  --govbr-gray-10: #e6e6e6;
+  --govbr-gray-80: #333333;
+
+  --background: #f8f8f8;
+  --foreground: #1c1c1c;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-govbr-blue: var(--govbr-blue-warm-70);
+  --color-govbr-blue-dark: var(--govbr-blue-warm-80);
+  --color-govbr-blue-darker: var(--govbr-blue-warm-90);
+  --color-govbr-yellow: var(--govbr-yellow);
+  --color-govbr-green: var(--govbr-green);
+  --color-govbr-red: var(--govbr-red);
+
+  --font-sans: var(--font-raleway), "Rawline", Arial, Helvetica, sans-serif;
+  --font-display: "Rawline", var(--font-raleway), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+}
+
+/* Foco visível acessível (eMAG / WCAG 2.4.7) */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid var(--govbr-yellow);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Link "pular para o conteúdo" (eMAG — atalho de teclado) */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 100;
+  background: var(--govbr-blue-warm-70);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 0 0 4px 0;
+}
+.skip-link:focus {
+  left: 0;
 }
