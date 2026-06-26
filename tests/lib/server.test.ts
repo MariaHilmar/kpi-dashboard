@@ -1,0 +1,38 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+describe("createServerSupabase / isSupabaseConfigured", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  it("isSupabaseConfigured retorna false sem env", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    const { isSupabaseConfigured } = await import("@/lib/supabase/server");
+    expect(isSupabaseConfigured()).toBe(false);
+  });
+
+  it("isSupabaseConfigured retorna true com env completa", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+    const { isSupabaseConfigured } = await import("@/lib/supabase/server");
+    expect(isSupabaseConfigured()).toBe(true);
+  });
+
+  it("createServerSupabase retorna null sem credenciais", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "");
+    const { createServerSupabase } = await import("@/lib/supabase/server");
+    expect(createServerSupabase()).toBeNull();
+  });
+
+  it("createServerSupabase retorna cliente quando configurado", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key-test");
+    const { createServerSupabase } = await import("@/lib/supabase/server");
+    const client = createServerSupabase();
+    expect(client).not.toBeNull();
+    expect(typeof client?.rpc).toBe("function");
+  });
+});
