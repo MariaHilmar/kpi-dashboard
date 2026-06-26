@@ -10,13 +10,13 @@ Dashboard web para acompanhamento de KPIs, alertas e issues dos projetos MGI. Co
 GitLab (issues/commits)
         │
         ▼
-mgi-kpi-pipeline  ──►  Excel  ──►  sync_supabase.py
-                                        │
-                                        ▼
-                                   Supabase (Postgres)
-                                        │
-                                        ▼
-                              mgi-kpi-dashboard (este repo)
+mgi-kpi-pipeline  ──►  processamento em memória  ──►  sync_supabase.py
+                                                              │
+                                                              ▼
+                                                         Supabase (Postgres)
+                                                              │
+                                                              ▼
+                                                    mgi-kpi-dashboard (este repo)
 ```
 
 O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
@@ -156,7 +156,7 @@ npx vercel deploy --prod
 
 | Repositório | Papel |
 |-------------|-------|
-| [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, Excel, sync Supabase |
+| [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, processamento em memória, sync Supabase |
 | **mgi-kpi-dashboard** (este) | Visualização web dos KPIs |
 
 
