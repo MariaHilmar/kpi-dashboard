@@ -1,0 +1,186 @@
+# Dados e Supabase
+
+O schema Postgres versionado está em `seu-workspace\supabase\migrations\`. O dashboard **não** escreve no banco — apenas consulta tabelas, views e RPCs.
+
+## Migrations
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `001_initial_schema.sql` | Tabelas base, views iniciais, RPCs legadas |
+| `002_grants.sql` | Permissões para role `anon` |
+| `003_kpis_completos.sql` | RPCs completas, `_issues_filtered`, paridade Excel |
+| `004_issues_search.sql` | RPC `search_issues` |
+| `005_modulo_area_pairs.sql` | View `v_modulo_area_pairs` |
+| `006_schema_hardening.sql` | Funções auxiliares, hardening, `search_issues` revisada |
+| `007_anon_least_privilege.sql` | Princípio do menor privilégio para anon |
+
+## Tabelas principais
+
+### `issues`
+
+Espelho processado das issues GitLab (equivalente à aba **Dados** do Excel legado).
+
+| Grupo de colunas | Exemplos |
+|------------------|----------|
+| Identificação | `issue_key`, `gitlab_iid`, `gitlab_repo`, `titulo` |
+| Taxonomia | `modulo`, `modulo_normalizado`, `area_funcional`, `tipo`, `categoria` |
+| Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` |
+| Pessoas | `assignee`, `autor`, `desenvolvedor`, `solicitante` |
+| Datas / métricas | `criado_em`, `fechado_em`, `lead_time_dias`, `idade_dias`, `sla_mais_90_dias` |
+| Git / Dev | `dev_tem_branch`, `dev_commits`, `dev_mergeado`, `gitlab_mrs` |
+| Qualidade | `modulo_ok`, `area_ok`, `padrao_titulo`, `padrao_completo` |
+| Colunas manuais (Excel) | `situacao_analise`, `desenvolvedor_futuro`, `observacao_geral`, `chamado`, `priorizar` |
+| Metadados | `synced_at`, `created_at`, `updated_at` |
+
+**Chave única:** `issue_key` (composta pelo pipeline — ver `issue_keys.py`).
+
+**Índices:** parceria, sprint, ano_criacao, modulo, area_funcional, repositorio, desenvolvedor, dev_mergeado, tipo, equipe, status, prioridade, epico.
+
+### `releases`
+
+Releases/tags Git sincronizadas pelo pipeline.
+
+| Coluna | Descrição |
+|--------|-----------|
+| `repositorio`, `versao` | Chave única composta |
+| `data_release` | Data da release |
+| `rotulo` | Label exibido no gráfico |
+
+### `sync_runs`
+
+Histórico de execuções do sync Python.
+
+| Coluna | Descrição |
+|--------|-----------|
+| `source` | Origem (ex.: `excel`, pipeline) |
+| `rows_upserted`, `releases_upserted` | Contadores |
+| `started_at`, `finished_at` | Timestamps |
+| `status` | `running` \| `success` \| `error` |
+| `message` | Detalhe opcional |
+
+O header do dashboard consulta a última execução com `status = 'success'`.
+
+## Views
+
+| View | Uso no dashboard |
+|------|------------------|
+| `v_filter_options_full` | Opções de todos os filtros globais (arrays agregados) |
+| `v_modulo_area_pairs` | Pares módulo × área para filtros dependentes |
+| `v_kpis` | KPIs simples (legado; substituída por RPC) |
+| `v_filter_options` | Opções básicas (legado) |
+
+## RPCs consumidas pelo dashboard
+
+Mapeamento `lib/dashboard/fetchers.ts` → Postgres:
+
+| RPC | Função fetcher | Descrição |
+|-----|----------------|-----------|
+| `dashboard_kpis_full` | `fetchKpis` | 11 KPIs consolidados com filtros |
+| `dashboard_aggregate_v2` | `fetchAggregate` | Contagem por dimensão |
+| `dashboard_fluxo_mensal` | `fetchFluxoMensal` | Criados/fechados/backlog por mês |
+| `dashboard_lead_time_por_modulo` | `fetchLeadTimePorModulo` | Lead médio/mediano por módulo |
+| `dashboard_kpis_por_tipo` | `fetchKpisPorTipo` | KPIs segmentados por tipo |
+| `dashboard_top_lead_times` | `fetchTopLeadTimes` | Maiores lead times |
+| `dashboard_alertas_resumo` | `fetchAlertasResumo` | Contagem alertas globais |
+| `dashboard_alertas_por_modulo` | `fetchAlertasPorModulo` | Alertas agrupados por módulo |
+| `dashboard_faixa_idade` | `fetchFaixaIdade` | Distribuição por faixa de idade |
+| `search_issues` | `searchIssues` | Busca paginada de issues |
+
+### Dimensões de `dashboard_aggregate_v2`
+
+Definidas em `lib/dashboard/constants.ts` → `AGGREGATE_DIMENSIONS`:
+
+```
+status, tipo, prioridade, modulo, equipe, parceria, repositorio,
+area_funcional, categoria, desenvolvedor, dev_mergeado,
+qualidade_modulo_ok, qualidade_area_ok, qualidade_padrao_titulo,
+qualidade_padrao_completo
+```
+
+Parâmetros adicionais: `p_limit`, `p_only_abertas`.
+
+### Função interna `_issues_filtered`
+
+Base de quase todas as RPCs filtradas. Aceita 16 parâmetros opcionais (ver [filtros](./03-paginas-funcionalidades.md#filtros-globais)).
+
+Regras especiais:
+
+- `p_* = 'Todos'` ou `null` → dimensão ignorada.
+- `p_* = 'Não informado'` → filtra registros com campo vazio/trim vazio.
+- `p_ano = 0` → ignorado (tratado como null).
+
+### `search_issues`
+
+Parâmetros (além dos filtros comuns):
+
+| Parâmetro | Descrição |
+|-----------|-----------|
+| `p_search` | Texto livre (título, autor, assignee, ID) |
+| `p_estado` | `Todos` \| `open` \| `closed` |
+| `p_sla` | `Todos` \| `acima_90` |
+| `p_order` | Coluna/direção de ordenação |
+| `p_limit` | Tamanho da página (50) |
+| `p_offset` | Offset para paginação |
+
+Retorno inclui `total_count` na primeira coluna de cada linha para calcular páginas.
+
+## Contrato de filtros (TypeScript)
+
+Tipo `DashboardFilters` em `types/database.ts`:
+
+```typescript
+{
+  modulo, area, tipo, prioridade, equipe, status,
+  parceria, sprint, epico, repositorio, situacao,
+  ano: number | null,
+  criadoDe, criadoAte, fechadoDe, fechadoAte: string | null
+}
+```
+
+Tradução para RPC via `commonArgs()` + `dateArgs()` em `lib/dashboard/filters.ts`.
+
+## KPIs retornados por `dashboard_kpis_full`
+
+| Campo | Descrição |
+|-------|-----------|
+| `total` | Issues no recorte filtrado |
+| `abertas` / `fechadas` | Por flag booleana |
+| `taxa_fechamento` | Percentual |
+| `lead_time_medio` | Média em dias (issues fechadas) |
+| `bugs_abertos` | Bugs com estado aberto |
+| `melhorias_abertas` | Melhorias abertas |
+| `sem_tipo` | Issues sem tipo inferido |
+| `pct_bugs_backlog` | % de bugs entre abertas |
+| `taxa_fech_bug` | Taxa de fechamento de bugs |
+| `sla_acima_90` | Issues abertas há mais de 90 dias |
+
+## Origem dos dados (pipeline)
+
+O pipeline Python deriva campos antes do upsert:
+
+| Campo Supabase | Módulo pipeline |
+|----------------|-----------------|
+| modulo, area_funcional, tipo | `taxonomy.py`, detectores Git |
+| lead_time_dias, idade_dias, sla | `issue_fields.py` |
+| dev_mergeado, dev_commits | `enriquecer_dev_git.py` |
+| modulo_ok, padrao_* | regras de qualidade em `taxonomy.py` |
+| parceria, sprint, epico | labels/campos GitLab |
+
+Ver `mgi-kpi-pipeline/README.md` para detalhes de processamento.
+
+## Aplicar schema no Supabase
+
+1. Criar projeto em [supabase.com](https://supabase.com).
+2. Executar migrations **em ordem** (001 → 007) no SQL Editor ou via Supabase CLI.
+3. Copiar URL, anon key e service role key.
+4. Rodar sync: `python mgi-kpi-pipeline/sync_supabase.py` (ou `pipeline_maestro.py`).
+
+## Sincronização
+
+Após cada sync bem-sucedido:
+
+- Tabela `issues` recebe upsert por `issue_key`.
+- Tabela `releases` recebe upsert por `(repositorio, versao)`.
+- `sync_runs` registra contadores e timestamp.
+
+O dashboard exibe `finished_at` da última sync com sucesso no header.
