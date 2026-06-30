@@ -1,3 +1,4 @@
+import { gitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
 import type { IssueRow } from "@/lib/dashboard/issues";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -48,35 +49,50 @@ export function IssuesTable({ rows }: Props) {
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {rows.map((row, index) => (
-            <tr key={`${row.gitlab_repo}-${row.gitlab_iid}-${index}`} className="hover:bg-slate-50">
-              <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500">
-                {row.gitlab_iid ?? "—"}
-              </td>
-              <td className="max-w-md px-3 py-2 text-slate-900">
-                <span className="line-clamp-2">{row.titulo ?? "—"}</span>
-                {row.sla_mais_90_dias ? (
-                  <span className="ml-1 inline-flex rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
-                    SLA &gt; 90d
-                  </span>
-                ) : null}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.modulo ?? "—"}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.tipo ?? "—"}</td>
-              <td className="whitespace-nowrap px-3 py-2">
-                <EstadoBadge estado={row.estado} />
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.prioridade ?? "—"}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.equipe ?? "—"}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-slate-600">{formatDate(row.criado_em)}</td>
-              <td className="whitespace-nowrap px-3 py-2 text-right text-slate-600">
-                {formatNumber(row.lead_time_dias)}
-              </td>
-              <td className="whitespace-nowrap px-3 py-2 text-right text-slate-600">
-                {formatNumber(row.idade_dias)}
-              </td>
-            </tr>
-          ))}
+          {rows.map((row, index) => {
+            const issueUrl = gitlabWorkItemUrl(row.gitlab_repo, row.gitlab_iid);
+
+            return (
+              <tr key={`${row.gitlab_repo}-${row.gitlab_iid}-${index}`} className="hover:bg-slate-50">
+                <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500">
+                  {issueUrl ? (
+                    <a
+                      href={issueUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-govbr-blue hover:underline"
+                    >
+                      {row.gitlab_iid ?? "—"}
+                    </a>
+                  ) : (
+                    row.gitlab_iid ?? "—"
+                  )}
+                </td>
+                <td className="max-w-md px-3 py-2 text-slate-900">
+                  <span className="line-clamp-2">{row.titulo ?? "—"}</span>
+                  {row.sla_mais_90_dias ? (
+                    <span className="ml-1 inline-flex rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
+                      SLA &gt; 90d
+                    </span>
+                  ) : null}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.modulo ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.tipo ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <EstadoBadge estado={row.estado} />
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.prioridade ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.equipe ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{formatDate(row.criado_em)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-right text-slate-600">
+                  {formatNumber(row.lead_time_dias)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right text-slate-600">
+                  {formatNumber(row.idade_dias)}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>
