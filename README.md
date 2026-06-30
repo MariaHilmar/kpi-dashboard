@@ -21,6 +21,8 @@ mgi-kpi-pipeline  ──►  processamento em memória  ──►  sync_supabase
 
 O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
 
+**Renderização:** Server Components no Next.js 16 — HTML gerado no servidor com streaming (`Suspense`) e cache de dados (`unstable_cache`, TTL 24 h). Skeletons durante navegação entre páginas.
+
 ## Funcionalidades
 
 | Área | Rota | Descrição |
@@ -33,6 +35,14 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 | Sprint | `/sprint` | Visão focada no sprint selecionado nos filtros globais |
 | Equipes & Devs | `/equipes` | Volume por equipe, top desenvolvedores, merge em master |
 | Issues | `/issues` | Busca livre, paginação e filtros (estado, SLA) |
+| Analistas | `/analistas` | Relatório de atividades por analista (filtro por ID GitLab) |
+| Minha conta | `/conta` | Nome de exibição e alteração de senha |
+| Admin usuários | `/admin/usuarios` | CRUD de contas (somente admin) |
+| Login | `/login` | Entrada com e-mail e senha (Supabase Auth) |
+| Cadastro | `/cadastro` | Criação de conta (opcional; desativável por env) |
+| Recuperar senha | `/recuperar-senha` | Link por e-mail para redefinir senha |
+
+**Autenticação:** rotas do dashboard exigem login. Papéis `admin` e `user`; área admin restrita. Issues são filtradas por analista via **`gitlab_user_id`** quando vinculado. Ver [docs/08-autenticacao.md](docs/08-autenticacao.md) e [docs/10-identidades-gitlab.md](docs/10-identidades-gitlab.md).
 
 **Drill-down:** KPIs clicáveis (Total, Abertas, Fechadas, etc.) levam para `/issues` preservando os filtros globais da URL.
 
@@ -40,7 +50,7 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 
 ## Stack
 
-- **Next.js 16** (App Router, Server Components)
+- **Next.js 16** (App Router, Server Components, streaming com Suspense)
 - **React 19** + **TypeScript**
 - **Tailwind CSS 4** + [GovBR Design System](https://www.gov.br/ds/)
 - **Recharts** — gráficos
@@ -73,6 +83,8 @@ Preencha as variáveis:
 |----------|-----------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave pública (anon) — usada no browser |
+| `NEXT_PUBLIC_AUTH_REQUIRED` | (opcional) `false` desliga login em dev local |
+| `NEXT_PUBLIC_ALLOW_SIGNUP` | (opcional) `false` desabilita `/cadastro` |
 
 > Use apenas a **anon key** no frontend. A `service_role` fica exclusivamente no pipeline Python.
 
@@ -105,27 +117,32 @@ Se as variáveis não estiverem configuradas, o dashboard exibe um banner de set
 mgi-kpi-dashboard/
 ├── app/
 │   ├── layout.tsx              # Layout raiz (metadados, fontes)
+│   ├── api/revalidate/         # Invalidação de cache (POST, Bearer token)
 │   └── (dashboard)/            # Páginas do dashboard (route group)
-│       ├── layout.tsx          # Header, sidebar, filtros globais
-│       ├── page.tsx            # Executivo
+│       ├── layout.tsx          # Shell GovBR (Suspense, não bloqueante)
+│       ├── loading.tsx         # Skeleton compartilhado
+│       ├── page.tsx            # Executivo (streaming por seção)
 │       ├── alertas/
 │       ├── temporal/
 │       ├── detalhamento/
 │       ├── qualidade/
 │       ├── sprint/
 │       ├── equipes/
-│       └── issues/
+│       ├── issues/
+│       └── analistas/
 ├── components/
 │   ├── dashboard/              # KPIs, gráficos, tabelas
+│   │   └── executivo/          # Seções async da página Executivo
 │   ├── issues/                 # Listagem e busca de issues
-│   └── layout/                 # Header GovBR, sidebar, filtros
+│   └── layout/                 # Header GovBR, sidebar, filtros, skeletons
 ├── lib/
-│   ├── dashboard/              # fetchers, filters, constants, page context
+│   ├── dashboard/              # fetchers, cache, filters, page context
 │   ├── format.ts               # Formatação pt-BR (número, data, %)
 │   ├── navigation.ts           # Menu desktop + mobile
 │   └── supabase/server.ts      # Cliente Supabase (server-only)
 ├── types/database.ts           # Tipos das RPCs e views
 ├── tests/                      # Vitest + Testing Library
+├── vercel.json                 # Deploy Vercel (região gru1)
 └── .github/workflows/ci.yml    # CI: tsc + testes
 ```
 
@@ -143,8 +160,8 @@ O projeto está preparado para deploy na [Vercel](https://vercel.com):
 
 1. Conecte o repositório GitHub `MariaHilmar/mgi-kpi-dashboard`
 2. Root Directory: raiz do repo (padrão)
-3. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`) no painel Vercel
-4. Framework detectado automaticamente: **Next.js**
+3. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`) no painel Vercel
+4. Framework detectado automaticamente: **Next.js** (região `gru1` via `vercel.json`)
 
 Deploy manual (CLI):
 

@@ -9,15 +9,20 @@ import {
   ISSUES_PAGE_SIZE,
   TODOS,
 } from "@/lib/dashboard/constants";
+import { fetchFilterOptions } from "@/lib/dashboard/fetchers";
 import { parseFilters } from "@/lib/dashboard/filters";
+import { DEFAULT_ISSUE_ORDER } from "@/lib/dashboard/issueOrders";
 import { searchIssues } from "@/lib/dashboard/issues";
 import type { DashboardPageProps } from "@/lib/dashboard/page";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-
 function str(value: string | string[] | undefined, fallback: string): string {
   return typeof value === "string" && value !== "" ? value : fallback;
+}
+
+function dateOr(value: string | string[] | undefined): string | null {
+  if (typeof value !== "string" || value === "") return null;
+  return value;
 }
 
 export default async function IssuesPage({ searchParams }: DashboardPageProps) {
@@ -39,14 +44,23 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
   const slaRaw = str(sp.sla, TODOS);
   const sla = (slaRaw === "acima_90" ? "acima_90" : TODOS) as IssueSla;
 
-  const result = await searchIssues(filters, {
-    search: str(sp.q, ""),
-    estado,
-    sla,
-    order: str(sp.order, "criado_em_desc"),
-    page,
-    pageSize: ISSUES_PAGE_SIZE,
-  });
+  const autorRaw = str(sp.autor, TODOS);
+  const autor = autorRaw;
+
+  const [filterOptions, result] = await Promise.all([
+    fetchFilterOptions(),
+    searchIssues(filters, {
+      search: str(sp.q, ""),
+      estado,
+      sla,
+      autor,
+      criadoDe: dateOr(sp.criadoDe),
+      criadoAte: dateOr(sp.criadoAte),
+      order: str(sp.order, DEFAULT_ISSUE_ORDER),
+      page,
+      pageSize: ISSUES_PAGE_SIZE,
+    }),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -55,7 +69,7 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
         subtitle="Busca livre por título, autor, responsável ou ID — respeitando os filtros globais."
       />
 
-      <IssuesToolbar />
+      <IssuesToolbar autores={filterOptions.autores} />
 
       <IssuesTable rows={result.rows} />
 

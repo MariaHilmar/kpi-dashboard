@@ -1,6 +1,11 @@
 @import "tailwindcss";
 /* Tokens oficiais do Design System gov.br (apenas variáveis CSS, sem classes que conflitem com Tailwind) */
 @import "@govbr-ds/core/dist/core-tokens.min.css";
+/* Componentes gov.br usados em feedback e confirmações */
+@import "@govbr-ds/core/dist/components/message/message.min.css";
+@import "@govbr-ds/core/dist/components/button/button.min.css";
+@import "@govbr-ds/core/dist/components/modal/modal.min.css";
+@import "@govbr-ds/core/dist/components/scrim/scrim.min.css";
 
 :root {
   /* Paleta institucional gov.br */

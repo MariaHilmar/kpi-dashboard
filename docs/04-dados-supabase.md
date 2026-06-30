@@ -13,6 +13,11 @@ O schema Postgres versionado está em `seu-workspace\supabase\migrations\`. O da
 | `005_modulo_area_pairs.sql` | View `v_modulo_area_pairs` |
 | `006_schema_hardening.sql` | Funções auxiliares, hardening, `search_issues` revisada |
 | `007_anon_least_privilege.sql` | Princípio do menor privilégio para anon |
+| `008_profiles_admin.sql` | Perfis, papéis admin/user, RLS |
+| `009_issues_search_filters.sql` | Filtros autor/período em `search_issues` |
+| `010_analista_relatorios.sql` | Relatórios de analistas (rascunho/publicado) |
+| `011_analista_relatorio_por_autor.sql` | Filtro Analistas por autor; `profiles.autor_issues` |
+| `012_gitlab_identities.sql` | `gitlab_users`, `issue_participants`, IDs GitLab em `issues` e `profiles` |
 
 ## Tabelas principais
 
@@ -25,7 +30,8 @@ Espelho processado das issues GitLab (equivalente à aba **Dados** do Excel lega
 | Identificação | `issue_key`, `gitlab_iid`, `gitlab_repo`, `titulo` |
 | Taxonomia | `modulo`, `modulo_normalizado`, `area_funcional`, `tipo`, `categoria` |
 | Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` |
-| Pessoas | `assignee`, `autor`, `desenvolvedor`, `solicitante` |
+| Pessoas | `assignee`, `autor`, `desenvolvedor`, `solicitante` (texto para UI) |
+| Identidades GitLab | `gitlab_author_id`, `gitlab_assignee_ids[]`, `gitlab_developer_id` |
 | Datas / métricas | `criado_em`, `fechado_em`, `lead_time_dias`, `idade_dias`, `sla_mais_90_dias` |
 | Git / Dev | `dev_tem_branch`, `dev_commits`, `dev_mergeado`, `gitlab_mrs` |
 | Qualidade | `modulo_ok`, `area_ok`, `padrao_titulo`, `padrao_completo` |
@@ -60,6 +66,22 @@ Histórico de execuções do sync Python.
 
 O header do dashboard consulta a última execução com `status = 'success'`.
 
+### `gitlab_users`
+
+Identidades GitLab (ID global, username, name, email). Escrita pelo pipeline; leitura autenticada.
+
+### `issue_participants`
+
+Vínculo issue ↔ usuário GitLab por papel: `author`, `assignee`, `developer`. Ver [10-identidades-gitlab.md](./10-identidades-gitlab.md).
+
+### `profiles`
+
+Contas do dashboard (Auth + metadados): `full_name`, `gitlab_user_id`, `role`, `active`, `autor_issues` (legado).
+
+### `analista_relatorios`
+
+Rascunhos/publicações de “outras atividades” na página Analistas.
+
 ## Views
 
 | View | Uso no dashboard |
@@ -85,6 +107,7 @@ Mapeamento `lib/dashboard/fetchers.ts` → Postgres:
 | `dashboard_alertas_por_modulo` | `fetchAlertasPorModulo` | Alertas agrupados por módulo |
 | `dashboard_faixa_idade` | `fetchFaixaIdade` | Distribuição por faixa de idade |
 | `search_issues` | `searchIssues` | Busca paginada de issues |
+| `analista_relatorio_snapshot` | `fetchAnalistaRelatorioSnapshot` | KPIs/issues Analistas (`p_gitlab_user_id` ou `p_autor`) |
 
 ### Dimensões de `dashboard_aggregate_v2`
 
@@ -163,6 +186,7 @@ O pipeline Python deriva campos antes do upsert:
 | modulo, area_funcional, tipo | `taxonomy.py`, detectores Git |
 | lead_time_dias, idade_dias, sla | `issue_fields.py` |
 | dev_mergeado, dev_commits | `enriquecer_dev_git.py` |
+| gitlab_author_id, gitlab_* , issue_participants | `gitlab_identities.py` + `sync_supabase.py` |
 | modulo_ok, padrao_* | regras de qualidade em `taxonomy.py` |
 | parceria, sprint, epico | labels/campos GitLab |
 
@@ -171,16 +195,46 @@ Ver `mgi-kpi-pipeline/README.md` para detalhes de processamento.
 ## Aplicar schema no Supabase
 
 1. Criar projeto em [supabase.com](https://supabase.com).
-2. Executar migrations **em ordem** (001 → 007) no SQL Editor ou via Supabase CLI.
+2. Executar migrations **em ordem** (001 → 012) no SQL Editor ou via Supabase CLI.
 3. Copiar URL, anon key e service role key.
-4. Rodar sync: `python mgi-kpi-pipeline/sync_supabase.py` (ou `pipeline_maestro.py`).
+4. Atualizar issues do GitLab e sincronizar:
+
+```powershell
+cd seu-workspace\mgi-kpi-pipeline
+python atualizar_gitlab_issues.py --full
+python sync_supabase.py
+python backfill_profile_gitlab_ids.py
+```
+
+Ver [10-identidades-gitlab.md](./10-identidades-gitlab.md).
 
 ## Sincronização
 
 Após cada sync bem-sucedido:
 
-- Tabela `issues` recebe upsert por `issue_key`.
+- Tabela `issues` recebe upsert por `issue_key` (inclui `gitlab_author_id`, etc.).
+- Tabelas `gitlab_users` e `issue_participants` atualizadas a cada sync.
 - Tabela `releases` recebe upsert por `(repositorio, versao)`.
 - `sync_runs` registra contadores e timestamp.
 
 O dashboard exibe `finished_at` da última sync com sucesso no header.
+
+### Invalidação de cache do dashboard
+
+Após sync, o pipeline (`sync_supabase.py`) pode chamar o endpoint de revalidação:
+
+```
+POST https://<dashboard-url>/api/revalidate
+Authorization: Bearer <REVALIDATE_SECRET>
+```
+
+Resposta esperada: `{ "revalidated": true, "tag": "kpis" }`.
+
+Isso invalida o cache de dados (`unstable_cache`) usado pelos fetchers — incluindo KPIs, agregações, opções de filtro (`fetchFilterOptions`) e última sync (`fetchLastSync`). Sem essa chamada, o dashboard continua servindo dados cacheados até o TTL de 24 h expirar.
+
+Variáveis necessárias:
+
+| Variável | Onde | Descrição |
+|----------|------|-----------|
+| `REVALIDATE_SECRET` | Dashboard + pipeline | Segredo compartilhado (Bearer token) |
+| `DASHBOARD_URL` | Pipeline | URL de produção do dashboard |

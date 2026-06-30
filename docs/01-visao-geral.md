@@ -82,4 +82,4 @@ Itens registrados na documentação do workspace e no código:
 1. **Dados atualizados pelo pipeline:** o header exibe a data da última sync bem-sucedida (`sync_runs`).
 2. **Chave anon no frontend:** apenas `NEXT_PUBLIC_SUPABASE_ANON_KEY`; `service_role` fica no pipeline Python.
 3. **Filtro sentinela `Todos`:** valor padrão que desativa o recorte na RPC `_issues_filtered`.
-4. **Renderização dinâmica:** todas as páginas usam `export const dynamic = "force-dynamic"` — sem cache estático de dados.
+4. **Renderização dinâmica:** páginas usam `searchParams` e/ou auth com cookies — HTML gerado no servidor a cada request. Cache de **dados** (não de página) via `unstable_cache` (tag `kpis`, TTL 24 h), invalidado pelo pipeline após sync. Streaming com `Suspense` no layout e na página Executivo; skeletons via `loading.tsx` na navegação.

@@ -11,8 +11,6 @@ import {
 } from "@/lib/dashboard/fetchers";
 import type { ChartPoint } from "@/types/database";
 
-export const dynamic = "force-dynamic";
-
 export default async function DetalhamentoPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {

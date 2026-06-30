@@ -5,12 +5,28 @@
  * evitando listas de rotas duplicadas e divergentes.
  */
 
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import {
+  faAward,
+  faBell,
+  faChartLine,
+  faChartPie,
+  faClipboardList,
+  faFileLines,
+  faFolderOpen,
+  faMagnifyingGlass,
+  faRocket,
+  faUser,
+  faUsers,
+  faUserShield,
+} from "@fortawesome/free-solid-svg-icons";
+
 export type NavItem = {
   href: string;
   label: string;
   /** Rótulo curto opcional para a navegação mobile. */
   shortLabel?: string;
-  icon: string;
+  icon: IconDefinition;
   description?: string;
 };
 
@@ -23,35 +39,111 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "Visão geral",
     items: [
-      { href: "/", label: "Executivo", icon: "📊", description: "KPIs e visão consolidada" },
-      { href: "/alertas", label: "Alertas", icon: "🚨", description: "Sem épico/parceria + idade" },
+      {
+        href: "/",
+        label: "Executivo",
+        icon: faChartPie,
+        description: "KPIs e visão consolidada",
+      },
+      {
+        href: "/alertas",
+        label: "Alertas",
+        icon: faBell,
+        description: "Sem épico/parceria + idade",
+      },
     ],
   },
   {
     title: "Análise",
     items: [
-      { href: "/temporal", label: "Análise Temporal", shortLabel: "Temporal", icon: "📈" },
-      { href: "/detalhamento", label: "Detalhamento", shortLabel: "Detalhe", icon: "🔍" },
-      { href: "/qualidade", label: "Qualidade", icon: "💎" },
+      {
+        href: "/temporal",
+        label: "Análise Temporal",
+        shortLabel: "Temporal",
+        icon: faChartLine,
+      },
+      {
+        href: "/detalhamento",
+        label: "Detalhamento",
+        shortLabel: "Detalhe",
+        icon: faMagnifyingGlass,
+      },
+      { href: "/qualidade", label: "Qualidade", icon: faAward },
     ],
   },
   {
     title: "Operação",
     items: [
-      { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: "🏃" },
-      { href: "/equipes", label: "Equipes & Devs", shortLabel: "Equipes", icon: "👥" },
+      { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: faRocket },
+      { href: "/equipes", label: "Equipes & Devs", shortLabel: "Equipes", icon: faUsers },
+      {
+        href: "/analistas",
+        label: "Analistas",
+        icon: faFileLines,
+        description: "Relatório mensal de atividades",
+      },
     ],
   },
   {
     title: "Dados",
     items: [
-      { href: "/issues", label: "Issues", icon: "📋", description: "Busca livre + tabela" },
+      {
+        href: "/issues",
+        label: "Issues",
+        icon: faClipboardList,
+        description: "Busca livre + tabela",
+      },
     ],
   },
 ];
 
+export const ADMINISTRATION_NAV_GROUP: NavGroup = {
+  title: "Administração",
+  items: [
+    {
+      href: "/conta",
+      label: "Minha conta",
+      icon: faUser,
+      description: "Alterar senha",
+    },
+  ],
+};
+
+export const ADMIN_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/admin/usuarios",
+    label: "Usuários",
+    shortLabel: "Usuários",
+    icon: faUserShield,
+    description: "Gerenciar acessos (admin)",
+  },
+  {
+    href: "/admin/relatorios",
+    label: "Relatórios",
+    shortLabel: "Relatórios",
+    icon: faFolderOpen,
+    description: "Histórico de atividades (admin)",
+  },
+];
+
+export function getNavGroups(isAdmin: boolean): NavGroup[] {
+  const administrationItems = isAdmin
+    ? [...ADMINISTRATION_NAV_GROUP.items, ...ADMIN_NAV_ITEMS]
+    : ADMINISTRATION_NAV_GROUP.items;
+
+  return [
+    ...NAV_GROUPS,
+    {
+      ...ADMINISTRATION_NAV_GROUP,
+      items: administrationItems,
+    },
+  ];
+}
+
 /** Lista achatada de itens, na ordem dos grupos (usada no mobile). */
-export const NAV_ITEMS: NavItem[] = NAV_GROUPS.flatMap((group) => group.items);
+export function getNavItems(isAdmin: boolean): NavItem[] {
+  return getNavGroups(isAdmin).flatMap((group) => group.items);
+}
 
 /** Indica se uma rota está ativa para um dado pathname. */
 export function isNavItemActive(pathname: string | null, href: string): boolean {

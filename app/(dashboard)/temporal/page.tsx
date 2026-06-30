@@ -4,8 +4,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 import { fetchFluxoMensal } from "@/lib/dashboard/fetchers";
 
-export const dynamic = "force-dynamic";
-
 export default async function TemporalPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {

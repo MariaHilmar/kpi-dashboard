@@ -25,8 +25,6 @@ import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 
-export const dynamic = "force-dynamic";
-
 export default async function NovaPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) return <SetupBanner />;
@@ -43,7 +41,55 @@ export default async function NovaPage({ searchParams }: DashboardPageProps) {
 ```
 
 3. Registre a rota em `lib/navigation.ts` → `NAV_GROUPS`.
-4. Adicione testes se houver lógica nova em `lib/`.
+4. Adicione `app/(dashboard)/nova-rota/loading.tsx` reutilizando `DashboardPageLoading`.
+5. Adicione testes se houver lógica nova em `lib/`.
+
+## Renderização e performance
+
+Padrões adotados para reduzir tempo até conteúdo visível (detalhes em [02-arquitetura.md](./02-arquitetura.md)):
+
+### Cache de fetchers
+
+Dados que só mudam após sync do pipeline devem usar `cachedFetch` em `lib/dashboard/cache.ts`:
+
+```typescript
+export const fetchMinhaMetrica = cachedFetch(
+  "minha-metrica",
+  async (filters: DashboardFilters) => {
+    // usar createStaticSupabase() — nunca cookies dentro do cache
+  },
+);
+```
+
+A invalidação é automática via `POST /api/revalidate` após sync (tag `kpis`).
+
+### Layout não bloqueante
+
+O layout do dashboard **não** deve ter `await` no topo. Busque dados dentro de wrappers async em `DashboardLayoutParts.tsx` e envolva cada um em `<Suspense>`.
+
+### Streaming em páginas com muitos cards
+
+Para páginas com vários fetches independentes, extraia seções async (padrão da Executivo em `components/dashboard/executivo/`):
+
+```tsx
+<Suspense fallback={<KpiGridSkeleton />}>
+  <KpiSection filters={filters} />
+</Suspense>
+```
+
+Replique este padrão em outras páginas (Alertas, Sprint, etc.) se o ganho percebido justificar.
+
+### Skeleton de navegação
+
+Toda rota principal deve ter `loading.tsx`:
+
+```tsx
+import { DashboardPageLoading } from "@/components/layout/DashboardPageLoading";
+
+export default function Loading() {
+  return <DashboardPageLoading />;
+}
+```
 
 ## Adicionar um gráfico com dimensão existente
 
@@ -77,7 +123,10 @@ Para dimensões novas, estender a RPC `dashboard_aggregate_v2` na migration Supa
 | Sentinela sem filtro | `TODOS = "Todos"` |
 | Valor ausente em agregação | `NAO_INFORMADO = "Não informado"` |
 | Imports | alias `@/` (tsconfig paths) |
-| Páginas dashboard | sempre `force-dynamic` |
+| Páginas dashboard | dinâmicas via `searchParams` e/ou auth com cookies (sem `force-dynamic` explícito) |
+| Fetchers de KPI | `cachedFetch` + `createStaticSupabase()` |
+| Layout dashboard | síncrono; fetches em wrappers async com `Suspense` |
+| Novas rotas | incluir `loading.tsx` com `DashboardPageLoading` |
 | Client components | apenas quando necessário (hooks, Recharts interativo) |
 
 ## Testes
@@ -126,8 +175,9 @@ Evite duplicar shapes inline nos componentes — importe de `types/database.ts`.
 | Pasta | Responsabilidade |
 |-------|------------------|
 | `components/dashboard/` | Visualizações de dados |
+| `components/dashboard/executivo/` | Seções async com streaming (página Executivo) |
 | `components/issues/` | Listagem paginada |
-| `components/layout/` | Shell GovBR, navegação, filtros |
+| `components/layout/` | Shell GovBR, navegação, filtros, skeletons |
 
 Gráficos usam **Recharts** encapsulados em `BarChartCard`, `DonutChartCard`, `FluxoMensalCard`.
 

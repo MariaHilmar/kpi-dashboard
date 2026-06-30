@@ -24,6 +24,7 @@ const options: FilterOptions = {
   sprints: ["Todos", "Sprint 10"],
   epicos: ["Todos", "Epico 1"],
   repositorios: ["Todos", "contratos_v2"],
+  autores: ["Todos", "Maria Silva"],
   anos: [2024, 2025],
   moduloAreaPairs: [
     { modulo: "PNCP", area: "PNCP" },

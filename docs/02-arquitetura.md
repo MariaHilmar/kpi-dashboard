@@ -61,21 +61,35 @@ mgi-kpi-dashboard/
 ├── app/
 │   ├── layout.tsx                 # Layout raiz (fontes, metadados)
 │   └── (dashboard)/               # Route group — URLs sem prefixo
-│       ├── layout.tsx             # Header, sidebar, filtros, footer
-│       ├── page.tsx               # / Executivo
+│       ├── layout.tsx             # Shell GovBR (Suspense + streaming)
+│       ├── loading.tsx            # Skeleton compartilhado entre rotas
+│       ├── page.tsx               # / Executivo (streaming por seção)
 │       ├── alertas/
+│       │   └── loading.tsx
 │       ├── temporal/
+│       │   └── loading.tsx
 │       ├── detalhamento/
+│       │   └── loading.tsx
 │       ├── qualidade/
+│       │   └── loading.tsx
 │       ├── sprint/
+│       │   └── loading.tsx
 │       ├── equipes/
-│       └── issues/
+│       │   └── loading.tsx
+│       ├── issues/
+│       │   └── loading.tsx
+│       └── analistas/
+│           └── loading.tsx
 ├── components/
 │   ├── dashboard/                 # KPIs, gráficos, tabelas de alerta
+│   │   └── executivo/             # Seções async da página Executivo
 │   ├── issues/                    # Toolbar, tabela, paginação
 │   └── layout/                    # GovBR header/footer, sidebar, filtros
+│       ├── DashboardLayoutParts.tsx  # Wrappers async do layout
+│       └── DashboardPageLoading.tsx  # Skeleton de navegação
 ├── lib/
 │   ├── dashboard/
+│   │   ├── cache.ts               # cachedFetch + tag kpis (TTL 24 h)
 │   │   ├── constants.ts           # TODOS, TOP_LIMIT, dimensões RPC
 │   │   ├── fetchers.ts            # Chamadas Supabase (RPCs/views)
 │   │   ├── filters.ts             # parseFilters, commonArgs, dateArgs
@@ -94,13 +108,69 @@ mgi-kpi-dashboard/
 
 ### Server Components por padrão
 
-Todas as páginas do dashboard são **async Server Components**. Dados são buscados no servidor via `fetchers.ts` antes do HTML ser enviado ao cliente.
+Todas as páginas do dashboard são **async Server Components**. Dados são buscados no servidor via `fetchers.ts` e enviados ao cliente como HTML + payload RSC.
 
 Exceções client-side (`"use client"`):
 
 - `KpiGrid` — drill-down preservando query string;
 - `GlobalFilters` — interação com filtros na URL;
 - componentes de gráfico que dependem de Recharts no browser.
+
+### Renderização e performance
+
+O dashboard usa **SSR dinâmico com streaming** — não há SSG nem cache de página inteira. Cada request renderiza no servidor, mas o HTML é enviado progressivamente conforme os blocos ficam prontos.
+
+```mermaid
+sequenceDiagram
+  participant Browser
+  participant Layout as DashboardLayout
+  participant Page as ExecutivoPage
+  participant Cache as unstable_cache
+  participant Supabase
+
+  Browser->>Layout: GET /?modulo=X
+  Layout->>Browser: shell + skeletons (Suspense)
+  par Layout async
+    Layout->>Cache: fetchFilterOptions / fetchLastSync
+    Cache-->>Layout: dados cacheados ou Supabase
+  and Page async
+    Page->>Cache: fetchKpis / fetchAggregate...
+    Cache-->>Page: dados cacheados ou RPC
+  end
+  Page->>Browser: KPIs (stream)
+  Page->>Browser: gráficos (stream)
+```
+
+**Camadas de otimização:**
+
+| Camada | Mecanismo | Efeito |
+|--------|-----------|--------|
+| Cache de dados | `cachedFetch` + `unstable_cache` (tag `kpis`, TTL 24 h) | Evita RPC repetido entre requests |
+| Layout não bloqueante | `Suspense` + wrappers async em `DashboardLayoutParts.tsx` | `{children}` renderiza em paralelo com header/filtros |
+| Navegação | `loading.tsx` por rota + `DashboardPageLoading` | Skeleton imediato ao trocar de página |
+| Página Executivo | Seções async (`KpiSection`, `FluxoMensalSection`, etc.) | KPIs e gráficos aparecem independentemente |
+
+**Dinamismo sem `force-dynamic`:** páginas com `searchParams` (filtros na URL) e rotas que leem cookies (auth) já são dinâmicas no Next.js 16. Não é necessário `export const dynamic = "force-dynamic"`.
+
+**Invalidação de cache:** após cada sync bem-sucedido, o pipeline chama `POST /api/revalidate` com `Authorization: Bearer <REVALIDATE_SECRET>`, que executa `revalidateTag("kpis")`.
+
+### Cache de dados (`lib/dashboard/cache.ts`)
+
+Fetchers de KPI, agregações, opções de filtro e última sync usam `cachedFetch`:
+
+```typescript
+// lib/dashboard/cache.ts
+export const CACHE_TAG_KPIS = "kpis";
+const CACHE_TTL_SECONDS = 86_400; // 24 h
+```
+
+| Fetcher | Chave de cache |
+|---------|----------------|
+| `fetchKpis`, `fetchAggregate`, `fetchFluxoMensal`, etc. | por dimensão + filtros serializados |
+| `fetchFilterOptions` | `filter-options` |
+| `fetchLastSync` | `last-sync` |
+
+Fetchers cacheados usam `createStaticSupabase()` (cliente anon **sem cookies**). Auth e perfil continuam com `createServerSupabase()` fora do cache.
 
 ### Filtros via URL (single source of truth)
 
@@ -112,12 +182,12 @@ Valor sentinela **`Todos`** = sem filtro na dimensão correspondente.
 
 ```typescript
 // lib/supabase/server.ts
-createServerSupabase()  // retorna null se env vars ausentes
-isSupabaseConfigured()  // guard usado por SetupBanner
+createStaticSupabase()   // anon sem cookies — fetchers cacheados (RPCs/views)
+createServerSupabase()   // anon com cookies — auth, perfil, admin
+isSupabaseConfigured()   // guard usado por SetupBanner
 ```
 
 Se as variáveis `NEXT_PUBLIC_SUPABASE_*` não estiverem definidas, o dashboard exibe `SetupBanner` em vez de falhar.
-
 ### Tratamento de erros
 
 Fetchers registram erros no console (`console.error`) e retornam arrays vazios ou `null` — a UI degrada graciosamente (cards vazios, mensagem de KPIs indisponíveis).
@@ -149,4 +219,4 @@ Migrations SQL ficam em `seu-workspace\supabase\migrations\` (001–007). Devem 
 2. `npx tsc --noEmit`
 3. `npm run test`
 
-**Vercel:** `vercel.json` define framework Next.js; env vars configuradas no painel Vercel.
+**Vercel:** `vercel.json` define framework Next.js, região `gru1` (São Paulo, alinhada ao Supabase `sa-east-1`) e env vars no painel Vercel.
