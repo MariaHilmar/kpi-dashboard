@@ -46,6 +46,9 @@ function queryChainWithMaybeSingle(finalResult: { data: unknown; error: unknown 
     eq: vi.fn(function eq() {
       return chain;
     }),
+    in: vi.fn(function inFilter() {
+      return chain;
+    }),
     maybeSingle: vi.fn(async function maybeSingle() {
       return finalResult;
     }),
@@ -53,8 +56,14 @@ function queryChainWithMaybeSingle(finalResult: { data: unknown; error: unknown 
   return chain;
 }
 
+vi.mock("next/cache", () => ({
+  unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+  revalidateTag: vi.fn(),
+}));
+
 vi.mock("@/lib/supabase/server", () => ({
-  createServerSupabase: () => createServerSupabaseMock(),
+  createServerSupabase: async () => createServerSupabaseMock(),
+  createStaticSupabase: () => createServerSupabaseMock(),
 }));
 
 describe("fetchers", () => {
@@ -278,6 +287,7 @@ describe("fetchers", () => {
             sprints: ["Sprint 2", "Sprint 10"],
             epicos: ["Epico"],
             repositorios: ["contratos_v2"],
+            autores: ["Maria Silva", "Não informado"],
             anos: [2024, 2025],
           },
           error: null,
@@ -298,6 +308,8 @@ describe("fetchers", () => {
     expect(options.modulos).toContain("PNCP");
     expect(options.sprints).toEqual(["Todos", "Sprint 10", "Sprint 2"]);
     expect(options.moduloAreaPairs).toEqual([{ modulo: "PNCP", area: "PNCP" }]);
+    expect(options.autores[0]).toBe("Todos");
+    expect(options.autores).toContain("Maria Silva");
     expect(options.anos).toEqual([2024, 2025]);
   });
 
@@ -328,35 +340,57 @@ describe("fetchers", () => {
     ]);
   });
 
-  it("fetchLastSync retorna finished_at", async () => {
-    fromMock.mockReturnValue(
-      queryChainWithMaybeSingle({
-        data: {
-          finished_at: "2024-06-01T10:00:00Z",
-          started_at: "2024-06-01T09:00:00Z",
-          status: "success",
-        },
-        error: null,
-      }),
-    );
+  it("fetchLastSync retorna finished_at da última sync GitLab", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "sync_runs") {
+        return queryChainWithMaybeSingle({
+          data: {
+            finished_at: "2024-06-01T10:00:00Z",
+            started_at: "2024-06-01T09:00:00Z",
+          },
+          error: null,
+        });
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
 
     const { fetchLastSync } = await import("@/lib/dashboard/fetchers");
     expect(await fetchLastSync()).toBe("2024-06-01T10:00:00Z");
   });
 
-  it("fetchLastSync usa started_at como fallback", async () => {
-    fromMock.mockReturnValue(
-      queryChainWithMaybeSingle({
-        data: {
-          finished_at: null,
-          started_at: "2024-06-01T09:00:00Z",
-          status: "success",
-        },
-        error: null,
-      }),
-    );
+  it("fetchLastSync usa started_at como fallback quando finished_at é nulo", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "sync_runs") {
+        return queryChainWithMaybeSingle({
+          data: {
+            finished_at: null,
+            started_at: "2024-06-01T09:00:00Z",
+          },
+          error: null,
+        });
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
 
     const { fetchLastSync } = await import("@/lib/dashboard/fetchers");
     expect(await fetchLastSync()).toBe("2024-06-01T09:00:00Z");
+  });
+
+  it("fetchLastSync usa max(synced_at) das issues quando não há sync_runs GitLab", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "sync_runs") {
+        return queryChainWithMaybeSingle({ data: null, error: null });
+      }
+      if (table === "issues") {
+        return queryChainWithMaybeSingle({
+          data: { synced_at: "2024-06-15T08:10:24.000Z" },
+          error: null,
+        });
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    const { fetchLastSync } = await import("@/lib/dashboard/fetchers");
+    expect(await fetchLastSync()).toBe("2024-06-15T08:10:24.000Z");
   });
 });

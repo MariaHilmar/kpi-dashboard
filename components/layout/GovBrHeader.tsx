@@ -1,13 +1,15 @@
 import Image from "next/image";
 
+import { AuthMenu } from "@/components/auth/AuthMenu";
 import { formatDateTime } from "@/lib/format";
 import govbrLogo from "@/public/govbr-logo.png";
 
 type Props = {
   lastSync?: string | null;
+  userEmail?: string | null;
 };
 
-export function GovBrHeader({ lastSync }: Props) {
+export function GovBrHeader({ lastSync, userEmail }: Props) {
   return (
     <header className="sticky top-0 z-50 bg-govbr-blue shadow-md">
       <div className="flex items-center gap-3 pr-4 sm:pr-6 lg:pr-8">
@@ -36,11 +38,14 @@ export function GovBrHeader({ lastSync }: Props) {
           </p>
         </div>
 
-        {lastSync ? (
-          <p className="ml-auto hidden shrink-0 text-xs text-white/80 md:block">
-            Dados atualizado em {formatDateTime(lastSync)}
-          </p>
-        ) : null}
+        <div className="ml-auto flex shrink-0 items-center gap-4">
+          {lastSync ? (
+            <p className="hidden text-xs text-white/80 md:block">
+              Dados atualizado em {formatDateTime(lastSync)}
+            </p>
+          ) : null}
+          {userEmail ? <AuthMenu email={userEmail} /> : null}
+        </div>
       </div>
     </header>
   );

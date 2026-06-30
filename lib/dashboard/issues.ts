@@ -31,6 +31,9 @@ export type IssuesSearchParams = {
   search: string;
   estado: IssueEstado;
   sla: IssueSla;
+  autor: string;
+  criadoDe: string | null;
+  criadoAte: string | null;
   order: string;
   page: number;
   pageSize: number;
@@ -47,7 +50,7 @@ export async function searchIssues(
   filters: DashboardFilters,
   params: IssuesSearchParams,
 ): Promise<IssuesSearchResult> {
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
   if (!supabase) {
     return { rows: [], total: 0, page: params.page, pageSize: params.pageSize };
   }
@@ -59,6 +62,9 @@ export async function searchIssues(
     p_search: params.search || null,
     p_estado: params.estado,
     p_sla: params.sla,
+    p_autor: params.autor,
+    p_criado_de: params.criadoDe,
+    p_criado_ate: params.criadoAte,
     p_order: params.order,
     p_limit: params.pageSize,
     p_offset: offset,

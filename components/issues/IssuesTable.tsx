@@ -1,6 +1,8 @@
 import type { IssueRow } from "@/lib/dashboard/issues";
 import { formatDate, formatNumber } from "@/lib/format";
 
+import { IssuesSortableTh } from "./IssuesSortableTh";
+
 type Props = {
   rows: IssueRow[];
 };
@@ -33,16 +35,16 @@ export function IssuesTable({ rows }: Props) {
         <caption className="sr-only">Lista de issues filtradas, com módulo, tipo, estado e prazos</caption>
         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
           <tr>
-            <th scope="col" className="px-3 py-2 font-medium">ID</th>
-            <th scope="col" className="px-3 py-2 font-medium">Título</th>
-            <th scope="col" className="px-3 py-2 font-medium">Módulo</th>
-            <th scope="col" className="px-3 py-2 font-medium">Tipo</th>
-            <th scope="col" className="px-3 py-2 font-medium">Estado</th>
-            <th scope="col" className="px-3 py-2 font-medium">Prioridade</th>
-            <th scope="col" className="px-3 py-2 font-medium">Equipe</th>
-            <th scope="col" className="px-3 py-2 font-medium">Criado</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Lead (d)</th>
-            <th scope="col" className="px-3 py-2 text-right font-medium">Idade (d)</th>
+            <IssuesSortableTh columnKey="id" label="ID" />
+            <IssuesSortableTh columnKey="titulo" label="Título" />
+            <IssuesSortableTh columnKey="modulo" label="Módulo" />
+            <IssuesSortableTh columnKey="tipo" label="Tipo" />
+            <IssuesSortableTh columnKey="estado" label="Estado" />
+            <IssuesSortableTh columnKey="prioridade" label="Prioridade" />
+            <IssuesSortableTh columnKey="equipe" label="Equipe" />
+            <IssuesSortableTh columnKey="criado" label="Criado" />
+            <IssuesSortableTh columnKey="lead" label="Lead (d)" align="right" />
+            <IssuesSortableTh columnKey="idade" label="Idade (d)" align="right" />
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">

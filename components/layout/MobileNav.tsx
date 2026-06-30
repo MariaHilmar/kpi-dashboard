@@ -1,21 +1,27 @@
 "use client";
 
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { NAV_ITEMS, isNavItemActive } from "@/lib/navigation";
+import { getNavItems, isNavItemActive } from "@/lib/navigation";
 
-export function MobileNav() {
+type MobileNavProps = {
+  isAdmin?: boolean;
+};
+
+export function MobileNav({ isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
+  const items = getNavItems(isAdmin);
 
   return (
     <nav
       aria-label="Navegação principal"
-      className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 lg:hidden"
+      className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-2 py-2 lg:hidden"
     >
-      {NAV_ITEMS.map((item) => {
+      {items.map((item) => {
         const active = isNavItemActive(pathname, item.href);
         const href = query ? `${item.href}?${query}` : item.href;
         return (
@@ -23,13 +29,19 @@ export function MobileNav() {
             key={item.href}
             href={href}
             aria-current={active ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium ${
+            className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
               active
                 ? "bg-govbr-blue/10 text-govbr-blue-dark"
-                : "text-slate-600 hover:bg-slate-100"
+                : "text-govbr-blue hover:bg-govbr-blue/10 hover:text-govbr-blue-dark"
             }`}
           >
-            <span aria-hidden="true">{item.icon}</span>
+            <FontAwesomeIcon
+              icon={item.icon}
+              className={`w-3.5 transition-colors ${
+                active ? "text-govbr-blue-dark" : "text-govbr-blue"
+              }`}
+              aria-hidden
+            />
             {item.shortLabel ?? item.label}
           </Link>
         );

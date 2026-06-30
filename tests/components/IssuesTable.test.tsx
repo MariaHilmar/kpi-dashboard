@@ -1,5 +1,11 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
+  usePathname: () => "/issues",
+  useSearchParams: () => new URLSearchParams("order=criado_em_desc"),
+}));
 
 import { IssuesTable } from "@/components/issues/IssuesTable";
 import type { IssueRow } from "@/lib/dashboard/issues";

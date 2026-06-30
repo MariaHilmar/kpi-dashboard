@@ -1,5 +1,8 @@
 /** Constantes compartilhadas do domínio do dashboard. */
 
+/** Valores de `sync_runs.source` produzidos pelo pipeline GitLab → Supabase. */
+export const GITLAB_SYNC_SOURCES = ["json", "gitlab"] as const;
+
 /** Valor sentinela para "sem filtro" em selects e RPCs. */
 export const TODOS = "Todos";
 

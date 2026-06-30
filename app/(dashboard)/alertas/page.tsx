@@ -12,8 +12,6 @@ import {
   fetchTopLeadTimes,
 } from "@/lib/dashboard/fetchers";
 
-export const dynamic = "force-dynamic";
-
 export default async function AlertasPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {

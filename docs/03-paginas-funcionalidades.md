@@ -23,17 +23,16 @@ A navegação é definida em `lib/navigation.ts` e reutilizada pela `Sidebar` (d
 
 **Objetivo:** visão consolidada equivalente ao Dashboard Executivo do Excel.
 
+A página usa **streaming por seção**: cada bloco é um Server Component async dentro de `<Suspense>`, renderizado independentemente conforme o fetch termina. Componentes em `components/dashboard/executivo/`.
+
 ### Conteúdo
 
-| Bloco | Fonte de dados | RPC / dimensão |
-|-------|----------------|----------------|
-| Grade de KPIs (10 cards) | `fetchKpis` | `dashboard_kpis_full` |
-| Evolução mensal | `fetchFluxoMensal` | `dashboard_fluxo_mensal` |
-| Donut Status | `fetchAggregate("status")` | `dashboard_aggregate_v2` |
-| Donut Tipo | `fetchAggregate("tipo")` | idem |
-| Bar Prioridade | `fetchAggregate("prioridade")` | idem |
-| Bar Módulos (top 14) | `fetchAggregate("modulo", { limit: 14 })` | idem |
-| Bar Equipes (top 14) | `fetchAggregate("equipe", { limit: 14 })` | idem |
+| Bloco | Componente | Fonte de dados | RPC / dimensão |
+|-------|------------|----------------|----------------|
+| Grade de KPIs (10 cards) | `KpiSection` | `fetchKpis` | `dashboard_kpis_full` |
+| Evolução mensal | `FluxoMensalSection` | `fetchFluxoMensal` | `dashboard_fluxo_mensal` |
+| Donut Status / Tipo / Bar Prioridade | `DistribuicaoSection` | `fetchAggregate` | `dashboard_aggregate_v2` |
+| Bar Módulos / Equipes (top 14) | `VolumeSection` | `fetchAggregate` | idem |
 
 ### KPIs exibidos
 
@@ -138,7 +137,39 @@ Conteúdo: `KpiGrid` + donuts Status/Tipo + barra Equipes — todos filtrados pe
 | Top Desenvolvedores | `desenvolvedor` | top 12 |
 | Merge em master | `dev_mergeado` | — |
 
-Dados de desenvolvedor e merge vêm do enriquecimento Git feito pelo pipeline (`enriquecer_dev_git.py`).
+Dados de desenvolvedor e merge vêm do enriquecimento Git feito pelo pipeline (`enriquecer_dev_git.py`). Identidades GitLab (autor, assignee, dev) são persistidas em `gitlab_*` e `issue_participants` — ver [10-identidades-gitlab.md](./10-identidades-gitlab.md).
+
+---
+
+## `/analistas` — Relatório de atividades
+
+**Arquivo:** `app/(dashboard)/analistas/page.tsx`
+
+Relatório mensal por analista: KPIs, distribuição por módulo/parceiro, lista de issues e editor de “outras atividades”.
+
+### Filtro de issues do analista
+
+1. **Preferencial:** `profiles.gitlab_user_id` → issues onde `gitlab_author_id` coincide (RPC `analista_relatorio_snapshot` com `p_gitlab_user_id`).
+2. **Legado:** nome em `issues.autor` vs `profiles.full_name` ou `autor_issues`.
+
+Gestores (admin) podem filtrar por autor na URL; cada analista edita apenas suas outras atividades quando o filtro corresponde ao próprio perfil.
+
+Export: `GET /api/analistas/export`.
+
+---
+
+## `/conta` — Minha conta
+
+**Arquivo:** `app/(dashboard)/conta/page.tsx`
+
+- Alterar **nome de exibição** (`profiles.full_name`)
+- Alterar **senha** (Supabase Auth)
+
+---
+
+## `/admin/usuarios` — Administração de usuários
+
+Somente **admin**. CRUD de contas, inclusive **ID GitLab** e nome de exibição. Ver [09-admin-usuarios.md](./09-admin-usuarios.md).
 
 ---
 
@@ -205,12 +236,29 @@ O parâmetro `page` é removido ao navegar para evitar página inválida.
 
 ## Layout compartilhado
 
-**Arquivo:** `app/(dashboard)/layout.tsx`
+**Arquivo:** `app/(dashboard)/layout.tsx` (síncrono, sem `await` no topo)
+
+**Wrappers async:** `components/layout/DashboardLayoutParts.tsx`
+
+| Parte | Wrapper async | Dados buscados |
+|-------|---------------|----------------|
+| Header | `GovBrHeaderAsync` | `fetchLastSync`, `getSessionUser` |
+| Sidebar | `SidebarAsync` | `isCurrentUserAdmin` |
+| Mobile nav | `MobileNavAsync` | `isCurrentUserAdmin` |
+| Filtros globais | `GlobalFiltersAsync` | `fetchFilterOptions` |
+
+Cada parte está em `<Suspense>` com fallback próprio. O slot `{children}` (conteúdo da página) renderiza **em paralelo** com header, sidebar e filtros — não espera o `Promise.all` do layout.
 
 - `GovBrHeader` — exibe última sync (`sync_runs.finished_at`).
 - `Sidebar` / `MobileNav` — navegação.
-- `GlobalFilters` — barra de filtros (Suspense).
-- `GovBrFooter` — rodapé GovBR.
+- `GlobalFilters` — barra de filtros (client component).
+- `GovBrFooter` — rodapé GovBR (estático).
+
+### Estados de carregamento (`loading.tsx`)
+
+Cada rota principal possui `loading.tsx` que renderiza `DashboardPageLoading` (skeleton). Durante navegação client-side entre páginas, o skeleton aparece imediatamente enquanto o Server Component da nova rota carrega.
+
+Rotas com `loading.tsx`: `/`, `/alertas`, `/temporal`, `/detalhamento`, `/qualidade`, `/sprint`, `/equipes`, `/issues`, `/analistas`.
 
 ---
 

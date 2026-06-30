@@ -108,6 +108,7 @@ export type FilterOptions = {
   sprints: string[];
   epicos: string[];
   repositorios: string[];
+  autores: string[];
   anos: number[];
   moduloAreaPairs: ModuloAreaPair[];
 };
