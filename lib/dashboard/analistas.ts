@@ -1,5 +1,6 @@
 import { normalizeAnoMes, normalizeSprintParam } from "@/lib/dashboard/analistas-utils";
 import { TODOS } from "@/lib/dashboard/constants";
+import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
 import { createServerSupabase } from "@/lib/supabase/server";
 
 export {
@@ -72,7 +73,13 @@ function mapIssues(rows: unknown): AnalistaIssueRow[] {
       epico: str(item.epico),
       sprint: str(item.sprint),
       criado_em: str(item.criado_em),
-      url: str(item.url),
+      url: resolveGitlabWorkItemUrl({
+        url: str(item.url),
+        gitlabIid:
+          item.gitlab_iid === null || item.gitlab_iid === undefined
+            ? null
+            : num(item.gitlab_iid),
+      }),
     };
   });
 }
