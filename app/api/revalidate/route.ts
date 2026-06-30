@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
-  revalidateTag(CACHE_TAG_KPIS);
+  revalidateTag(CACHE_TAG_KPIS, "max");
 
   console.log(`[revalidate] tag="${CACHE_TAG_KPIS}" invalidada em ${new Date().toISOString()}`);
 
