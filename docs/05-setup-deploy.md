@@ -18,14 +18,11 @@
 
 ```
 D:\mgi-workspace\supabase\migrations\
-  001_initial_schema.sql
-  002_grants.sql
-  003_kpis_completos.sql
-  004_issues_search.sql
-  005_modulo_area_pairs.sql
-  006_schema_hardening.sql
-  007_anon_least_privilege.sql
+  001_initial_schema.sql … 007_anon_least_privilege.sql
+  008_profiles_admin.sql … 012_gitlab_identities.sql
 ```
+
+Ou aplique todas via `supabase db push` a partir de `D:\mgi-workspace\supabase`.
 
 3. Em **Project Settings → API**, copie:
    - **Project URL**
@@ -39,18 +36,25 @@ No pipeline Python (workspace `mgi-kpi-pipeline`):
 ```powershell
 cd D:\mgi-workspace\mgi-kpi-pipeline
 
-# Variáveis (PowerShell) — ou use .env em mgi-workspace/.env
-$env:SUPABASE_URL = "https://xxx.supabase.co"
-$env:SUPABASE_SERVICE_ROLE_KEY = "eyJ..."
+# Variáveis — ou use .env em mgi-workspace/.env
+# SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GITLAB_TOKEN*
 
-# Sync completo via orquestrador
-python pipeline_maestro.py
+# 1) Issues com IDs GitLab no JSON (após migration 012)
+python atualizar_gitlab_issues.py --full
 
-# Ou apenas sync (sem coleta Git)
+# 2) Sync Supabase (issues + gitlab_users + issue_participants)
 python sync_supabase.py
+
+# 3) Vincular perfis existentes ao GitLab (por e-mail)
+python backfill_profile_gitlab_ids.py
+
+# Ou pipeline completo (Git + issues + sync)
+python pipeline_maestro.py
 ```
 
-Confirme em Supabase → Table Editor que `issues` possui registros e `sync_runs` tem status `success`.
+Confirme em Supabase → Table Editor: `issues`, `gitlab_users`, `issue_participants`, `profiles.gitlab_user_id` e `sync_runs` com status `success`.
+
+Ver [10-identidades-gitlab.md](./10-identidades-gitlab.md).
 
 ## 2. Configurar o dashboard localmente
 
@@ -96,7 +100,10 @@ npm run start
 4. Configure variáveis de ambiente de **Production** e **Preview**:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `REVALIDATE_SECRET` (mesmo valor usado no pipeline para invalidar cache)
 5. Deploy.
+
+O `vercel.json` fixa a região **`gru1`** (São Paulo), alinhada ao Supabase do projeto (`sa-east-1`), reduzindo latência das RPCs.
 
 ### Via CLI
 
@@ -120,6 +127,15 @@ cd D:\mgi-workspace\mgi-kpi-pipeline
 python pipeline_maestro.py
 ```
 
+Configure no ambiente do pipeline (`.env` do workspace ou variáveis de sistema):
+
+```env
+DASHBOARD_URL=https://seu-dashboard.vercel.app
+REVALIDATE_SECRET=<mesmo valor do dashboard>
+```
+
+Sem `DASHBOARD_URL` e `REVALIDATE_SECRET`, o sync conclui normalmente mas o cache do dashboard não é invalidado (dados podem ficar desatualizados até 24 h).
+
 Tempo típico do pipeline completo: **2–3 minutos** (conforme docs do workspace).
 
 ### Opção B — Agendamento Windows
@@ -138,6 +154,8 @@ Sync automático via HTTP trigger + endpoint protegido — item de roadmap em `S
 |----------|-------------|-----------|
 | `NEXT_PUBLIC_SUPABASE_URL` | Sim | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sim | Chave pública anon |
+| `REVALIDATE_SECRET` | Recomendada | Segredo para `POST /api/revalidate` (invalidação de cache após sync) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin only | CRUD de usuários em `/admin/usuarios` — nunca expor no browser |
 
 ### Pipeline Python (sync)
 
@@ -177,11 +195,20 @@ Reaplique migrations `002`, `006`, `007` (grants para role `anon`).
 
 Tabela `sync_runs` vazia ou sem registro `status = 'success'`. Execute o pipeline.
 
+### Dados desatualizados após sync
+
+1. Confirme `REVALIDATE_SECRET` idêntico no dashboard e no pipeline.
+2. Confirme `DASHBOARD_URL` apontando para a URL de produção correta.
+3. Verifique logs do pipeline: mensagem de cache invalidado ou aviso `DASHBOARD_URL ou REVALIDATE_SECRET nao configurados`.
+4. Teste manualmente: `curl -X POST https://<url>/api/revalidate -H "Authorization: Bearer <secret>"`.
+
 ## Checklist de go-live
 
-- [ ] Migrations 001–007 aplicadas no Supabase
-- [ ] Pipeline executado com sucesso (`sync_runs.status = success`)
-- [ ] `.env.local` / Vercel env vars configuradas (anon key apenas)
+- [ ] Migrations 001–012 aplicadas no Supabase
+- [ ] `atualizar_gitlab_issues.py` + `sync_supabase.py` executados
+- [ ] `backfill_profile_gitlab_ids.py` executado (perfis com `gitlab_user_id`)
+- [ ] Pipeline/sync com sucesso (`sync_runs.status = success`)
+- [ ] `.env.local` / Vercel env vars configuradas (anon key + `REVALIDATE_SECRET`)
 - [ ] `npm run build` passa localmente
 - [ ] CI GitHub Actions verde (`tsc` + testes)
 - [ ] Deploy Vercel acessível

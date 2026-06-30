@@ -5,8 +5,6 @@ import { TOP_LIMIT } from "@/lib/dashboard/constants";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 import { fetchAggregate } from "@/lib/dashboard/fetchers";
 
-export const dynamic = "force-dynamic";
-
 export default async function EquipesPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {

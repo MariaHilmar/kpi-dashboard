@@ -12,7 +12,7 @@ const createServerSupabaseMock = vi.fn(
 );
 
 vi.mock("@/lib/supabase/server", () => ({
-  createServerSupabase: () => createServerSupabaseMock(),
+  createServerSupabase: async () => createServerSupabaseMock(),
 }));
 
 describe("searchIssues", () => {
@@ -44,6 +44,9 @@ describe("searchIssues", () => {
       search: "teste",
       estado: "open",
       sla: "Todos",
+      autor: "Todos",
+      criadoDe: null,
+      criadoAte: null,
       order: "criado_em_desc",
       page: 2,
       pageSize: 50,
@@ -58,6 +61,9 @@ describe("searchIssues", () => {
       expect.objectContaining({
         p_search: "teste",
         p_estado: "open",
+        p_autor: "Todos",
+        p_criado_de: null,
+        p_criado_ate: null,
         p_offset: 50,
         p_limit: 50,
       }),
@@ -72,6 +78,9 @@ describe("searchIssues", () => {
       search: "",
       estado: "Todos",
       sla: "Todos",
+      autor: "Todos",
+      criadoDe: null,
+      criadoAte: null,
       order: "criado_em_desc",
       page: 1,
       pageSize: 50,
@@ -88,6 +97,9 @@ describe("searchIssues", () => {
       search: "",
       estado: "Todos",
       sla: "Todos",
+      autor: "Todos",
+      criadoDe: null,
+      criadoAte: null,
       order: "criado_em_desc",
       page: 1,
       pageSize: 50,
@@ -104,6 +116,9 @@ describe("searchIssues", () => {
       search: "",
       estado: "Todos",
       sla: "Todos",
+      autor: "Todos",
+      criadoDe: null,
+      criadoAte: null,
       order: "criado_em_desc",
       page: 1,
       pageSize: 50,

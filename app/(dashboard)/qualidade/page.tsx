@@ -7,8 +7,6 @@ import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/pa
 import { fetchAggregate, fetchKpis, fetchQualidade } from "@/lib/dashboard/fetchers";
 import { formatNumber, formatPercent } from "@/lib/format";
 
-export const dynamic = "force-dynamic";
-
 export default async function QualidadePage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {
