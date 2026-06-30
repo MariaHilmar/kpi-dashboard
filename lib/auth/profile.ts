@@ -58,10 +58,10 @@ export async function requireAdmin(): Promise<
 }
 
 export async function listProfiles(): Promise<UserProfile[]> {
-  const admin = createAdminSupabase();
-  if (!admin) return [];
+  const supabase = await createServerSupabase();
+  if (!supabase) return [];
 
-  const { data, error } = await admin
+  const { data, error } = await supabase
     .from("profiles")
     .select("id, email, full_name, gitlab_user_id, autor_issues, role, active, created_at, updated_at")
     .order("created_at", { ascending: false });
