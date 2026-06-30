@@ -38,7 +38,7 @@ export async function GET(request: Request) {
 
   const filename = buildAnalistaWordExportFilename(analystName, anoMes);
 
-  return new NextResponse(buffer, {
+  return new NextResponse(new Uint8Array(buffer), {
     status: 200,
     headers: {
       "Content-Type":
