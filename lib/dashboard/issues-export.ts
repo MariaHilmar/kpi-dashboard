@@ -105,7 +105,7 @@ async function embedPieChart(
 
   const png = await buildDistribuicaoPieChartPng(title, rows);
   const imageId = workbook.addImage({
-    buffer: png,
+    base64: png.toString("base64"),
     extension: "png",
   });
 
