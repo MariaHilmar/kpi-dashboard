@@ -1,10 +1,19 @@
 import { createRequire } from "node:module";
+import fs from "node:fs";
+import path from "node:path";
 
 import type { AnalistaDistribuicaoRow } from "@/types/analistas";
 
 const require = createRequire(import.meta.url);
 
 const CHART_FONT_FAMILY = "DejaVu Sans";
+
+const CHART_FONT_FILES = [
+  "dejavu-sans-latin-400-normal.woff2",
+  "dejavu-sans-latin-700-normal.woff2",
+] as const;
+
+const CHART_FONT_DIR = path.join(process.cwd(), "assets", "chart-fonts");
 
 const PIE_COLORS = [
   "#1351B4",
@@ -19,11 +28,30 @@ const PIE_COLORS = [
   "#FF580A",
 ];
 
+function resolveChartFontPath(filename: (typeof CHART_FONT_FILES)[number]): string {
+  const bundled = path.join(process.cwd(), "assets", "chart-fonts", filename);
+  if (fs.existsSync(bundled)) return bundled;
+
+  if (filename === "dejavu-sans-latin-400-normal.woff2") {
+    return require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-400-normal.woff2");
+  }
+
+  return require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-700-normal.woff2");
+}
+
+function getChartFontDir(): string | null {
+  return fs.existsSync(CHART_FONT_DIR) ? CHART_FONT_DIR : null;
+}
+
 function getChartFonts(): string[] {
-  return [
-    require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-400-normal.woff2"),
-    require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-700-normal.woff2"),
-  ];
+  return CHART_FONT_FILES.map(resolveChartFontPath).filter((filePath) => fs.existsSync(filePath));
+}
+
+function chartTextAttrs(options: { size?: number; weight?: number; fill?: string } = {}): string {
+  const size = options.size ?? 13;
+  const weight = options.weight ? ` font-weight="${options.weight}"` : "";
+  const fill = options.fill ?? "#334155";
+  return `font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="${size}"${weight} fill="${fill}"`;
 }
 
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
@@ -69,9 +97,14 @@ function truncateLabel(label: string, max = 40): string {
 
 async function renderSvgToPng(svg: string): Promise<Buffer> {
   const { Resvg } = await import("@resvg/resvg-js");
+  const fontDir = getChartFontDir();
+  const fontFiles = getChartFonts();
+
   const resvg = new Resvg(svg, {
     font: {
-      fontFiles: getChartFonts(),
+      loadSystemFonts: false,
+      ...(fontDir ? { fontDirs: [fontDir] } : {}),
+      ...(fontFiles.length > 0 ? { fontFiles } : {}),
       defaultFontFamily: CHART_FONT_FAMILY,
       serifFamily: CHART_FONT_FAMILY,
       sansSerifFamily: CHART_FONT_FAMILY,
@@ -114,19 +147,33 @@ function buildDistribuicaoPieChartSvg(
 
   let angle = 0;
   const paths: string[] = [];
+  const sliceLabels: string[] = [];
   const legend: string[] = [];
 
   slices.forEach((row, index) => {
     const pct = sum > 0 ? (row.total / sum) * 100 : 0;
     const sweep = sum > 0 ? (row.total / sum) * 360 : 0;
     const color = PIE_COLORS[index % PIE_COLORS.length];
+    const startAngle = angle;
     const end = angle + sweep;
     paths.push(
-      `<path d="${describeSlicePath(cx, cy, radius, angle, end)}" fill="${color}" stroke="#ffffff" stroke-width="1.5" />`,
+      `<path d="${describeSlicePath(cx, cy, radius, startAngle, end)}" fill="${color}" stroke="#ffffff" stroke-width="1.5" />`,
     );
+
+    if (pct >= 5 && sweep >= 18) {
+      const mid = startAngle + sweep / 2;
+      const labelPos = polarToCartesian(cx, cy, radius * 0.62, mid);
+      const labelFill = pct >= 35 ? "#ffffff" : "#0f172a";
+      sliceLabels.push(`
+        <text x="${labelPos.x.toFixed(2)}" y="${labelPos.y.toFixed(2)}" text-anchor="middle" dominant-baseline="middle" ${chartTextAttrs({ size: 12, weight: 700, fill: labelFill })}>
+          ${row.total} (${pct.toFixed(0)}%)
+        </text>
+      `);
+    }
+
     legend.push(`
       <rect x="320" y="${24 + index * 28}" width="14" height="14" fill="${color}" rx="2" />
-      <text x="344" y="${35 + index * 28}" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="13" fill="#334155">
+      <text x="344" y="${35 + index * 28}" ${chartTextAttrs()}>
         ${escapeXml(truncateLabel(row.label))} (${row.total} · ${pct.toFixed(0)}%)
       </text>
     `);
@@ -136,7 +183,7 @@ function buildDistribuicaoPieChartSvg(
   if (slices.length === 0) {
     paths.push(`<circle cx="${cx}" cy="${cy}" r="${radius}" fill="#E2E8F0" />`);
     legend.push(`
-      <text x="320" y="40" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="13" fill="#64748B">
+      <text x="320" y="40" ${chartTextAttrs({ fill: "#64748B" })}>
         Sem dados para o recorte selecionado.
       </text>
     `);
@@ -145,12 +192,23 @@ function buildDistribuicaoPieChartSvg(
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <text x="16" y="24" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="14" font-weight="700" fill="#0f172a">${escapeXml(title)}</text>
+  <text x="16" y="24" ${chartTextAttrs({ size: 14, weight: 700, fill: "#0f172a" })}>
+    ${escapeXml(title)}
+  </text>
   ${paths.join("\n")}
+  ${sliceLabels.join("\n")}
   ${legend.join("\n")}
 </svg>`;
 
   return { svg, width, height };
+}
+
+/** Expõe SVG para testes (rótulos devem estar no markup). */
+export function buildDistribuicaoPieChartSvgForTest(
+  title: string,
+  rows: AnalistaDistribuicaoRow[],
+): string {
+  return buildDistribuicaoPieChartSvg(title, rows).svg;
 }
 
 /** Fallback quando a RPC ainda não retorna por_tipo (pré-migration 013). */

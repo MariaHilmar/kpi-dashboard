@@ -95,6 +95,60 @@ function sectionHeading(text: string): Paragraph {
   });
 }
 
+function buildDistribuicaoDataTable(rows: AnalistaDistribuicaoRow[]): Table {
+  const slices = rows.filter((row) => row.total > 0);
+  const sum = slices.reduce((acc, row) => acc + row.total, 0);
+
+  const header = new TableRow({
+    children: [
+      headerCell("Categoria", 58),
+      headerCell("Quantidade", 22),
+      headerCell("%", 20),
+    ],
+  });
+
+  const dataRows =
+    slices.length === 0
+      ? [
+          new TableRow({
+            children: [
+              new TableCell({
+                columnSpan: 3,
+                margins: { top: 80, bottom: 80, left: 120, right: 120 },
+                children: [
+                  new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    children: [
+                      new TextRun({
+                        text: "Sem dados para o recorte selecionado.",
+                        italics: true,
+                        size: 18,
+                      }),
+                    ],
+                  }),
+                ],
+              }),
+            ],
+          }),
+        ]
+      : slices.map((row) => {
+          const pct = sum > 0 ? Math.round((row.total / sum) * 100) : 0;
+          return new TableRow({
+            children: [
+              bodyCell(row.label, 58),
+              bodyCell(String(row.total), 22),
+              bodyCell(`${pct}%`, 20),
+            ],
+          });
+        });
+
+  return new Table({
+    width: { size: 100, type: WidthType.PERCENTAGE },
+    borders: TABLE_BORDERS,
+    rows: [header, ...dataRows],
+  });
+}
+
 async function buildDistribuicaoSection(
   title: string,
   rows: AnalistaDistribuicaoRow[],
@@ -108,7 +162,7 @@ async function buildDistribuicaoSection(
     sectionHeading(title),
     new Paragraph({
       alignment: AlignmentType.CENTER,
-      spacing: { after: 240 },
+      spacing: { after: 160 },
       children: [
         new ImageRun({
           type: "png",
@@ -117,6 +171,8 @@ async function buildDistribuicaoSection(
         }),
       ],
     }),
+    buildDistribuicaoDataTable(rows),
+    new Paragraph({ spacing: { after: 240 }, children: [] }),
   ];
 }
 
