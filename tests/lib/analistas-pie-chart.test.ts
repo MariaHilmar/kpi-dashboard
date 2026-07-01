@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
 
 import {
   aggregateDistribuicaoFromIssues,
   buildDistribuicaoPieChartPng,
+  buildDistribuicaoPieChartSvgForTest,
 } from "@/lib/dashboard/analistas-pie-chart";
 
 describe("buildDistribuicaoPieChartPng", () => {
@@ -31,6 +34,31 @@ describe("buildDistribuicaoPieChartPng", () => {
     ]);
 
     expect(png.byteLength).toBeGreaterThan(3000);
+  });
+
+  it("usa fontes em assets/chart-fonts quando disponíveis", async () => {
+    const bundled = path.join(process.cwd(), "assets", "chart-fonts", "dejavu-sans-latin-400-normal.woff2");
+    expect(fs.existsSync(bundled)).toBe(true);
+
+    const png = await buildDistribuicaoPieChartPng("Distribuição por parceiro", [
+      { label: "BCB", total: 2, abertas: 0, fechadas: 2, pct_conclusao: 100 },
+      { label: "Sem Parceiro", total: 15, abertas: 5, fechadas: 10, pct_conclusao: 67 },
+    ]);
+
+    expect(png.byteLength).toBeGreaterThan(4000);
+  });
+
+  it("inclui rótulos e percentuais no SVG", () => {
+    const svg = buildDistribuicaoPieChartSvgForTest("Distribuição por tipo", [
+      { label: "Melhoria", total: 19, abertas: 1, fechadas: 18, pct_conclusao: 95 },
+      { label: "Bug", total: 1, abertas: 1, fechadas: 0, pct_conclusao: 0 },
+    ]);
+
+    expect(svg).toContain("Melhoria");
+    expect(svg).toContain("Bug");
+    expect(svg).toContain("19 · 95%");
+    expect(svg).toContain("1 · 5%");
+    expect(svg).toContain("19 (95%)");
   });
 });
 

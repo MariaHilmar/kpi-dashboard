@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
   ],
   outputFileTracingIncludes: {
     "/api/analistas/export/word": [
+      "./assets/chart-fonts/**/*",
       "./node_modules/@fontsource/dejavu-sans/files/dejavu-sans-latin-400-normal.woff2",
       "./node_modules/@fontsource/dejavu-sans/files/dejavu-sans-latin-700-normal.woff2",
       "./node_modules/@resvg/resvg-js/**/*",
