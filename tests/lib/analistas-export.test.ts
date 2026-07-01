@@ -34,6 +34,7 @@ const SNAPSHOT: AnalistaRelatorioSnapshot = {
   issues: [
     {
       gitlab_iid: 1241,
+      gitlab_repo: "Contratos v1",
       titulo: "Ajuste de tela",
       modulo: "Fiscalização",
       tipo: "Melhoria",
@@ -70,7 +71,11 @@ describe("buildAnalistaRelatorioWorkbook", () => {
     expect(painel?.getCell("B2").value).toContain("05/2026");
 
     const dados = workbook.getWorksheet("Dados");
-    expect(dados?.getCell("A2").value).toBe("#1241");
+    const issueCell = dados?.getCell("A2");
+    expect(issueCell?.value).toMatchObject({
+      text: "#1241",
+      hyperlink: "https://gitlab.com/comprasnet/contratos/-/work_items/1241",
+    });
   });
 
   it("usa texto padrão quando não há outras atividades", async () => {

@@ -43,7 +43,11 @@ describe("IssuesTable", () => {
   it("renderiza linha com badge aberta e SLA", () => {
     render(<IssuesTable rows={[sampleRow]} />);
 
-    expect(screen.getByText("1234")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: "1234" });
+    expect(link).toHaveAttribute(
+      "href",
+      "https://gitlab.com/comprasnet/contratos_v2/-/work_items/1234",
+    );
     expect(screen.getByText("[PNCP] Integrar envio")).toBeInTheDocument();
     expect(screen.getByText("Aberta")).toBeInTheDocument();
     expect(screen.getByText(/SLA > 90d/)).toBeInTheDocument();
@@ -57,5 +61,15 @@ describe("IssuesTable", () => {
       />,
     );
     expect(screen.getByText("Fechada")).toBeInTheDocument();
+  });
+
+  it("renderiza issue aberta com estado em portugues (pipeline)", () => {
+    render(
+      <IssuesTable
+        rows={[{ ...sampleRow, gitlab_iid: 786, estado: "Aberto", sla_mais_90_dias: true }]}
+      />,
+    );
+    expect(screen.getByText("Aberta")).toBeInTheDocument();
+    expect(screen.queryByText("Fechada")).not.toBeInTheDocument();
   });
 });

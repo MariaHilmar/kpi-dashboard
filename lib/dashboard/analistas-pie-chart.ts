@@ -1,6 +1,10 @@
-import sharp from "sharp";
+import { createRequire } from "node:module";
 
 import type { AnalistaDistribuicaoRow } from "@/types/analistas";
+
+const require = createRequire(import.meta.url);
+
+const CHART_FONT_FAMILY = "DejaVu Sans";
 
 const PIE_COLORS = [
   "#1351B4",
@@ -14,6 +18,13 @@ const PIE_COLORS = [
   "#59B9DE",
   "#FF580A",
 ];
+
+function getChartFonts(): string[] {
+  return [
+    require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-400-normal.woff2"),
+    require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-700-normal.woff2"),
+  ];
+}
 
 function polarToCartesian(cx: number, cy: number, radius: number, angleDeg: number) {
   const rad = ((angleDeg - 90) * Math.PI) / 180;
@@ -50,19 +61,56 @@ function escapeXml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
+function truncateLabel(label: string, max = 40): string {
+  const trimmed = label.trim();
+  if (trimmed.length <= max) return trimmed;
+  return `${trimmed.slice(0, max - 1)}…`;
+}
+
+async function renderSvgToPng(svg: string): Promise<Buffer> {
+  const { Resvg } = await import("@resvg/resvg-js");
+  const resvg = new Resvg(svg, {
+    font: {
+      fontFiles: getChartFonts(),
+      defaultFontFamily: CHART_FONT_FAMILY,
+      serifFamily: CHART_FONT_FAMILY,
+      sansSerifFamily: CHART_FONT_FAMILY,
+      monospaceFamily: CHART_FONT_FAMILY,
+      cursiveFamily: CHART_FONT_FAMILY,
+      fantasyFamily: CHART_FONT_FAMILY,
+    },
+  });
+
+  return Buffer.from(resvg.render().asPng());
+}
+
 /** Gera PNG de gráfico pizza + legenda para embutir no Word. */
 export async function buildDistribuicaoPieChartPng(
   title: string,
   rows: AnalistaDistribuicaoRow[],
 ): Promise<Buffer> {
+  const { svg } = buildDistribuicaoPieChartSvg(title, rows);
+  return renderSvgToPng(svg);
+}
+
+export function getDistribuicaoPieChartHeight(rows: AnalistaDistribuicaoRow[]): number {
+  const legendRows = rows.filter((row) => row.total > 0).length || 1;
+  return Math.max(320, 56 + legendRows * 28);
+}
+
+function buildDistribuicaoPieChartSvg(
+  title: string,
+  rows: AnalistaDistribuicaoRow[],
+): { svg: string; width: number; height: number } {
   const slices = rows.filter((row) => row.total > 0);
   const sum = slices.reduce((acc, row) => acc + row.total, 0);
 
   const width = 640;
-  const height = 320;
+  const legendRows = slices.length > 0 ? slices.length : 1;
+  const height = Math.max(320, 56 + legendRows * 28);
   const cx = 150;
-  const cy = 160;
-  const radius = 110;
+  const cy = Math.round(height / 2);
+  const radius = Math.min(110, Math.round(height / 2) - 24);
 
   let angle = 0;
   const paths: string[] = [];
@@ -78,8 +126,8 @@ export async function buildDistribuicaoPieChartPng(
     );
     legend.push(`
       <rect x="320" y="${24 + index * 28}" width="14" height="14" fill="${color}" rx="2" />
-      <text x="344" y="${35 + index * 28}" font-family="Arial, sans-serif" font-size="13" fill="#334155">
-        ${escapeXml(row.label)} (${row.total} · ${pct.toFixed(0)}%)
+      <text x="344" y="${35 + index * 28}" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="13" fill="#334155">
+        ${escapeXml(truncateLabel(row.label))} (${row.total} · ${pct.toFixed(0)}%)
       </text>
     `);
     angle = end;
@@ -88,7 +136,7 @@ export async function buildDistribuicaoPieChartPng(
   if (slices.length === 0) {
     paths.push(`<circle cx="${cx}" cy="${cy}" r="${radius}" fill="#E2E8F0" />`);
     legend.push(`
-      <text x="320" y="40" font-family="Arial, sans-serif" font-size="13" fill="#64748B">
+      <text x="320" y="40" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="13" fill="#64748B">
         Sem dados para o recorte selecionado.
       </text>
     `);
@@ -97,12 +145,12 @@ export async function buildDistribuicaoPieChartPng(
   const svg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   <rect width="100%" height="100%" fill="#ffffff"/>
-  <text x="16" y="24" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#0f172a">${escapeXml(title)}</text>
+  <text x="16" y="24" font-family="${CHART_FONT_FAMILY}, sans-serif" font-size="14" font-weight="700" fill="#0f172a">${escapeXml(title)}</text>
   ${paths.join("\n")}
   ${legend.join("\n")}
 </svg>`;
 
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  return { svg, width, height };
 }
 
 /** Fallback quando a RPC ainda não retorna por_tipo (pré-migration 013). */

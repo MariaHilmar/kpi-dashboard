@@ -50,6 +50,20 @@ export type AggregateDimension = (typeof AGGREGATE_DIMENSIONS)[number];
 /** Dimensões usadas pela RPC `dashboard_alertas_por_modulo`. */
 export type AlertaDimensao = "sem_epico" | "sem_parceria";
 
+/** Ordem das faixas em Alertas → Issues abertas por idade (RPC `dashboard_faixa_idade`). */
+export const FAIXAS_IDADE_ABERTAS = [
+  "0-30 dias",
+  "31-60 dias",
+  "61-90 dias",
+  "91-120 dias",
+  "121-180 dias",
+  "181-360 dias",
+  "Mais de 1 ano",
+] as const;
+
+/** Opções do filtro faixaIdade na listagem de issues (/issues). */
+export const FAIXAS_IDADE_ISSUES = [TODOS, "Sem dado", ...FAIXAS_IDADE_ABERTAS] as const;
+
 /** Estados possíveis no filtro de listagem de issues. */
 export type IssueEstado = "Todos" | "open" | "closed";
 

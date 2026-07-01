@@ -1,5 +1,6 @@
-import type { AnalistaIssueRow } from "@/types/analistas";
+import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
 import { formatNumber } from "@/lib/format";
+import type { AnalistaIssueRow } from "@/types/analistas";
 
 type Props = {
   rows: AnalistaIssueRow[];
@@ -40,23 +41,31 @@ export function AnalistasIssuesTable({ rows }: Props) {
                 </td>
               </tr>
             ) : (
-              rows.map((row, index) => (
+              rows.map((row, index) => {
+                const issueUrl = resolveGitlabWorkItemUrl({
+                  gitlabRepo: row.gitlab_repo,
+                  gitlabIid: row.gitlab_iid,
+                  url: row.url,
+                });
+                const issueLabel = row.gitlab_iid != null ? `#${row.gitlab_iid}` : "—";
+
+                return (
                 <tr
-                  key={`${row.gitlab_iid ?? "na"}-${row.criado_em ?? "na"}-${index}`}
+                  key={`${row.gitlab_repo ?? "na"}-${row.gitlab_iid ?? "na"}-${row.criado_em ?? "na"}-${index}`}
                   className="hover:bg-slate-50"
                 >
                   <td className="whitespace-nowrap px-3 py-2 font-mono text-xs text-slate-500">
-                    {row.url ? (
+                    {issueUrl ? (
                       <a
-                        href={row.url}
+                        href={issueUrl}
                         target="_blank"
                         rel="noreferrer"
                         className="text-govbr-blue hover:underline"
                       >
-                        #{row.gitlab_iid ?? "—"}
+                        {issueLabel}
                       </a>
                     ) : (
-                      `#${row.gitlab_iid ?? "—"}`
+                      issueLabel
                     )}
                   </td>
                   <td className="max-w-md px-3 py-2 text-slate-900">{row.titulo ?? "—"}</td>
@@ -67,7 +76,8 @@ export function AnalistasIssuesTable({ rows }: Props) {
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.parceiro ?? "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.sprint ?? "—"}</td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

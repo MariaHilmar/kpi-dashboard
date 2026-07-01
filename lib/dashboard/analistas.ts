@@ -17,7 +17,6 @@ import type {
   AnalistaDistribuicaoRow,
   AnalistaIssueRow,
   AnalistaRelatorioKpis,
-  AnalistaRelatorioComAutor,
   AnalistaRelatorioSalvo,
   AnalistaRelatorioSnapshot,
   AnalistaRelatorioStatus,
@@ -61,8 +60,13 @@ function mapIssues(rows: unknown): AnalistaIssueRow[] {
   if (!Array.isArray(rows)) return [];
   return rows.map((row) => {
     const item = row as Record<string, unknown>;
+    const gitlabIid =
+      item.gitlab_iid === null || item.gitlab_iid === undefined ? null : num(item.gitlab_iid);
+    const gitlabRepo = str(item.gitlab_repo);
+
     return {
-      gitlab_iid: item.gitlab_iid === null || item.gitlab_iid === undefined ? null : num(item.gitlab_iid),
+      gitlab_iid: gitlabIid,
+      gitlab_repo: gitlabRepo,
       titulo: str(item.titulo),
       modulo: str(item.modulo),
       tipo: str(item.tipo),
@@ -74,11 +78,9 @@ function mapIssues(rows: unknown): AnalistaIssueRow[] {
       sprint: str(item.sprint),
       criado_em: str(item.criado_em),
       url: resolveGitlabWorkItemUrl({
+        gitlabRepo,
+        gitlabIid,
         url: str(item.url),
-        gitlabIid:
-          item.gitlab_iid === null || item.gitlab_iid === undefined
-            ? null
-            : num(item.gitlab_iid),
       }),
     };
   });
@@ -157,60 +159,6 @@ export async function fetchAnalistaRelatorioSalvo(params: {
   }
 
   return (data ?? null) as AnalistaRelatorioSalvo | null;
-}
-
-/**
- * Lista todos os relatórios (rascunho + publicado) com nome/e-mail do autor.
- * Requer que o usuário logado seja admin — RLS de `analista_relatorios` e
- * `profiles` libera leitura ampla apenas para `is_admin()`.
- */
-export async function listAnalistaRelatorios(filters?: {
-  anoMes?: string;
-}): Promise<AnalistaRelatorioComAutor[]> {
-  const supabase = await createServerSupabase();
-  if (!supabase) return [];
-
-  let query = supabase
-    .from("analista_relatorios")
-    .select("id, user_id, ano_mes, sprint, outras_atividades, status, publicado_em, updated_at")
-    .order("ano_mes", { ascending: false })
-    .order("updated_at", { ascending: false });
-
-  if (filters?.anoMes) {
-    query = query.eq("ano_mes", normalizeAnoMes(filters.anoMes));
-  }
-
-  const { data: relatorios, error } = await query;
-  if (error) {
-    console.error("listAnalistaRelatorios", error.message);
-    return [];
-  }
-
-  const rows = (relatorios ?? []) as AnalistaRelatorioSalvo[];
-  if (rows.length === 0) return [];
-
-  const userIds = Array.from(new Set(rows.map((row) => row.user_id)));
-  const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id, full_name, email")
-    .in("id", userIds);
-
-  if (profilesError) {
-    console.error("listAnalistaRelatorios:profiles", profilesError.message);
-  }
-
-  const profileById = new Map(
-    ((profiles ?? []) as { id: string; full_name: string | null; email: string }[]).map((p) => [p.id, p]),
-  );
-
-  return rows.map((row) => {
-    const profile = profileById.get(row.user_id);
-    return {
-      ...row,
-      autor_nome: profile?.full_name ?? profile?.email?.split("@")[0] ?? "—",
-      autor_email: profile?.email ?? "—",
-    };
-  });
 }
 
 export async function saveAnalistaRelatorio(

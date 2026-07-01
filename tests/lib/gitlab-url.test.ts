@@ -46,4 +46,13 @@ describe("gitlab-url", () => {
       }),
     ).toBe("https://gitlab.com/comprasnet/contratos_v2/-/work_items/1348");
   });
+
+  it("monta URL a partir de gitlab_repo legível mesmo sem url", () => {
+    expect(
+      resolveGitlabWorkItemUrl({
+        gitlabRepo: "Contratos v1",
+        gitlabIid: 1241,
+      }),
+    ).toBe("https://gitlab.com/comprasnet/contratos/-/work_items/1241");
+  });
 });

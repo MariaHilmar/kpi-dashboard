@@ -1,4 +1,5 @@
 import { gitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
+import { isIssueOpen, issueEstadoLabel } from "@/lib/dashboard/issue-state";
 import type { IssueRow } from "@/lib/dashboard/issues";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -9,14 +10,14 @@ type Props = {
 };
 
 function EstadoBadge({ estado }: { estado: string | null }) {
-  const isOpen = estado === "open" || estado === "opened";
+  const open = isIssueOpen(estado);
   return (
     <span
       className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        isOpen ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
+        open ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
       }`}
     >
-      {isOpen ? "Aberta" : "Fechada"}
+      {issueEstadoLabel(estado)}
     </span>
   );
 }

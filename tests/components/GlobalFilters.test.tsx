@@ -14,15 +14,15 @@ import { GlobalFilters } from "@/components/layout/GlobalFilters";
 import type { FilterOptions } from "@/types/database";
 
 const options: FilterOptions = {
-  modulos: ["Todos", "PNCP", "Empenho"],
+  modulos: ["Todos", "PNCP", "Empenho", "Fiscalização"],
   areas: ["Todos", "PNCP", "Minuta de Empenho"],
   tipos: ["Todos", "Bug"],
   prioridades: ["Todos", "high"],
   equipes: ["Todos", "Alpha"],
   statuses: ["Todos", "Em andamento"],
-  parcerias: ["Todos", "Beta"],
+  parcerias: ["Todos", "Não informado", "Beta"],
   sprints: ["Todos", "Sprint 10"],
-  epicos: ["Todos", "Epico 1"],
+  epicos: ["Todos", "Não informado", "Epico 1"],
   repositorios: ["Todos", "contratos_v2"],
   autores: ["Todos", "Maria Silva"],
   anos: [2024, 2025],
@@ -38,6 +38,7 @@ describe("GlobalFilters", () => {
     expect(screen.getByText("Filtros globais")).toBeInTheDocument();
     expect(screen.getByLabelText("Módulo")).toHaveValue("Todos");
     expect(screen.getByLabelText("Área funcional")).toHaveValue("Todos");
+    expect(screen.getByLabelText("Épico")).toHaveValue("Todos");
   });
 
   it("limpa filtros ao clicar em Limpar filtros", async () => {
