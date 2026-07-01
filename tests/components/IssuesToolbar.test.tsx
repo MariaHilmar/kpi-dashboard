@@ -18,8 +18,10 @@ import { IssuesToolbar } from "@/components/issues/IssuesToolbar";
 const autores = ["Todos", "Maria Silva", "João Souza"];
 
 describe("IssuesToolbar", () => {
+  const exportHref = "/api/issues/export?modulo=Fiscalização&estado=open";
+
   it("renderiza busca e filtros com valores da URL", () => {
-    render(<IssuesToolbar autores={autores} />);
+    render(<IssuesToolbar autores={autores} exportHref={exportHref} />);
     expect(screen.getByLabelText(/Buscar issues/)).toBeInTheDocument();
     expect(screen.getByLabelText("Estado")).toHaveValue("open");
     expect(screen.getByLabelText("Faixa de idade")).toHaveValue("0-30 dias");
@@ -29,7 +31,7 @@ describe("IssuesToolbar", () => {
   it("envia filtro de autor limpando page", async () => {
     pushMock.mockClear();
     const user = userEvent.setup();
-    render(<IssuesToolbar autores={autores} />);
+    render(<IssuesToolbar autores={autores} exportHref={exportHref} />);
 
     await user.selectOptions(screen.getByLabelText("Autor(a)"), "Maria Silva");
 
@@ -42,7 +44,7 @@ describe("IssuesToolbar", () => {
   it("altera filtro SLA", async () => {
     pushMock.mockClear();
     const user = userEvent.setup();
-    render(<IssuesToolbar autores={autores} />);
+    render(<IssuesToolbar autores={autores} exportHref={exportHref} />);
 
     await user.selectOptions(screen.getByLabelText("SLA"), "acima_90");
     expect(pushMock).toHaveBeenCalledTimes(1);
@@ -53,7 +55,7 @@ describe("IssuesToolbar", () => {
   it("aplica período de datas", async () => {
     pushMock.mockClear();
     const user = userEvent.setup();
-    render(<IssuesToolbar autores={autores} />);
+    render(<IssuesToolbar autores={autores} exportHref={exportHref} />);
 
     fireEvent.change(screen.getByLabelText("Data inicial de criação"), {
       target: { value: "2024-01-01" },
@@ -67,5 +69,11 @@ describe("IssuesToolbar", () => {
     const url = pushMock.mock.calls[0][0] as string;
     expect(url).toContain("criadoDe=2024-01-01");
     expect(url).toContain("criadoAte=2024-12-31");
+  });
+
+  it("exibe link de exportação Excel", () => {
+    render(<IssuesToolbar autores={autores} exportHref={exportHref} />);
+    const link = screen.getByRole("link", { name: "Exportar Excel" });
+    expect(link).toHaveAttribute("href", exportHref);
   });
 });

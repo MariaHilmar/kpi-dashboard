@@ -26,15 +26,15 @@ const PIE_COLORS = [
   "#FF580A",
 ];
 
+function getDejavuTtfDir(): string {
+  const pkgJson = require.resolve("@vintproykt/dejavu-fonts-ttf/package.json");
+  return path.join(path.dirname(pkgJson), "ttf");
+}
+
 function resolveChartFontPath(filename: (typeof CHART_FONT_FILES)[number]): string {
   const bundled = path.join(CHART_FONT_DIR, filename);
   if (fs.existsSync(bundled)) return bundled;
-
-  if (filename === "DejaVuSans.ttf") {
-    return require.resolve("@vintproykt/dejavu-fonts-ttf/ttf/DejaVuSans.ttf");
-  }
-
-  return require.resolve("@vintproykt/dejavu-fonts-ttf/ttf/DejaVuSans-Bold.ttf");
+  return path.join(getDejavuTtfDir(), filename);
 }
 
 function getChartFontDir(): string | null {

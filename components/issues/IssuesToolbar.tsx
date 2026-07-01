@@ -19,6 +19,7 @@ const SLAS = [
 
 type Props = {
   autores: string[];
+  exportHref: string;
 };
 
 function LabeledSelect({
@@ -54,7 +55,7 @@ function LabeledSelect({
   );
 }
 
-export function IssuesToolbar({ autores }: Props) {
+export function IssuesToolbar({ autores, exportHref }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -125,7 +126,15 @@ export function IssuesToolbar({ autores }: Props) {
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-700">Filtros da listagem</h3>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-sm font-semibold text-slate-700">Filtros da listagem</h3>
+        <a
+          href={exportHref}
+          className="inline-flex items-center gap-2 rounded-lg bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+        >
+          Exportar Excel
+        </a>
+      </div>
 
       <form onSubmit={submitSearch} className="flex gap-2" role="search">
         <label htmlFor="issues-search" className="sr-only">
