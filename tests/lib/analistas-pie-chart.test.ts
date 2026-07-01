@@ -36,8 +36,8 @@ describe("buildDistribuicaoPieChartPng", () => {
     expect(png.byteLength).toBeGreaterThan(3000);
   });
 
-  it("usa fontes em assets/chart-fonts quando disponíveis", async () => {
-    const bundled = path.join(process.cwd(), "assets", "chart-fonts", "dejavu-sans-latin-400-normal.woff2");
+  it("usa fontes TTF em assets/chart-fonts (resvg não carrega WOFF2)", async () => {
+    const bundled = path.join(process.cwd(), "assets", "chart-fonts", "DejaVuSans.ttf");
     expect(fs.existsSync(bundled)).toBe(true);
 
     const png = await buildDistribuicaoPieChartPng("Distribuição por parceiro", [
@@ -45,7 +45,8 @@ describe("buildDistribuicaoPieChartPng", () => {
       { label: "Sem Parceiro", total: 15, abertas: 5, fechadas: 10, pct_conclusao: 67 },
     ]);
 
-    expect(png.byteLength).toBeGreaterThan(4000);
+    // PNG só com formas (sem texto) fica ~7 KB; com rótulos legíveis, >10 KB.
+    expect(png.byteLength).toBeGreaterThan(10_000);
   });
 
   it("inclui rótulos e percentuais no SVG", () => {
