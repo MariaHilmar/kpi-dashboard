@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useCallback, useEffect, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { UserForm, type UserFormState } from "@/components/admin/UserForm";
 import { UserTable } from "@/components/admin/UserTable";
@@ -14,13 +14,33 @@ const emptyForm: UserFormState = {
   password: "",
   full_name: "",
   gitlab_user_id: "",
-  autor_issues: "",
   role: "user" as UserRole,
   active: true,
 };
 
 function displayName(user: Pick<UserProfile, "full_name" | "email">) {
   return user.full_name?.trim() || user.email;
+}
+
+function matchesUserFilter(
+  user: UserProfile,
+  { emailFilter, nameFilter }: { emailFilter: string; nameFilter: string },
+): boolean {
+  const emailQuery = emailFilter.trim().toLowerCase();
+  const nameQuery = nameFilter.trim().toLowerCase();
+
+  if (emailQuery && !user.email.toLowerCase().includes(emailQuery)) {
+    return false;
+  }
+
+  if (nameQuery) {
+    const name = (user.full_name ?? "").trim().toLowerCase();
+    if (!name.includes(nameQuery)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 export function UsersManager() {
@@ -37,6 +57,15 @@ export function UsersManager() {
   const [form, setForm] = useState<UserFormState>(emptyForm);
   const [editPassword, setEditPassword] = useState("");
   const [userToInactivate, setUserToInactivate] = useState<UserProfile | null>(null);
+  const [emailFilter, setEmailFilter] = useState("");
+  const [nameFilter, setNameFilter] = useState("");
+
+  const filteredUsers = useMemo(
+    () => users.filter((user) => matchesUserFilter(user, { emailFilter, nameFilter })),
+    [users, emailFilter, nameFilter],
+  );
+
+  const hasActiveFilters = emailFilter.trim().length > 0 || nameFilter.trim().length > 0;
 
   const { feedback, showSuccess, showError, showWarning, showInfo, clear } = useSystemFeedback();
 
@@ -74,6 +103,11 @@ export function UsersManager() {
     clear();
   }
 
+  function clearFilters() {
+    setEmailFilter("");
+    setNameFilter("");
+  }
+
   function openEdit(user: UserProfile) {
     setMode("edit");
     setEditing(user);
@@ -82,7 +116,6 @@ export function UsersManager() {
       password: "",
       full_name: user.full_name ?? "",
       gitlab_user_id: user.gitlab_user_id ? String(user.gitlab_user_id) : "",
-      autor_issues: user.autor_issues ?? "",
       role: user.role,
       active: user.active,
     });
@@ -129,7 +162,6 @@ export function UsersManager() {
             password: form.password,
             full_name: form.full_name || null,
             gitlab_user_id: parsedGitlabUserId,
-            autor_issues: form.autor_issues || null,
             role: form.role,
             active: form.active,
           }),
@@ -145,8 +177,6 @@ export function UsersManager() {
       } else if (editing) {
         const payload: Record<string, unknown> = {
           full_name: form.full_name || null,
-          gitlab_user_id: parsedGitlabUserId,
-          autor_issues: form.autor_issues || null,
           role: form.role,
           active: form.active,
         };
@@ -271,13 +301,69 @@ export function UsersManager() {
             </div>
           ) : null}
 
-          <UserTable
-            users={users}
-            loading={loading}
-            saving={saving}
-            onEdit={openEdit}
-            onToggleActive={requestToggleActive}
-          />
+          {!loading && users.length > 0 ? (
+            <div className="border-b border-slate-100 px-4 py-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+                <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs">
+                  <span className="font-medium text-slate-600">Filtrar por e-mail</span>
+                  <input
+                    type="search"
+                    value={emailFilter}
+                    onChange={(event) => setEmailFilter(event.target.value)}
+                    placeholder="Ex.: maria@mgi.gov.br"
+                    aria-label="Filtrar por e-mail"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-govbr-blue focus:outline-none"
+                  />
+                </label>
+                <label className="flex min-w-[12rem] flex-1 flex-col gap-1 text-xs">
+                  <span className="font-medium text-slate-600">Filtrar por nome</span>
+                  <input
+                    type="search"
+                    value={nameFilter}
+                    onChange={(event) => setNameFilter(event.target.value)}
+                    placeholder="Ex.: Maria Silva"
+                    aria-label="Filtrar por nome"
+                    className="rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-govbr-blue focus:outline-none"
+                  />
+                </label>
+                {hasActiveFilters ? (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="br-button secondary small self-start sm:self-auto"
+                  >
+                    Limpar filtros
+                  </button>
+                ) : null}
+              </div>
+              {hasActiveFilters ? (
+                <p className="mt-2 text-xs text-slate-500">
+                  {filteredUsers.length} de {users.length} usuário
+                  {users.length === 1 ? "" : "s"}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!loading && users.length > 0 && filteredUsers.length === 0 ? (
+            <div className="p-4">
+              <SystemFeedback
+                variant="info"
+                title="Nenhum resultado"
+                message="Nenhum usuário corresponde aos filtros informados. Ajuste o e-mail ou o nome ou limpe os filtros."
+              />
+            </div>
+          ) : null}
+
+          {(loading || filteredUsers.length > 0) && (
+            <UserTable
+              users={filteredUsers}
+              loading={loading}
+              saving={saving}
+              onEdit={openEdit}
+              onToggleActive={requestToggleActive}
+            />
+          )}
         </section>
 
         <UserForm
