@@ -52,6 +52,24 @@ describe("IssuesTable", () => {
     expect(screen.getByText("Aberta")).toBeInTheDocument();
     expect(screen.getByText(/SLA > 90d/)).toBeInTheDocument();
     expect(screen.getByText("PNCP")).toBeInTheDocument();
+    expect(screen.getByText("Beta")).toBeInTheDocument();
+  });
+
+  it("renderiza parceria e data de fechamento", () => {
+    render(
+      <IssuesTable
+        rows={[
+          {
+            ...sampleRow,
+            parceria: "BCB",
+            fechado_em: "2024-07-01T12:00:00Z",
+            estado: "closed",
+          },
+        ]}
+      />,
+    );
+    expect(screen.getByText("BCB")).toBeInTheDocument();
+    expect(screen.getByText("01/07/2024")).toBeInTheDocument();
   });
 
   it("renderiza issue fechada", () => {

@@ -47,6 +47,38 @@ export type IssuesSearchResult = {
   pageSize: number;
 };
 
+const ISSUES_EXPORT_BATCH_SIZE = 500;
+const ISSUES_EXPORT_MAX_PAGES = 100;
+
+/** Busca todas as issues do recorte (paginado) para exportação. */
+export async function searchAllIssues(
+  filters: DashboardFilters,
+  params: Omit<IssuesSearchParams, "page" | "pageSize">,
+): Promise<{ rows: IssueRow[]; total: number }> {
+  const allRows: IssueRow[] = [];
+  let total = 0;
+  let page = 1;
+
+  while (page <= ISSUES_EXPORT_MAX_PAGES) {
+    const result = await searchIssues(filters, {
+      ...params,
+      page,
+      pageSize: ISSUES_EXPORT_BATCH_SIZE,
+    });
+
+    total = result.total;
+    allRows.push(...result.rows);
+
+    if (allRows.length >= total || result.rows.length === 0) {
+      break;
+    }
+
+    page += 1;
+  }
+
+  return { rows: allRows, total };
+}
+
 export async function searchIssues(
   filters: DashboardFilters,
   params: IssuesSearchParams,
