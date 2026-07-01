@@ -1,5 +1,6 @@
 import Image from "next/image";
 
+import { formatAppVersionLabel } from "@/lib/app-version";
 import govbrLogo from "@/public/govbr-logo.png";
 
 export function GovBrFooter() {
@@ -15,7 +16,7 @@ export function GovBrFooter() {
           </p>
         </div>
         <p className="text-xs text-white/60">
-          Painel interno de gestão · Dados coletados do GitLab
+          Painel interno de gestão · Dados coletados do GitLab · {formatAppVersionLabel()}
         </p>
       </div>
     </footer>
