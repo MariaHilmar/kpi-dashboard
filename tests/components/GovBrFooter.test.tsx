@@ -13,5 +13,6 @@ describe("GovBrFooter", () => {
       screen.getByText(/Ministério da Gestão e da Inovação/),
     ).toBeInTheDocument();
     expect(screen.getByText(/Painel interno de gestão/)).toBeInTheDocument();
+    expect(screen.getByText(/v0\.2\.0/)).toBeInTheDocument();
   });
 });
