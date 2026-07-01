@@ -1,3 +1,5 @@
+import { unstable_noStore as noStore } from "next/cache";
+
 import {
   commonArgs,
   dateArgs,
@@ -15,7 +17,7 @@ import {
 } from "@/lib/dashboard/constants";
 import { cachedFetch } from "@/lib/dashboard/cache";
 import { normalizeFaixaIdadeRows } from "@/lib/dashboard/faixa-idade";
-import { createStaticSupabase } from "@/lib/supabase/server";
+import { createLiveSupabase, createStaticSupabase } from "@/lib/supabase/server";
 import type {
   AlertaPorModulo,
   AlertaResumo,
@@ -85,6 +87,27 @@ async function selectOne(
     return null;
   }
   return (data ?? null) as DbRow | null;
+}
+
+async function selectOneLive(
+  label: string,
+  run: (client: DbClient) => PromiseLike<DbResult>,
+): Promise<DbRow | null> {
+  const client = createLiveSupabase();
+  if (!client) return null;
+
+  const { data, error } = await run(client);
+  if (error) {
+    console.error(label, error.message);
+    return null;
+  }
+  return (data ?? null) as DbRow | null;
+}
+
+function maxIsoTimestamp(a: string | null, b: string | null): string | null {
+  if (!a) return b;
+  if (!b) return a;
+  return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
 }
 
 // --- agregações genéricas ----------------------------------------------------
@@ -391,13 +414,14 @@ export async function fetchReleases(): Promise<ChartPoint[]> {
 }
 
 async function fetchLastGitlabSyncFromRuns(): Promise<string | null> {
-  const row = await selectOne("last-gitlab-sync-run", (client) =>
+  const row = await selectOneLive("last-gitlab-sync-run", (client) =>
     client
       .from("sync_runs")
       .select("finished_at,started_at")
       .eq("status", "success")
       .in("source", [...GITLAB_SYNC_SOURCES])
-      .order("finished_at", { ascending: false })
+      .order("finished_at", { ascending: false, nullsFirst: false })
+      .order("started_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
   );
@@ -407,11 +431,11 @@ async function fetchLastGitlabSyncFromRuns(): Promise<string | null> {
 }
 
 async function fetchLastGitlabSyncFromIssues(): Promise<string | null> {
-  const row = await selectOne("last-gitlab-synced-at", (client) =>
+  const row = await selectOneLive("last-gitlab-synced-at", (client) =>
     client
       .from("issues")
       .select("synced_at")
-      .order("synced_at", { ascending: false })
+      .order("synced_at", { ascending: false, nullsFirst: false })
       .limit(1)
       .maybeSingle(),
   );
@@ -422,5 +446,10 @@ async function fetchLastGitlabSyncFromIssues(): Promise<string | null> {
 
 /** Última carga GitLab → Supabase. Sem cache — o header deve refletir o banco ao vivo. */
 export async function fetchLastSync(): Promise<string | null> {
-  return (await fetchLastGitlabSyncFromRuns()) ?? (await fetchLastGitlabSyncFromIssues());
+  noStore();
+  const [fromRuns, fromIssues] = await Promise.all([
+    fetchLastGitlabSyncFromRuns(),
+    fetchLastGitlabSyncFromIssues(),
+  ]);
+  return maxIsoTimestamp(fromRuns, fromIssues);
 }

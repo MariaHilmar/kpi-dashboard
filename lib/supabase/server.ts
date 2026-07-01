@@ -20,6 +20,23 @@ export function createStaticSupabase(): SupabaseClient | null {
   });
 }
 
+/** Cliente anon com `cache: no-store` — consultas que devem refletir o banco ao vivo. */
+export function createLiveSupabase(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  return createClient(getSupabaseUrl(), getSupabaseAnonKey(), {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      fetch: (url, init) => fetch(url, { ...init, cache: "no-store" }),
+    },
+  });
+}
+
 export async function createServerSupabase() {
   if (!isSupabaseConfigured()) {
     return null;

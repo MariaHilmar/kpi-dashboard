@@ -8,7 +8,6 @@ export type UserFormState = {
   password: string;
   full_name: string;
   gitlab_user_id: string;
-  autor_issues: string;
   role: UserRole;
   active: boolean;
 };
@@ -110,27 +109,19 @@ export function UserForm({
             step={1}
             value={form.gitlab_user_id}
             onChange={(e) => onFormChange({ gitlab_user_id: e.target.value })}
+            readOnly={mode === "edit"}
+            disabled={mode === "edit"}
             placeholder="ID global do usuário no GitLab"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-govbr-blue focus:outline-none"
+            className={`w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-govbr-blue focus:outline-none${
+              mode === "edit" ? " bg-slate-50 opacity-70" : ""
+            }`}
           />
-          <p className="mt-1 text-xs text-slate-500">
-            Vínculo preferencial com issues (author.id). Preenchido automaticamente pelo provisionamento GitLab.
-          </p>
-        </Field>
-
-        <Field label="Autor das issues (GitLab)" id="autor_issues">
-          <input
-            id="autor_issues"
-            type="text"
-            value={form.autor_issues}
-            onChange={(e) => onFormChange({ autor_issues: e.target.value })}
-            placeholder="Deixe em branco para usar o Nome acima"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-govbr-blue focus:outline-none"
-          />
-          <p className="mt-1 text-xs text-slate-500">
-            Valor exato do campo &quot;Autor&quot; nas issues (página Analistas filtra apenas o que foi
-            criado por este nome). Use só se o nome no GitLab for diferente do Nome acima.
-          </p>
+          {mode === "create" ? (
+            <p className="mt-1 text-xs text-slate-500">
+              Vínculo preferencial com issues (author.id). Preenchido automaticamente pelo
+              provisionamento GitLab.
+            </p>
+          ) : null}
         </Field>
 
         <Field label="Papel" id="role">
