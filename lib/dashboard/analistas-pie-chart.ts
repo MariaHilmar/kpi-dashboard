@@ -8,10 +8,8 @@ const require = createRequire(import.meta.url);
 
 const CHART_FONT_FAMILY = "DejaVu Sans";
 
-const CHART_FONT_FILES = [
-  "dejavu-sans-latin-400-normal.woff2",
-  "dejavu-sans-latin-700-normal.woff2",
-] as const;
+/** resvg/fontdb só aceita TTF/OTF — WOFF/WOFF2 falham silenciosamente em serverless. */
+const CHART_FONT_FILES = ["DejaVuSans.ttf", "DejaVuSans-Bold.ttf"] as const;
 
 const CHART_FONT_DIR = path.join(process.cwd(), "assets", "chart-fonts");
 
@@ -28,15 +26,15 @@ const PIE_COLORS = [
   "#FF580A",
 ];
 
+function getDejavuTtfDir(): string {
+  const pkgJson = require.resolve("@vintproykt/dejavu-fonts-ttf/package.json");
+  return path.join(path.dirname(pkgJson), "ttf");
+}
+
 function resolveChartFontPath(filename: (typeof CHART_FONT_FILES)[number]): string {
-  const bundled = path.join(process.cwd(), "assets", "chart-fonts", filename);
+  const bundled = path.join(CHART_FONT_DIR, filename);
   if (fs.existsSync(bundled)) return bundled;
-
-  if (filename === "dejavu-sans-latin-400-normal.woff2") {
-    return require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-400-normal.woff2");
-  }
-
-  return require.resolve("@fontsource/dejavu-sans/files/dejavu-sans-latin-700-normal.woff2");
+  return path.join(getDejavuTtfDir(), filename);
 }
 
 function getChartFontDir(): string | null {

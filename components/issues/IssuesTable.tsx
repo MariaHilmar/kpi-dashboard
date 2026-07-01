@@ -44,7 +44,13 @@ export function IssuesTable({ rows }: Props) {
             <IssuesSortableTh columnKey="estado" label="Estado" />
             <IssuesSortableTh columnKey="prioridade" label="Prioridade" />
             <IssuesSortableTh columnKey="equipe" label="Equipe" />
+            <th scope="col" className="px-3 py-2 font-medium">
+              Parceria
+            </th>
             <IssuesSortableTh columnKey="criado" label="Criado" />
+            <th scope="col" className="px-3 py-2 font-medium">
+              Data de Fechamento
+            </th>
             <IssuesSortableTh columnKey="lead" label="Lead (d)" align="right" />
             <IssuesSortableTh columnKey="idade" label="Idade (d)" align="right" />
           </tr>
@@ -84,7 +90,9 @@ export function IssuesTable({ rows }: Props) {
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.prioridade ?? "—"}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.equipe ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.parceria ?? "—"}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{formatDate(row.criado_em)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{formatDate(row.fechado_em)}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-right text-slate-600">
                   {formatNumber(row.lead_time_dias)}
                 </td>
