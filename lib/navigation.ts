@@ -13,7 +13,6 @@ import {
   faChartPie,
   faClipboardList,
   faFileLines,
-  faFolderOpen,
   faMagnifyingGlass,
   faRocket,
   faUser,
@@ -117,13 +116,6 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
     icon: faUserShield,
     description: "Gerenciar acessos (admin)",
   },
-  {
-    href: "/admin/relatorios",
-    label: "Relatórios",
-    shortLabel: "Relatórios",
-    icon: faFolderOpen,
-    description: "Histórico de atividades (admin)",
-  },
 ];
 
 export function getNavGroups(isAdmin: boolean): NavGroup[] {
@@ -149,4 +141,18 @@ export function getNavItems(isAdmin: boolean): NavItem[] {
 export function isNavItemActive(pathname: string | null, href: string): boolean {
   if (href === "/") return pathname === "/";
   return Boolean(pathname?.startsWith(href));
+}
+
+/**
+ * Monta href de navegação preservando filtros globais da URL atual.
+ * Em `/sprint`, remove `sprint` para que a página aplique o default (última sprint).
+ */
+export function buildNavHref(href: string, query: string): string {
+  if (!query) return href;
+
+  const params = new URLSearchParams(query);
+  if (href === "/sprint") params.delete("sprint");
+
+  const nextQuery = params.toString();
+  return nextQuery ? `${href}?${nextQuery}` : href;
 }

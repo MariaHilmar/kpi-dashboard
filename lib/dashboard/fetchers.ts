@@ -14,6 +14,7 @@ import {
   TOP_LIMIT,
 } from "@/lib/dashboard/constants";
 import { cachedFetch } from "@/lib/dashboard/cache";
+import { normalizeFaixaIdadeRows } from "@/lib/dashboard/faixa-idade";
 import { createStaticSupabase } from "@/lib/supabase/server";
 import type {
   AlertaPorModulo,
@@ -201,79 +202,90 @@ export const fetchKpisPorTipo = cachedFetch(
   },
 );
 
-export const fetchTopLeadTimes = cachedFetch(
-  "fetchTopLeadTimes",
-  async (filters: DashboardFilters): Promise<TopLeadTime[]> => {
-    const rows = await selectRows("dashboard_top_lead_times", (client) =>
-      client.rpc("dashboard_top_lead_times", {
-        p_limit: TOP_LIMIT.topLeadTimes,
-        p_ano: filters.ano,
-      }),
-    );
+export async function fetchTopLeadTimes(filters: DashboardFilters): Promise<TopLeadTime[]> {
+  const rows = await selectRows("dashboard_top_lead_times", (client) =>
+    client.rpc("dashboard_top_lead_times", {
+      p_limit: TOP_LIMIT.topLeadTimes,
+      ...commonArgs(filters),
+      ...dateArgs(filters),
+    }),
+  );
 
-    return rows.map((row) => ({
-      id: numOrNull(row.id),
-      titulo: strOrNull(row.titulo),
-      modulo: strOrNull(row.modulo),
-      area: strOrNull(row.area),
-      estado: strOrNull(row.estado),
-      status: strOrNull(row.status),
-      prioridade: strOrNull(row.prioridade),
-      equipe: strOrNull(row.equipe),
-      criado_em: strOrNull(row.criado_em),
-      fechado_em: strOrNull(row.fechado_em),
-      lead_time: numOrNull(row.lead_time),
-    }));
-  },
-);
+  return rows.map((row) => ({
+    id: numOrNull(row.id),
+    titulo: strOrNull(row.titulo),
+    modulo: strOrNull(row.modulo),
+    area: strOrNull(row.area),
+    estado: strOrNull(row.estado),
+    status: strOrNull(row.status),
+    prioridade: strOrNull(row.prioridade),
+    equipe: strOrNull(row.equipe),
+    criado_em: strOrNull(row.criado_em),
+    fechado_em: strOrNull(row.fechado_em),
+    lead_time: numOrNull(row.lead_time),
+  }));
+}
 
-export const fetchAlertasResumo = cachedFetch(
-  "fetchAlertasResumo",
-  async (): Promise<AlertaResumo | null> => {
-    const rows = await selectRows("dashboard_alertas_resumo", (client) =>
-      client.rpc("dashboard_alertas_resumo"),
-    );
+/** Sem Data Cache: resultados dependem dos filtros globais e da RPC 018. */
+export async function fetchAlertasResumo(filters: DashboardFilters): Promise<AlertaResumo | null> {
+  const rows = await selectRows("dashboard_alertas_resumo", (client) =>
+    client.rpc("dashboard_alertas_resumo", {
+      ...commonArgs(filters),
+      ...dateArgs(filters),
+    }),
+  );
 
-    const row = rows[0];
-    if (!row) return null;
+  const row = rows[0];
+  if (!row) return null;
 
-    return {
-      abertas: num(row.abertas),
-      sem_epico: num(row.sem_epico),
-      sem_parceria: num(row.sem_parceria),
-    };
-  },
-);
+  return {
+    abertas: num(row.abertas),
+    sem_epico: num(row.sem_epico),
+    sem_parceria: num(row.sem_parceria),
+  };
+}
 
-export const fetchAlertasPorModulo = cachedFetch(
-  "fetchAlertasPorModulo",
-  async (dimensao: AlertaDimensao): Promise<AlertaPorModulo[]> => {
-    const rows = await selectRows(`dashboard_alertas_por_modulo(${dimensao})`, (client) =>
-      client.rpc("dashboard_alertas_por_modulo", { p_dimensao: dimensao }),
-    );
+/** Sem Data Cache: evita servir listas vazias após deploy da migration 018. */
+export async function fetchAlertasPorModulo(
+  dimensao: AlertaDimensao,
+  filters: DashboardFilters,
+): Promise<AlertaPorModulo[]> {
+  const rows = await selectRows(`dashboard_alertas_por_modulo(${dimensao})`, (client) =>
+    client.rpc("dashboard_alertas_por_modulo", {
+      p_dimensao: dimensao,
+      ...commonArgs(filters),
+      ...dateArgs(filters),
+    }),
+  );
 
-    return rows.map((row) => ({
-      modulo: str(row.modulo, OUTROS),
-      qtde: num(row.qtde),
-      percentual: num(row.percentual),
-    }));
-  },
-);
+  return rows.map((row) => ({
+    modulo: str(row.modulo, OUTROS),
+    qtde: num(row.qtde),
+    percentual: num(row.percentual),
+  }));
+}
 
-export const fetchFaixaIdade = cachedFetch(
-  "fetchFaixaIdade",
-  async (): Promise<FaixaIdade[]> => {
-    const rows = await selectRows("dashboard_faixa_idade", (client) =>
-      client.rpc("dashboard_faixa_idade"),
-    );
+async function fetchFaixaIdadeInner(filters: DashboardFilters): Promise<FaixaIdade[]> {
+  const rows = await selectRows("dashboard_faixa_idade", (client) =>
+    client.rpc("dashboard_faixa_idade", {
+      ...commonArgs(filters),
+      ...dateArgs(filters),
+    }),
+  );
 
-    return rows.map((row) => ({
+  return normalizeFaixaIdadeRows(
+    rows.map((row) => ({
       faixa: str(row.faixa),
       qtde: num(row.qtde),
       percentual: num(row.percentual),
-    }));
-  },
-);
+    })),
+  );
+}
+
+/** Sem Data Cache: evita servir zeros após correção da RPC no Supabase. */
+export async function fetchFaixaIdade(filters: DashboardFilters): Promise<FaixaIdade[]> {
+  return fetchFaixaIdadeInner(filters);
+}
 
 export const fetchQualidade = cachedFetch(
   "fetchQualidade",

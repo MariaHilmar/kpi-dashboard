@@ -24,6 +24,14 @@ describe("buildDistribuicaoPieChartPng", () => {
     expect(png.byteLength).toBeGreaterThan(500);
     expect(png.subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
   });
+
+  it("renderiza rótulos com acentuação em português", async () => {
+    const png = await buildDistribuicaoPieChartPng("Distribuição por módulo", [
+      { label: "Não informado", total: 2, abertas: 1, fechadas: 1, pct_conclusao: 50 },
+    ]);
+
+    expect(png.byteLength).toBeGreaterThan(3000);
+  });
 });
 
 describe("aggregateDistribuicaoFromIssues", () => {

@@ -3,7 +3,8 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-import { TODOS } from "@/lib/dashboard/constants";
+import { FAIXAS_IDADE_ISSUES, TODOS } from "@/lib/dashboard/constants";
+import { ensureFilterOption } from "@/lib/dashboard/filters";
 
 const ESTADOS = [
   { value: "Todos", label: "Todos os estados" },
@@ -20,6 +21,39 @@ type Props = {
   autores: string[];
 };
 
+function LabeledSelect({
+  label,
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="flex flex-col gap-1 text-xs">
+      <span className="font-medium text-slate-600">{label}</span>
+      <select
+        name={name}
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-w-[9rem] rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function IssuesToolbar({ autores }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -27,6 +61,17 @@ export function IssuesToolbar({ autores }: Props) {
   const [isPending, startTransition] = useTransition();
 
   const [search, setSearch] = useState(searchParams.get("q") ?? "");
+
+  const estadoValue = searchParams.get("estado") ?? TODOS;
+  const faixaValue = searchParams.get("faixaIdade") ?? TODOS;
+
+  const faixaOptions = ensureFilterOption(
+    [...FAIXAS_IDADE_ISSUES],
+    faixaValue === TODOS ? TODOS : faixaValue,
+  ).map((value) => ({
+    value,
+    label: value === TODOS ? "Todas as faixas" : value,
+  }));
 
   useEffect(() => {
     setSearch(searchParams.get("q") ?? "");
@@ -80,6 +125,8 @@ export function IssuesToolbar({ autores }: Props) {
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-slate-700">Filtros da listagem</h3>
+
       <form onSubmit={submitSearch} className="flex gap-2" role="search">
         <label htmlFor="issues-search" className="sr-only">
           Buscar issues por título, autor, responsável ou ID
@@ -101,47 +148,40 @@ export function IssuesToolbar({ autores }: Props) {
       </form>
 
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-xs">
-          <span className="font-medium text-slate-600">Autor(a)</span>
-          <select
-            aria-label="Filtrar por autor da issue"
-            value={searchParams.get("autor") ?? TODOS}
-            onChange={(event) => setParam("autor", event.target.value)}
-            className="min-w-[10rem] rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
-          >
-            {autores.map((autor) => (
-              <option key={autor} value={autor}>
-                {autor === TODOS ? "Todos os autores" : autor}
-              </option>
-            ))}
-          </select>
-        </label>
+        <LabeledSelect
+          label="Estado"
+          name="estado"
+          value={estadoValue}
+          options={ESTADOS}
+          onChange={(value) => setParam("estado", value)}
+        />
 
-        <select
-          aria-label="Filtrar por estado da issue"
-          value={searchParams.get("estado") ?? TODOS}
-          onChange={(event) => setParam("estado", event.target.value)}
-          className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
-        >
-          {ESTADOS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        <LabeledSelect
+          label="Faixa de idade"
+          name="faixaIdade"
+          value={faixaValue}
+          options={faixaOptions}
+          onChange={(value) => setParam("faixaIdade", value)}
+        />
 
-        <select
-          aria-label="Filtrar por SLA"
+        <LabeledSelect
+          label="Autor(a)"
+          name="autor"
+          value={searchParams.get("autor") ?? TODOS}
+          options={autores.map((autor) => ({
+            value: autor,
+            label: autor === TODOS ? "Todos os autores" : autor,
+          }))}
+          onChange={(value) => setParam("autor", value)}
+        />
+
+        <LabeledSelect
+          label="SLA"
+          name="sla"
           value={searchParams.get("sla") ?? TODOS}
-          onChange={(event) => setParam("sla", event.target.value)}
-          className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
-        >
-          {SLAS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+          options={SLAS}
+          onChange={(value) => setParam("sla", value)}
+        />
 
         <form onSubmit={applyDateRange} className="flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1 text-xs">

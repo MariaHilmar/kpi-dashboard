@@ -178,8 +178,8 @@ export default async function AnalistasPage({ searchParams }: DashboardPageProps
           <p className="font-medium text-slate-800">Outras atividades</p>
           <p className="mt-2">
             Você está visualizando o painel de <strong>{autorParam}</strong>. Apenas a analista
-            selecionada pode editar o texto de outras atividades (ou um administrador vê o que foi
-            publicado em Administração → Relatórios).
+            selecionada pode editar o texto de outras atividades (administradores visualizam o
+            conteúdo publicado nesta mesma página).
           </p>
         </div>
       ) : null}
