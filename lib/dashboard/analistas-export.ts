@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
-import type { AnalistaRelatorioSnapshot } from "@/types/analistas";
+import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
+import type { AnalistaRelatorioSnapshot, AnalistaIssueRow } from "@/types/analistas";
 import { formatAnoMesLabel } from "@/lib/dashboard/analistas-utils";
 
 export type AnalistaExportParams = {
@@ -31,6 +32,26 @@ function styleDataRow(row: ExcelJS.Row) {
     cell.border = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
     cell.font = { size: 10 };
   });
+}
+
+function issueIidCellValue(issue: AnalistaIssueRow): string | ExcelJS.CellHyperlinkValue {
+  const label = issue.gitlab_iid != null ? `#${issue.gitlab_iid}` : "—";
+  const url = resolveGitlabWorkItemUrl({
+    gitlabRepo: issue.gitlab_repo,
+    gitlabIid: issue.gitlab_iid,
+    url: issue.url,
+  });
+
+  if (!url || label === "—") return label;
+  return { text: label, hyperlink: url, tooltip: url };
+}
+
+function setIssueIidCell(cell: ExcelJS.Cell, issue: AnalistaIssueRow) {
+  const value = issueIidCellValue(issue);
+  cell.value = value;
+  if (typeof value === "object" && value !== null && "hyperlink" in value) {
+    cell.font = { size: 10, color: { argb: "FF1351B4" }, underline: true };
+  }
 }
 
 /** Gera o workbook replicando o layout do relatório Excel manual (abas Painel + Dados). */
@@ -200,19 +221,22 @@ export async function buildAnalistaRelatorioWorkbook(
   styleHeaderRow(issuesHeaderRow);
 
   for (const issue of issues) {
-    styleDataRow(
-      painel.addRow([
-        null,
-        issue.gitlab_iid ? `#${issue.gitlab_iid}` : "—",
-        issue.titulo ?? "—",
-        issue.modulo ?? "—",
-        issue.colaborador ?? "—",
-        issue.status ?? "—",
-        issue.status_label ?? "—",
-        issue.parceiro ?? "—",
-        issue.sprint ?? "—",
-      ]),
-    );
+    const dataRow = painel.addRow([
+      null,
+      issueIidCellValue(issue),
+      issue.titulo ?? "—",
+      issue.modulo ?? "—",
+      issue.colaborador ?? "—",
+      issue.status ?? "—",
+      issue.status_label ?? "—",
+      issue.parceiro ?? "—",
+      issue.sprint ?? "—",
+    ]);
+    const issueCell = dataRow.getCell(2);
+    if (typeof issueCell.value === "object" && issueCell.value !== null && "hyperlink" in issueCell.value) {
+      issueCell.font = { size: 10, color: { argb: "FF1351B4" }, underline: true };
+    }
+    styleDataRow(dataRow);
   }
 
   const abertasCount = issues.filter((issue) => issue.status === "Aberta").length;
@@ -268,20 +292,24 @@ export async function buildAnalistaRelatorioWorkbook(
   ];
 
   for (const issue of issues) {
-    styleDataRow(
-      dados.addRow([
-        issue.gitlab_iid ? `#${issue.gitlab_iid}` : "—",
-        issue.titulo ?? "—",
-        issue.modulo ?? "—",
-        issue.colaborador ?? "—",
-        issue.status ?? "—",
-        issue.status_label ?? "—",
-        issue.parceiro ?? "—",
-        issue.sprint ?? "—",
-        issue.criado_em ? new Date(issue.criado_em).toLocaleDateString("pt-BR") : "—",
-        issue.url ?? "",
-      ]),
-    );
+    const dataRow = dados.addRow([
+      issueIidCellValue(issue),
+      issue.titulo ?? "—",
+      issue.modulo ?? "—",
+      issue.colaborador ?? "—",
+      issue.status ?? "—",
+      issue.status_label ?? "—",
+      issue.parceiro ?? "—",
+      issue.sprint ?? "—",
+      issue.criado_em ? new Date(issue.criado_em).toLocaleDateString("pt-BR") : "—",
+      resolveGitlabWorkItemUrl({
+        gitlabRepo: issue.gitlab_repo,
+        gitlabIid: issue.gitlab_iid,
+        url: issue.url,
+      }) ?? "",
+    ]);
+    setIssueIidCell(dataRow.getCell(1), issue);
+    styleDataRow(dataRow);
   }
 
   return workbook.xlsx.writeBuffer();

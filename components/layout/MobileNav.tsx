@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { getNavItems, isNavItemActive } from "@/lib/navigation";
+import { getNavItems, isNavItemActive, buildNavHref } from "@/lib/navigation";
 
 type MobileNavProps = {
   isAdmin?: boolean;
@@ -23,7 +23,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
     >
       {items.map((item) => {
         const active = isNavItemActive(pathname, item.href);
-        const href = query ? `${item.href}?${query}` : item.href;
+        const href = buildNavHref(item.href, query);
         return (
           <Link
             key={item.href}
