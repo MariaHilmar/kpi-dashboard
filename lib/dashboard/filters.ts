@@ -83,14 +83,21 @@ export function dateArgs(filters: DashboardFilters) {
 }
 
 export function filtersToSearchParams(
-  filters: Partial<DashboardFilters>,
+  filters: Partial<DashboardFilters> | null | undefined,
 ): URLSearchParams {
   const params = new URLSearchParams();
+  if (!filters) return params;
   for (const [key, value] of Object.entries(filters)) {
     if (value === null || value === undefined || value === "" || value === TODOS) continue;
     params.set(key, String(value));
   }
   return params;
+}
+
+/** Garante que o valor selecionado na URL apareça nas opções do select. */
+export function ensureFilterOption(options: string[], value: string): string[] {
+  if (!value || value === TODOS || options.includes(value)) return options;
+  return sortFilterOptions([...options, value]);
 }
 
 /** Ordem padrão: Todos → Não informado → demais (A–Z). */
@@ -134,4 +141,10 @@ export function sortSprintOptions(values: string[]): string[] {
   const result = [TODOS];
   if (hasNaoInformado) result.push(NAO_INFORMADO);
   return [...result, ...numbered.map((item) => item.label)];
+}
+
+/** Retorna a sprint mais recente (maior número) ou null se não houver. */
+export function resolveLatestSprint(sprints: string[]): string | null {
+  const sorted = sortSprintOptions(sprints);
+  return sorted.find((sprint) => sprint !== TODOS && sprint !== NAO_INFORMADO && /\d+/.test(sprint)) ?? null;
 }

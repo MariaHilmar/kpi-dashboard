@@ -60,7 +60,7 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 ## Pré-requisitos
 
 - Node.js 20+
-- Projeto Supabase configurado (schema + RPCs — ver pasta `supabase/migrations` no workspace MGI)
+- Projeto Supabase configurado (schema + RPCs — ver `supabase/migrations/` neste repositório)
 - Dados sincronizados pelo pipeline Python (`sync_supabase.py`)
 
 ## Configuração local

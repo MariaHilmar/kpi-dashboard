@@ -14,15 +14,9 @@
 ### Criar projeto
 
 1. Acesse [supabase.com](https://supabase.com) e crie um projeto.
-2. No **SQL Editor**, execute as migrations em ordem:
+2. No **SQL Editor**, execute as migrations em ordem a partir de `supabase/migrations/` (001 … 020).
 
-```
-D:\mgi-workspace\supabase\migrations\
-  001_initial_schema.sql … 007_anon_least_privilege.sql
-  008_profiles_admin.sql … 012_gitlab_identities.sql
-```
-
-Ou aplique todas via `supabase db push` a partir de `D:\mgi-workspace\supabase`.
+Ou aplique todas via `supabase db push` a partir da raiz deste repositório (pasta `supabase/`).
 
 3. Em **Project Settings → API**, copie:
    - **Project URL**

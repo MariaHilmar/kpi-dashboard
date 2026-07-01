@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-import { getNavGroups, isNavItemActive } from "@/lib/navigation";
+import { getNavGroups, isNavItemActive, buildNavHref } from "@/lib/navigation";
 
 type SidebarProps = {
   isAdmin?: boolean;
@@ -27,7 +27,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
             <ul className="space-y-0.5">
               {group.items.map((item) => {
                 const active = isNavItemActive(pathname, item.href);
-                const href = query ? `${item.href}?${query}` : item.href;
+                const href = buildNavHref(item.href, query);
                 return (
                   <li key={item.href}>
                     <Link

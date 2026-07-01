@@ -1,19 +1,37 @@
 "use client";
 
+import { IssueDrilldownLink } from "@/components/dashboard/IssueDrilldownLink";
+import { buildAlertasResumoIssuesHref } from "@/lib/dashboard/issuesLinks";
 import { formatNumber } from "@/lib/format";
-import type { AlertaResumo } from "@/types/database";
+import type { AlertaResumo, DashboardFilters } from "@/types/database";
 
 type AlertasResumoProps = {
   data: AlertaResumo | null;
+  filters: DashboardFilters;
 };
 
-export function AlertasResumo({ data }: AlertasResumoProps) {
+export function AlertasResumo({ data, filters }: AlertasResumoProps) {
   if (!data) return null;
 
   const cards = [
-    { label: "Issues Abertas", value: data.abertas, color: "bg-blue-50 border-blue-200" },
-    { label: "Sem Épico", value: data.sem_epico, color: "bg-amber-50 border-amber-200" },
-    { label: "Sem Parceria", value: data.sem_parceria, color: "bg-rose-50 border-rose-200" },
+    {
+      label: "Issues Abertas",
+      value: data.abertas,
+      color: "bg-blue-50 border-blue-200",
+      href: data.abertas > 0 ? buildAlertasResumoIssuesHref(filters, "abertas") : null,
+    },
+    {
+      label: "Sem Épico",
+      value: data.sem_epico,
+      color: "bg-amber-50 border-amber-200",
+      href: data.sem_epico > 0 ? buildAlertasResumoIssuesHref(filters, "sem_epico") : null,
+    },
+    {
+      label: "Sem Parceria",
+      value: data.sem_parceria,
+      color: "bg-rose-50 border-rose-200",
+      href: data.sem_parceria > 0 ? buildAlertasResumoIssuesHref(filters, "sem_parceria") : null,
+    },
   ];
 
   return (
@@ -26,7 +44,13 @@ export function AlertasResumo({ data }: AlertasResumoProps) {
               {card.label}
             </p>
             <p className="mt-1 text-3xl font-semibold text-slate-900">
-              {formatNumber(card.value)}
+              {card.href ? (
+                <IssueDrilldownLink href={card.href} title={`Ver issues — ${card.label}`}>
+                  {formatNumber(card.value)}
+                </IssueDrilldownLink>
+              ) : (
+                formatNumber(card.value)
+              )}
             </p>
           </div>
         ))}

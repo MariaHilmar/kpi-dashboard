@@ -1,6 +1,6 @@
 # Dados e Supabase
 
-O schema Postgres versionado está em `D:\mgi-workspace\supabase\migrations\`. O dashboard **não** escreve no banco — apenas consulta tabelas, views e RPCs.
+O schema Postgres versionado está em `supabase/migrations/` neste repositório. O dashboard **não** escreve no banco — apenas consulta tabelas, views e RPCs.
 
 ## Migrations
 
@@ -18,6 +18,8 @@ O schema Postgres versionado está em `D:\mgi-workspace\supabase\migrations\`. O
 | `010_analista_relatorios.sql` | Relatórios de analistas (rascunho/publicado) |
 | `011_analista_relatorio_por_autor.sql` | Filtro Analistas por autor; `profiles.autor_issues` |
 | `012_gitlab_identities.sql` | `gitlab_users`, `issue_participants`, IDs GitLab em `issues` e `profiles` |
+
+Migrations **013–020** (analistas, alertas globais, faixa de idade, `search_issues`) estão na mesma pasta — consulte os arquivos para o detalhe de cada uma.
 
 ## Tabelas principais
 

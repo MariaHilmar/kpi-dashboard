@@ -4,8 +4,10 @@ import {
   DEFAULT_FILTERS,
   commonArgs,
   dateArgs,
+  ensureFilterOption,
   filtersToSearchParams,
   parseFilters,
+  resolveLatestSprint,
   sortFilterOptions,
   sortSprintOptions,
 } from "@/lib/dashboard/filters";
@@ -108,5 +110,25 @@ describe("sortSprintOptions", () => {
       "Sprint 1",
     ]);
     expect(sorted).toEqual(["Todos", "Não informado", "Sprint 12", "Sprint 3", "Sprint 1"]);
+  });
+});
+
+describe("resolveLatestSprint", () => {
+  it("retorna a sprint com maior numero", () => {
+    expect(
+      resolveLatestSprint(["Todos", "Sprint 88", "Sprint 90 - Contratos", "Não informado", "Sprint 89 - Contratos"]),
+    ).toBe("Sprint 90 - Contratos");
+  });
+
+  it("retorna null quando nao ha sprint numerica", () => {
+    expect(resolveLatestSprint(["Todos", "Não informado"])).toBeNull();
+  });
+});
+
+describe("ensureFilterOption", () => {
+  it("inclui valor da URL ausente na lista de opcoes", () => {
+    const options = ensureFilterOption(["Todos", "PNCP"], "Fiscalização");
+    expect(options).toContain("Fiscalização");
+    expect(options).toContain("Todos");
   });
 });

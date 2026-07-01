@@ -47,12 +47,16 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
   const autorRaw = str(sp.autor, TODOS);
   const autor = autorRaw;
 
+  const faixaIdadeRaw = typeof sp.faixaIdade === "string" ? sp.faixaIdade.trim() : "";
+  const faixaIdade = faixaIdadeRaw || null;
+
   const [filterOptions, result] = await Promise.all([
     fetchFilterOptions(),
     searchIssues(filters, {
       search: str(sp.q, ""),
       estado,
       sla,
+      faixaIdade,
       autor,
       criadoDe: dateOr(sp.criadoDe),
       criadoAte: dateOr(sp.criadoAte),

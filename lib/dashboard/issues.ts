@@ -31,6 +31,7 @@ export type IssuesSearchParams = {
   search: string;
   estado: IssueEstado;
   sla: IssueSla;
+  faixaIdade: string | null;
   autor: string;
   criadoDe: string | null;
   criadoAte: string | null;
@@ -57,18 +58,22 @@ export async function searchIssues(
 
   const offset = (params.page - 1) * params.pageSize;
 
-  const args = {
+  const args: Record<string, unknown> = {
     ...commonArgs(filters),
     p_search: params.search || null,
     p_estado: params.estado,
     p_sla: params.sla,
     p_autor: params.autor,
-    p_criado_de: params.criadoDe,
-    p_criado_ate: params.criadoAte,
+    p_criado_de: params.criadoDe ?? filters.criadoDe,
+    p_criado_ate: params.criadoAte ?? filters.criadoAte,
     p_order: params.order,
     p_limit: params.pageSize,
     p_offset: offset,
   };
+
+  if (params.faixaIdade) {
+    args.p_faixa_idade = params.faixaIdade;
+  }
 
   const { data, error } = await supabase.rpc("search_issues", args);
 

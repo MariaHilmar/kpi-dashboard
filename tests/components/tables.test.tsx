@@ -5,12 +5,15 @@ import { AlertasPorModuloTabela } from "@/components/dashboard/tables/AlertasPor
 import { FaixaIdadeTabela } from "@/components/dashboard/tables/FaixaIdadeTabela";
 import { KpisPorTipoTabela } from "@/components/dashboard/tables/KpisPorTipoTabela";
 import { TopLeadTimesTabela } from "@/components/dashboard/tables/TopLeadTimesTabela";
+import { DEFAULT_FILTERS } from "@/lib/dashboard/filters";
 
 describe("tabelas do dashboard", () => {
   it("AlertasPorModuloTabela formata percentual", () => {
     render(
       <AlertasPorModuloTabela
         title="Sem épico"
+        dimensao="sem_epico"
+        filters={DEFAULT_FILTERS}
         rows={[{ modulo: "PNCP", qtde: 5, percentual: 33.333 }]}
       />,
     );
@@ -21,6 +24,7 @@ describe("tabelas do dashboard", () => {
   it("FaixaIdadeTabela renderiza faixas", () => {
     render(
       <FaixaIdadeTabela
+        filters={DEFAULT_FILTERS}
         rows={[{ faixa: "0-30 dias", qtde: 20, percentual: 40 }]}
       />,
     );
