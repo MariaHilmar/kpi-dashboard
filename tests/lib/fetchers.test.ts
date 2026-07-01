@@ -223,21 +223,33 @@ describe("fetchers", () => {
     });
 
     const { fetchAlertasPorModulo } = await import("@/lib/dashboard/fetchers");
-    expect(await fetchAlertasPorModulo("sem_epico")).toEqual([
+    expect(await fetchAlertasPorModulo("sem_epico", DEFAULT_FILTERS)).toEqual([
       { modulo: "PNCP", qtde: 3, percentual: 25.5 },
     ]);
   });
 
-  it("fetchFaixaIdade mapeia faixas", async () => {
+  it("fetchFaixaIdade inclui todas as faixas na ordem esperada", async () => {
     rpcMock.mockResolvedValue({
-      data: [{ faixa: "0-30", qtde: 10, percentual: 40 }],
+      data: [
+        { faixa: "91-120 dias", qtde: 5, percentual: 50 },
+        { faixa: "121-180 dias", qtde: 2, percentual: 20 },
+      ],
       error: null,
     });
 
     const { fetchFaixaIdade } = await import("@/lib/dashboard/fetchers");
-    expect(await fetchFaixaIdade()).toEqual([
-      { faixa: "0-30", qtde: 10, percentual: 40 },
+    const rows = await fetchFaixaIdade(DEFAULT_FILTERS);
+
+    expect(rows.map((row) => row.faixa)).toEqual([
+      "0-30 dias",
+      "31-60 dias",
+      "61-90 dias",
+      "91-120 dias",
+      "121-180 dias",
+      "181-360 dias",
+      "Mais de 1 ano",
     ]);
+    expect(rows.find((row) => row.faixa === "91-120 dias")?.percentual).toBe(71.43);
   });
 
   it("fetchQualidade agrega metricas Sim", async () => {
@@ -265,7 +277,7 @@ describe("fetchers", () => {
     });
 
     const { fetchAlertasResumo } = await import("@/lib/dashboard/fetchers");
-    expect(await fetchAlertasResumo()).toEqual({
+    expect(await fetchAlertasResumo(DEFAULT_FILTERS)).toEqual({
       abertas: 10,
       sem_epico: 3,
       sem_parceria: 2,

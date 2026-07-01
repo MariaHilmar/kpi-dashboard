@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useMemo, useTransition } from "react";
 
-import { sortFilterOptions } from "@/lib/dashboard/filters";
+import { ensureFilterOption, sortFilterOptions } from "@/lib/dashboard/filters";
 import type { FilterOptions } from "@/types/database";
 
 type Props = {
@@ -28,6 +28,7 @@ function SelectField({
       <span className="font-medium text-slate-600">{label}</span>
       <select
         name={name}
+        aria-label={label}
         value={value}
         onChange={(event) => onChange(name, event.target.value)}
         className="rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900"
@@ -52,23 +53,34 @@ export function GlobalFilters({ options }: Props) {
 
   const selectedModulo = read("modulo");
   const selectedArea = read("area");
+  const selectedParceria = read("parceria");
+  const selectedEpico = read("epico");
+  const selectedSprint = read("sprint");
+  const selectedEquipe = read("equipe");
+  const selectedTipo = read("tipo");
+  const selectedAno = read("ano");
 
-  // Opções em cascata: módulo ↔ área funcional
   const moduloOptions = useMemo(() => {
-    if (selectedArea === "Todos") return options.modulos;
-    const relacionados = options.moduloAreaPairs
-      .filter((p) => p.area === selectedArea)
-      .map((p) => p.modulo);
-    return sortFilterOptions(Array.from(new Set(relacionados)));
-  }, [options.modulos, options.moduloAreaPairs, selectedArea]);
+    let list = options.modulos;
+    if (selectedArea !== "Todos") {
+      const relacionados = options.moduloAreaPairs
+        .filter((p) => p.area === selectedArea)
+        .map((p) => p.modulo);
+      list = sortFilterOptions(Array.from(new Set(relacionados)));
+    }
+    return ensureFilterOption(list, selectedModulo);
+  }, [options.modulos, options.moduloAreaPairs, selectedArea, selectedModulo]);
 
   const areaOptions = useMemo(() => {
-    if (selectedModulo === "Todos") return options.areas;
-    const relacionadas = options.moduloAreaPairs
-      .filter((p) => p.modulo === selectedModulo)
-      .map((p) => p.area);
-    return sortFilterOptions(Array.from(new Set(relacionadas)));
-  }, [options.areas, options.moduloAreaPairs, selectedModulo]);
+    let list = options.areas;
+    if (selectedModulo !== "Todos") {
+      const relacionadas = options.moduloAreaPairs
+        .filter((p) => p.modulo === selectedModulo)
+        .map((p) => p.area);
+      list = sortFilterOptions(Array.from(new Set(relacionadas)));
+    }
+    return ensureFilterOption(list, selectedArea);
+  }, [options.areas, options.moduloAreaPairs, selectedModulo, selectedArea]);
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -81,10 +93,11 @@ export function GlobalFilters({ options }: Props) {
 
   function updateFilter(name: string, value: string) {
     pushParams((params) => {
-      if (value === "Todos" || value === "") params.delete(name);
-      else params.set(name, value);
+      if (value === "Todos" || value === "") {
+        if (name === "sprint") params.set("sprint", "Todos");
+        else params.delete(name);
+      } else params.set(name, value);
 
-      // Mantém a coerência da relação módulo ↔ área
       if (name === "modulo") {
         const area = params.get("area");
         if (
@@ -129,18 +142,61 @@ export function GlobalFilters({ options }: Props) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-7">
-        <SelectField label="Módulo" name="modulo" value={selectedModulo} options={moduloOptions} onChange={updateFilter} />
-        <SelectField label="Área funcional" name="area" value={selectedArea} options={areaOptions} onChange={updateFilter} />
-        <SelectField label="Parceria" name="parceria" value={read("parceria")} options={options.parcerias} onChange={updateFilter} />
-        <SelectField label="Sprint" name="sprint" value={read("sprint")} options={options.sprints} onChange={updateFilter} />
-        <SelectField label="Equipe" name="equipe" value={read("equipe")} options={options.equipes} onChange={updateFilter} />
-        <SelectField label="Tipo" name="tipo" value={read("tipo")} options={options.tipos} onChange={updateFilter} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-8">
+        <SelectField
+          label="Módulo"
+          name="modulo"
+          value={selectedModulo}
+          options={moduloOptions}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Área funcional"
+          name="area"
+          value={selectedArea}
+          options={areaOptions}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Épico"
+          name="epico"
+          value={selectedEpico}
+          options={ensureFilterOption(options.epicos, selectedEpico)}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Parceria"
+          name="parceria"
+          value={selectedParceria}
+          options={ensureFilterOption(options.parcerias, selectedParceria)}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Sprint"
+          name="sprint"
+          value={selectedSprint}
+          options={ensureFilterOption(options.sprints, selectedSprint)}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Equipe"
+          name="equipe"
+          value={selectedEquipe}
+          options={ensureFilterOption(options.equipes, selectedEquipe)}
+          onChange={updateFilter}
+        />
+        <SelectField
+          label="Tipo"
+          name="tipo"
+          value={selectedTipo}
+          options={ensureFilterOption(options.tipos, selectedTipo)}
+          onChange={updateFilter}
+        />
         <SelectField
           label="Ano criação"
           name="ano"
-          value={read("ano")}
-          options={anoOptions}
+          value={selectedAno}
+          options={ensureFilterOption(anoOptions, selectedAno)}
           onChange={updateFilter}
         />
       </div>

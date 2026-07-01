@@ -24,6 +24,7 @@ const SNAPSHOT: AnalistaRelatorioSnapshot = {
   issues: [
     {
       gitlab_iid: 1241,
+      gitlab_repo: "Contratos v2",
       titulo: "Ajuste de tela",
       modulo: "Fiscalização",
       tipo: "Melhoria",

@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 
 import { KpiCard } from "@/components/dashboard/KpiCard";
+import { buildIssuesHref } from "@/lib/dashboard/issuesLinks";
 import { formatNumber, formatPercent } from "@/lib/format";
 import type { DashboardKpisFull } from "@/types/database";
 
@@ -21,15 +22,8 @@ export function KpiGrid({ kpis }: KpiGridProps) {
     );
   }
 
-  // Drill-down: leva para /issues preservando os filtros globais da URL e
-  // acrescentando o recorte do KPI clicado (estado).
-  const issuesHref = (extra?: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("page");
-    for (const [key, value] of Object.entries(extra ?? {})) params.set(key, value);
-    const query = params.toString();
-    return query ? `/issues?${query}` : "/issues";
-  };
+  const issuesHref = (extra?: Record<string, string>) =>
+    buildIssuesHref(searchParams, extra);
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">

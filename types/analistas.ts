@@ -20,6 +20,7 @@ export type AnalistaDistribuicaoRow = {
 
 export type AnalistaIssueRow = {
   gitlab_iid: number | null;
+  gitlab_repo: string | null;
   titulo: string | null;
   modulo: string | null;
   tipo: string | null;
@@ -57,10 +58,4 @@ export type SaveAnalistaRelatorioInput = {
   sprint?: string;
   outrasAtividades: string;
   status?: AnalistaRelatorioStatus;
-};
-
-/** Relatório salvo + dados do autor, usado na visão de histórico (admin). */
-export type AnalistaRelatorioComAutor = AnalistaRelatorioSalvo & {
-  autor_nome: string;
-  autor_email: string;
 };

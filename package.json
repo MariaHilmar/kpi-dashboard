@@ -12,10 +12,12 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@fontsource/dejavu-sans": "^5.2.5",
     "@fortawesome/fontawesome-svg-core": "^7.3.0",
     "@fortawesome/free-solid-svg-icons": "^7.3.0",
     "@fortawesome/react-fontawesome": "^3.3.1",
     "@govbr-ds/core": "^3.7.0",
+    "@resvg/resvg-js": "^2.6.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "docx": "^9.5.0",
@@ -23,8 +25,7 @@
     "next": "16.2.9",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "recharts": "^3.9.0",
-    "sharp": "^0.34.5"
+    "recharts": "^3.9.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
