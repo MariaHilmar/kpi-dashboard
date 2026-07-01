@@ -58,12 +58,14 @@ function queryChainWithMaybeSingle(finalResult: { data: unknown; error: unknown 
 
 vi.mock("next/cache", () => ({
   unstable_cache: (fn: (...args: unknown[]) => unknown) => fn,
+  unstable_noStore: vi.fn(),
   revalidateTag: vi.fn(),
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
   createServerSupabase: async () => createServerSupabaseMock(),
   createStaticSupabase: () => createServerSupabaseMock(),
+  createLiveSupabase: () => createServerSupabaseMock(),
 }));
 
 describe("fetchers", () => {
@@ -363,6 +365,12 @@ describe("fetchers", () => {
           error: null,
         });
       }
+      if (table === "issues") {
+        return queryChainWithMaybeSingle({
+          data: { synced_at: "2024-05-01T08:00:00.000Z" },
+          error: null,
+        });
+      }
       throw new Error(`tabela inesperada: ${table}`);
     });
 
@@ -381,6 +389,12 @@ describe("fetchers", () => {
           error: null,
         });
       }
+      if (table === "issues") {
+        return queryChainWithMaybeSingle({
+          data: { synced_at: "2024-05-01T08:00:00.000Z" },
+          error: null,
+        });
+      }
       throw new Error(`tabela inesperada: ${table}`);
     });
 
@@ -392,6 +406,30 @@ describe("fetchers", () => {
     fromMock.mockImplementation((table: string) => {
       if (table === "sync_runs") {
         return queryChainWithMaybeSingle({ data: null, error: null });
+      }
+      if (table === "issues") {
+        return queryChainWithMaybeSingle({
+          data: { synced_at: "2024-06-15T08:10:24.000Z" },
+          error: null,
+        });
+      }
+      throw new Error(`tabela inesperada: ${table}`);
+    });
+
+    const { fetchLastSync } = await import("@/lib/dashboard/fetchers");
+    expect(await fetchLastSync()).toBe("2024-06-15T08:10:24.000Z");
+  });
+
+  it("fetchLastSync retorna o timestamp mais recente entre sync_runs e issues", async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === "sync_runs") {
+        return queryChainWithMaybeSingle({
+          data: {
+            finished_at: "2024-06-01T10:00:00Z",
+            started_at: "2024-06-01T09:00:00Z",
+          },
+          error: null,
+        });
       }
       if (table === "issues") {
         return queryChainWithMaybeSingle({
