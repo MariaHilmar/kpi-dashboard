@@ -2,6 +2,7 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  ExternalHyperlink,
   HeadingLevel,
   ImageRun,
   Packer,
@@ -14,9 +15,12 @@ import {
   WidthType,
 } from "docx";
 
+import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
+
 import type { AnalistaDistribuicaoRow, AnalistaIssueRow } from "@/types/analistas";
 import {
   buildDistribuicaoPieChartPng,
+  getDistribuicaoPieChartHeight,
   resolveDistribuicaoRows,
 } from "@/lib/dashboard/analistas-pie-chart";
 import { formatAnoMesPeriodoLabel } from "@/lib/dashboard/analistas-utils";
@@ -58,6 +62,31 @@ function bodyCell(text: string, widthPct?: number): TableCell {
   });
 }
 
+function issueBodyCell(row: AnalistaIssueRow, widthPct?: number): TableCell {
+  const label = row.gitlab_iid != null ? `#${row.gitlab_iid}` : "—";
+  const url = resolveGitlabWorkItemUrl({
+    gitlabRepo: row.gitlab_repo,
+    gitlabIid: row.gitlab_iid,
+    url: row.url,
+  });
+
+  const children =
+    url && row.gitlab_iid != null
+      ? [
+          new ExternalHyperlink({
+            children: [new TextRun({ text: label, style: "Hyperlink", size: 18 })],
+            link: url,
+          }),
+        ]
+      : [new TextRun({ text: label, size: 18 })];
+
+  return new TableCell({
+    width: widthPct ? { size: widthPct, type: WidthType.PERCENTAGE } : undefined,
+    margins: { top: 60, bottom: 60, left: 120, right: 120 },
+    children: [new Paragraph({ children })],
+  });
+}
+
 function sectionHeading(text: string): Paragraph {
   return new Paragraph({
     heading: HeadingLevel.HEADING_2,
@@ -71,6 +100,9 @@ async function buildDistribuicaoSection(
   rows: AnalistaDistribuicaoRow[],
 ): Promise<(Paragraph | Table)[]> {
   const chartPng = await buildDistribuicaoPieChartPng(title, rows);
+  const chartHeight = getDistribuicaoPieChartHeight(rows);
+  const displayWidth = 480;
+  const displayHeight = Math.round((displayWidth * chartHeight) / 640);
 
   return [
     sectionHeading(title),
@@ -81,7 +113,7 @@ async function buildDistribuicaoSection(
         new ImageRun({
           type: "png",
           data: chartPng,
-          transformation: { width: 480, height: 240 },
+          transformation: { width: displayWidth, height: displayHeight },
         }),
       ],
     }),
@@ -128,7 +160,7 @@ function buildIssuesTable(issues: AnalistaIssueRow[]): Table {
           (row) =>
             new TableRow({
               children: [
-                bodyCell(row.gitlab_iid ? `#${row.gitlab_iid}` : "—", 10),
+                issueBodyCell(row, 10),
                 bodyCell(row.titulo ?? "—", 34),
                 bodyCell(row.modulo ?? "—", 14),
                 bodyCell(row.tipo ?? "—", 12),

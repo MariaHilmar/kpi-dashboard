@@ -12,6 +12,8 @@ import {
   fetchTopLeadTimes,
 } from "@/lib/dashboard/fetchers";
 
+export const dynamic = "force-dynamic";
+
 export default async function AlertasPage({ searchParams }: DashboardPageProps) {
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {
@@ -19,10 +21,10 @@ export default async function AlertasPage({ searchParams }: DashboardPageProps) 
   }
 
   const [resumo, semEpico, semParceria, faixaIdade, topLeadTimes] = await Promise.all([
-    fetchAlertasResumo(),
-    fetchAlertasPorModulo("sem_epico"),
-    fetchAlertasPorModulo("sem_parceria"),
-    fetchFaixaIdade(),
+    fetchAlertasResumo(filters),
+    fetchAlertasPorModulo("sem_epico", filters),
+    fetchAlertasPorModulo("sem_parceria", filters),
+    fetchFaixaIdade(filters),
     fetchTopLeadTimes(filters),
   ]);
 
@@ -30,23 +32,27 @@ export default async function AlertasPage({ searchParams }: DashboardPageProps) 
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Alertas"
-        subtitle="Issues abertas sem épico/parceria, distribuição por idade e maiores lead times."
+        subtitle="Issues abertas sem épico/parceria, distribuição por idade e maiores lead times — respeitam os filtros globais."
       />
 
-      <AlertasResumo data={resumo} />
+      <AlertasResumo data={resumo} filters={filters} />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <AlertasPorModuloTabela
           title="Issues abertas sem Épico — por Módulo"
+          dimensao="sem_epico"
+          filters={filters}
           rows={semEpico}
         />
         <AlertasPorModuloTabela
           title="Issues abertas sem Parceria — por Módulo"
+          dimensao="sem_parceria"
+          filters={filters}
           rows={semParceria}
         />
       </div>
 
-      <FaixaIdadeTabela rows={faixaIdade} />
+      <FaixaIdadeTabela filters={filters} rows={faixaIdade} />
 
       <TopLeadTimesTabela rows={topLeadTimes} />
     </div>

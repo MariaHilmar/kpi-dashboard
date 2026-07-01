@@ -203,7 +203,7 @@ Fetchers registram erros no console (`console.error`) e retornam arrays vazios o
 | Registro de execução | tabela `sync_runs` |
 | Leitura | este dashboard (RPCs) |
 
-Migrations SQL ficam em `seu-workspace\supabase\migrations\` (001–007). Devem ser aplicadas no projeto Supabase antes do primeiro sync.
+Migrations SQL ficam em `supabase/migrations/` neste repositório (001–020). Devem ser aplicadas no projeto Supabase antes do primeiro sync.
 
 ## Segurança
 

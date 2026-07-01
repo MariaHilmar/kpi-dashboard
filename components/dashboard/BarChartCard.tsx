@@ -32,6 +32,12 @@ export function BarChartCard({
     issues: item.quantidade,
   }));
 
+  const longestLabel = chartData.reduce((max, item) => Math.max(max, item.name.length), 0);
+  const yAxisWidth = horizontal ? Math.min(220, Math.max(120, longestLabel * 7)) : undefined;
+  const horizontalHeight = Math.max(288, chartData.length * 32 + 56);
+  const chartHeight = horizontal ? horizontalHeight : 288;
+  const leftMargin = horizontal ? yAxisWidth! + 12 : 8;
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
@@ -44,18 +50,24 @@ export function BarChartCard({
           {emptyMessage}
         </div>
       ) : (
-        <div className={horizontal ? "h-80" : "h-72"}>
+        <div style={{ height: chartHeight }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
               layout={horizontal ? "vertical" : "horizontal"}
-              margin={{ top: 8, right: 16, left: horizontal ? 120 : 8, bottom: 8 }}
+              margin={{ top: 8, right: 16, left: leftMargin, bottom: 8 }}
             >
               <CartesianGrid strokeDasharray="3 3" vertical={!horizontal} horizontal={horizontal} />
               {horizontal ? (
                 <>
                   <XAxis type="number" allowDecimals={false} />
-                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12 }} />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    width={yAxisWidth}
+                    interval={0}
+                    tick={{ fontSize: 12 }}
+                  />
                 </>
               ) : (
                 <>

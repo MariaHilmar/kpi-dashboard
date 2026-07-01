@@ -7,7 +7,10 @@ const pushMock = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
   usePathname: () => "/issues",
-  useSearchParams: () => new URLSearchParams("estado=open&order=criado_em_desc"),
+  useSearchParams: () =>
+    new URLSearchParams(
+      "modulo=Fiscalização&estado=open&epico=Não informado&faixaIdade=0-30 dias",
+    ),
 }));
 
 import { IssuesToolbar } from "@/components/issues/IssuesToolbar";
@@ -18,8 +21,9 @@ describe("IssuesToolbar", () => {
   it("renderiza busca e filtros com valores da URL", () => {
     render(<IssuesToolbar autores={autores} />);
     expect(screen.getByLabelText(/Buscar issues/)).toBeInTheDocument();
-    expect(screen.getByLabelText("Filtrar por estado da issue")).toHaveValue("open");
-    expect(screen.getByLabelText("Filtrar por autor da issue")).toHaveValue("Todos");
+    expect(screen.getByLabelText("Estado")).toHaveValue("open");
+    expect(screen.getByLabelText("Faixa de idade")).toHaveValue("0-30 dias");
+    expect(screen.getByLabelText("Autor(a)")).toHaveValue("Todos");
   });
 
   it("envia filtro de autor limpando page", async () => {
@@ -27,7 +31,7 @@ describe("IssuesToolbar", () => {
     const user = userEvent.setup();
     render(<IssuesToolbar autores={autores} />);
 
-    await user.selectOptions(screen.getByLabelText("Filtrar por autor da issue"), "Maria Silva");
+    await user.selectOptions(screen.getByLabelText("Autor(a)"), "Maria Silva");
 
     expect(pushMock).toHaveBeenCalledTimes(1);
     const url = pushMock.mock.calls[0][0] as string;
@@ -40,7 +44,7 @@ describe("IssuesToolbar", () => {
     const user = userEvent.setup();
     render(<IssuesToolbar autores={autores} />);
 
-    await user.selectOptions(screen.getByLabelText("Filtrar por SLA"), "acima_90");
+    await user.selectOptions(screen.getByLabelText("SLA"), "acima_90");
     expect(pushMock).toHaveBeenCalledTimes(1);
     const url = pushMock.mock.calls[0][0] as string;
     expect(url).toContain("sla=acima_90");
