@@ -15,7 +15,6 @@ import {
   summarizeLeadTimeDistribution,
   sumWip,
   sumWipFromCfd,
-  summarizeLeadTimeDistribution,
   throughputToChartPoints,
   weightedMedianLeadTime,
   workItemAgeToChartPoints,
