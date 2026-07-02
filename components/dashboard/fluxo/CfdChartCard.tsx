@@ -10,12 +10,16 @@ import {
   YAxis,
   AreaChart,
 } from "recharts";
+import type { TooltipProps } from "recharts";
 
 import type { CfdChartPoint } from "@/lib/dashboard/flow-charts";
 import {
   FLOW_CFD_ETAPAS,
   getFlowCfdFillOpacity,
   getFlowEtapaChartColor,
+  orderCfdEtapasForDisplay,
+  orderCfdEtapasForStack,
+  type FlowEtapa,
 } from "@/lib/dashboard/flow-stages";
 import { formatDate } from "@/lib/format";
 
@@ -25,10 +29,50 @@ type CfdChartCardProps = {
   data: CfdChartPoint[];
 };
 
+type CfdTooltipProps = TooltipProps<number, string> & {
+  displayEtapas: FlowEtapa[];
+};
+
+function CfdTooltipContent({ active, payload, label, displayEtapas }: CfdTooltipProps) {
+  if (!active || !payload?.length) return null;
+
+  const payloadByName = new Map(payload.map((entry) => [String(entry.name), entry]));
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-md">
+      <p className="mb-2 font-medium text-slate-900">{formatDate(String(label))}</p>
+      <ul className="space-y-1">
+        {displayEtapas.map((etapa) => {
+          const entry = payloadByName.get(etapa);
+          if (!entry) return null;
+
+          const color = getFlowEtapaChartColor(etapa);
+
+          return (
+            <li key={etapa} className="flex items-center gap-2">
+              <span
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: color }}
+              />
+              <span style={{ color }}>
+                {etapa} : {entry.value}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 export function CfdChartCard({ title, subtitle, data }: CfdChartCardProps) {
   const visibleEtapas = FLOW_CFD_ETAPAS.filter((etapa) =>
     data.some((point) => Number(point[etapa] ?? 0) > 0),
   );
+  const stackEtapas = orderCfdEtapasForStack(
+    visibleEtapas.length > 0 ? visibleEtapas : [...FLOW_CFD_ETAPAS],
+  );
+  const displayEtapas = orderCfdEtapasForDisplay(stackEtapas);
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -54,11 +98,19 @@ export function CfdChartCard({ title, subtitle, data }: CfdChartCardProps) {
               />
               <YAxis allowDecimals={false} />
               <Tooltip
-                labelFormatter={(value) => formatDate(String(value))}
-                formatter={(value, name) => [value, String(name)]}
+                content={(props) => (
+                  <CfdTooltipContent {...props} displayEtapas={displayEtapas} />
+                )}
               />
-              <Legend />
-              {(visibleEtapas.length > 0 ? visibleEtapas : [...FLOW_CFD_ETAPAS]).map((etapa) => (
+              <Legend
+                payload={displayEtapas.map((etapa) => ({
+                  value: etapa,
+                  type: "circle",
+                  color: getFlowEtapaChartColor(etapa),
+                  id: etapa,
+                }))}
+              />
+              {stackEtapas.map((etapa) => (
                 <Area
                   key={etapa}
                   type="monotone"

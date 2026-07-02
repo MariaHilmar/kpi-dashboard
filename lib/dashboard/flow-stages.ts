@@ -142,3 +142,14 @@ const FLOW_CFD_TERMINAL_FILL_OPACITY = 0.3;
 export function getFlowCfdFillOpacity(etapa: string): number {
   return isWipEtapa(etapa) ? FLOW_CFD_WIP_FILL_OPACITY : FLOW_CFD_TERMINAL_FILL_OPACITY;
 }
+
+/** Ordem de empilhamento no CFD (base → topo). */
+export function orderCfdEtapasForStack(etapas: readonly string[]): FlowEtapa[] {
+  const selected = new Set(etapas);
+  return FLOW_CFD_ETAPAS.filter((etapa) => selected.has(etapa));
+}
+
+/** Ordem visual de cima para baixo (legenda e tooltip). */
+export function orderCfdEtapasForDisplay(etapas: readonly string[]): FlowEtapa[] {
+  return [...orderCfdEtapasForStack(etapas)].reverse();
+}
