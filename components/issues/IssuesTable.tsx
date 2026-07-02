@@ -1,26 +1,21 @@
+import { IssueEstadoBadge } from "@/components/issues/IssueEstadoBadge";
+import { IssueStatusBadge } from "@/components/issues/IssueStatusBadge";
 import { gitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
-import { isIssueOpen, issueEstadoLabel } from "@/lib/dashboard/issue-state";
 import type { IssueRow } from "@/lib/dashboard/issues";
 import { formatDate, formatNumber } from "@/lib/format";
 
 import { IssuesSortableTh } from "./IssuesSortableTh";
 
+const COMPACT_COLUMN = "w-[5rem] max-w-[5rem]";
+const COMPACT_CELL =
+  "max-w-[5rem] break-words px-3 py-2 align-top leading-snug text-slate-600 [overflow-wrap:anywhere]";
+/** 70% de max-w-md (28rem) */
+const TITULO_COLUMN = "w-[19.6rem] max-w-[19.6rem]";
+const TITULO_CELL = "max-w-[19.6rem] min-w-0 px-3 py-2 text-slate-900";
+
 type Props = {
   rows: IssueRow[];
 };
-
-function EstadoBadge({ estado }: { estado: string | null }) {
-  const open = isIssueOpen(estado);
-  return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-        open ? "bg-amber-100 text-amber-800" : "bg-emerald-100 text-emerald-800"
-      }`}
-    >
-      {issueEstadoLabel(estado)}
-    </span>
-  );
-}
 
 export function IssuesTable({ rows }: Props) {
   if (rows.length === 0) {
@@ -33,24 +28,21 @@ export function IssuesTable({ rows }: Props) {
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-full divide-y divide-slate-200 text-sm">
-        <caption className="sr-only">Lista de issues filtradas, com módulo, tipo, estado e prazos</caption>
+      <table className="min-w-full table-fixed divide-y divide-slate-200 text-sm">
+        <caption className="sr-only">Lista de issues filtradas, com módulo, tipo, estado, status e prazos</caption>
         <thead className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <IssuesSortableTh columnKey="id" label="ID" />
-            <IssuesSortableTh columnKey="titulo" label="Título" />
-            <IssuesSortableTh columnKey="modulo" label="Módulo" />
-            <IssuesSortableTh columnKey="tipo" label="Tipo" />
+            <IssuesSortableTh columnKey="titulo" label="Título" className={TITULO_COLUMN} />
+            <IssuesSortableTh columnKey="modulo" label="Módulo" className={COMPACT_COLUMN} />
+            <IssuesSortableTh columnKey="tipo" label="Tipo" className={COMPACT_COLUMN} />
             <IssuesSortableTh columnKey="estado" label="Estado" />
+            <IssuesSortableTh columnKey="status" label="Status" />
             <IssuesSortableTh columnKey="prioridade" label="Prioridade" />
             <IssuesSortableTh columnKey="equipe" label="Equipe" />
-            <th scope="col" className="px-3 py-2 font-medium">
-              Parceria
-            </th>
+            <IssuesSortableTh columnKey="parceria" label="Parceria" />
             <IssuesSortableTh columnKey="criado" label="Criado" />
-            <th scope="col" className="px-3 py-2 font-medium">
-              Data de Fechamento
-            </th>
+            <IssuesSortableTh columnKey="fechado" label="Data de Fechamento" />
             <IssuesSortableTh columnKey="lead" label="Lead (d)" align="right" />
             <IssuesSortableTh columnKey="idade" label="Idade (d)" align="right" />
           </tr>
@@ -75,7 +67,7 @@ export function IssuesTable({ rows }: Props) {
                     row.gitlab_iid ?? "—"
                   )}
                 </td>
-                <td className="max-w-md px-3 py-2 text-slate-900">
+                <td className={TITULO_CELL}>
                   <span className="line-clamp-2">{row.titulo ?? "—"}</span>
                   {row.sla_mais_90_dias ? (
                     <span className="ml-1 inline-flex rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-700">
@@ -83,10 +75,13 @@ export function IssuesTable({ rows }: Props) {
                     </span>
                   ) : null}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.modulo ?? "—"}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.tipo ?? "—"}</td>
+                <td className={COMPACT_CELL}>{row.modulo ?? "—"}</td>
+                <td className={COMPACT_CELL}>{row.tipo ?? "—"}</td>
                 <td className="whitespace-nowrap px-3 py-2">
-                  <EstadoBadge estado={row.estado} />
+                  <IssueEstadoBadge row={row} />
+                </td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <IssueStatusBadge row={row} />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.prioridade ?? "—"}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.equipe ?? "—"}</td>
