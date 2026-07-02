@@ -7,6 +7,8 @@ import {
   isExcludedEtapa,
   isWipEtapa,
   mapStatusToFlowEtapa,
+  orderCfdEtapasForDisplay,
+  orderCfdEtapasForStack,
   resolveEtapaOnDate,
 } from "@/lib/dashboard/flow-stages";
 
@@ -50,6 +52,12 @@ describe("WIP etapas", () => {
     expect(FLOW_CFD_ETAPAS.indexOf("A Fazer")).toBeLessThan(
       FLOW_CFD_ETAPAS.indexOf("Em Desenvolvimento"),
     );
+  });
+
+  it("ordena legenda/tooltip de cima para baixo", () => {
+    const subset = ["Backlog", "Concluído", "Em Teste"];
+    expect(orderCfdEtapasForStack(subset)).toEqual(["Backlog", "Em Teste", "Concluído"]);
+    expect(orderCfdEtapasForDisplay(subset)).toEqual(["Concluído", "Em Teste", "Backlog"]);
   });
 });
 

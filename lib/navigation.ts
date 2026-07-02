@@ -46,12 +46,6 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: faChartPie,
         description: "KPIs e visão consolidada",
       },
-      {
-        href: "/alertas",
-        label: "Alertas",
-        icon: faBell,
-        description: "Sem épico/parceria + idade",
-      },
     ],
   },
   {
@@ -77,24 +71,30 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: faMagnifyingGlass,
       },
       { href: "/qualidade", label: "Qualidade", icon: faAward },
+      {
+        href: "/alertas",
+        label: "Alertas",
+        icon: faBell,
+        description: "Sem épico/parceria + idade",
+      },
     ],
   },
   {
     title: "Operação",
     items: [
       { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: faRocket },
+      {
+        href: "/parcerias",
+        label: "Parcerias",
+        icon: faHandshake,
+        description: "Relatório mensal por parceiro",
+      },
       { href: "/equipes", label: "Equipes & Devs", shortLabel: "Equipes", icon: faUsers },
       {
         href: "/analistas",
         label: "Analistas",
         icon: faFileLines,
         description: "Relatório mensal de atividades",
-      },
-      {
-        href: "/parcerias",
-        label: "Parcerias",
-        icon: faHandshake,
-        description: "Relatório mensal por parceiro",
       },
     ],
   },
