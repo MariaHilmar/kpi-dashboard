@@ -14,7 +14,12 @@ type Props = {
   exportHref: string;
 };
 
-export function ParceriasToolbar({ parcerias, exportHref }: Props) {
+function formFieldValue(formData: FormData, name: string, fallback = ""): string {
+  const value = formData.get(name);
+  return typeof value === "string" ? value : fallback;
+}
+
+export function ParceriasToolbar({ parcerias, exportHref }: Readonly<Props>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -38,11 +43,11 @@ export function ParceriasToolbar({ parcerias, exportHref }: Props) {
   function applyFilters(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const nextParceiro = String(formData.get("parceiro") ?? TODOS);
-    const nextFechadoDe = String(formData.get("fechadoDe") ?? "");
-    const nextFechadoAte = String(formData.get("fechadoAte") ?? "");
-    const nextCriadoDe = String(formData.get("criadoDe") ?? "");
-    const nextCriadoAte = String(formData.get("criadoAte") ?? "");
+    const nextParceiro = formFieldValue(formData, "parceiro", TODOS);
+    const nextFechadoDe = formFieldValue(formData, "fechadoDe");
+    const nextFechadoAte = formFieldValue(formData, "fechadoAte");
+    const nextCriadoDe = formFieldValue(formData, "criadoDe");
+    const nextCriadoAte = formFieldValue(formData, "criadoAte");
 
     const params = new URLSearchParams(searchParams.toString());
     if (nextParceiro !== TODOS) params.set("parceiro", nextParceiro);

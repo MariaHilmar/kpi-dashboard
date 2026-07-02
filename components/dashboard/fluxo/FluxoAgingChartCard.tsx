@@ -32,13 +32,15 @@ export function FluxoAgingChartCard({
   subtitle,
   data,
   leadTimeReferencia,
-}: FluxoAgingChartCardProps) {
+}: Readonly<FluxoAgingChartCardProps>) {
+  const hasReferenceLine = leadTimeReferencia !== null;
+
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
         {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
-        {leadTimeReferencia != null ? (
+        {hasReferenceLine ? (
           <p className="mt-1 text-xs text-slate-500">
             Linha tracejada = mediana do lead time no período ({formatDecimal(leadTimeReferencia)} dias).
             Barras laranja ultrapassam essa referência.
@@ -74,7 +76,7 @@ export function FluxoAgingChartCard({
                   return `${issueKeyToIid(row.issueKey)} · ${row.etapa}`;
                 }}
               />
-              {leadTimeReferencia != null ? (
+              {hasReferenceLine ? (
                 <ReferenceLine
                   x={leadTimeReferencia}
                   stroke={COLOR_REFERENCIA}

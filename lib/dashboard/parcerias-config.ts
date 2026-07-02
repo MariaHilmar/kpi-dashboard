@@ -143,12 +143,17 @@ export function parceriasShowParceriaColumn(parceiro: string): boolean {
 export { parceriasDefaultOrder } from "@/lib/dashboard/parcerias-sort";
 
 function slugify(value: string): string {
-  return value
+  const normalized = value
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .replace(/[^a-z0-9]+/g, "-");
+
+  let start = 0;
+  let end = normalized.length;
+  while (start < end && normalized[start] === "-") start += 1;
+  while (end > start && normalized[end - 1] === "-") end -= 1;
+  return normalized.slice(start, end);
 }
 
 export function parceriasExportSlug(parceiro: string): string {

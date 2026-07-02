@@ -9,7 +9,7 @@ type Props = {
   rows: FlowWorkItemAgeRow[];
 };
 
-export function FluxoWorkItemAgeTabela({ rows }: Props) {
+export function FluxoWorkItemAgeTabela({ rows }: Readonly<Props>) {
   return (
     <TabelaCard<FlowWorkItemAgeRow>
       title="Top 10 — issues mais antigas em andamento"

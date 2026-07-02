@@ -5,27 +5,27 @@ type IssueKeyLinkProps = {
   className?: string;
 };
 
-export function IssueKeyLink({ issueKey, className = "" }: IssueKeyLinkProps) {
+export function IssueKeyLink({ issueKey, className = "" }: Readonly<IssueKeyLinkProps>) {
   const url = gitlabWorkItemUrlFromIssueKey(issueKey);
   const iid = issueKeyToIid(issueKey);
 
-  if (!url) {
+  if (url) {
     return (
-      <span className={`font-mono text-xs ${className}`} title={issueKey}>
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        title={issueKey}
+        className={`font-mono text-xs text-govbr-blue hover:underline ${className}`}
+      >
         {iid}
-      </span>
+      </a>
     );
   }
 
   return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noreferrer"
-      title={issueKey}
-      className={`font-mono text-xs text-govbr-blue hover:underline ${className}`}
-    >
+    <span className={`font-mono text-xs ${className}`} title={issueKey}>
       {iid}
-    </a>
+    </span>
   );
 }
