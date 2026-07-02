@@ -2,8 +2,7 @@ export function FluxoApproximationNotice() {
   return (
     <details className="rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-950">
       <summary className="cursor-pointer list-none font-semibold marker:content-none [&::-webkit-details-marker]:hidden">
-        <span aria-hidden="true">💡 </span>
-        Como ler este relatório
+        <span aria-hidden="true">💡</span> Como ler este relatório
         <span className="ml-2 text-xs font-normal text-sky-700">(clique para expandir)</span>
       </summary>
       <p className="mt-3 text-sm leading-relaxed text-sky-900">

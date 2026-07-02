@@ -24,7 +24,7 @@ export function FluxoStageDwellChartCard({
   data,
   meta,
   highlightEtapa,
-}: FluxoStageDwellChartCardProps) {
+}: Readonly<FluxoStageDwellChartCardProps>) {
   const longestLabel = data.reduce((max, item) => Math.max(max, item.label.length), 0);
   const yAxisWidth = Math.min(220, Math.max(120, longestLabel * 7));
   const chartHeight = Math.max(288, data.length * 36 + 56);

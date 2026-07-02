@@ -11,7 +11,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import {
   parseFlowGranularity,
   resolveFlowPageFilters,
-  type FlowReportFilters,
 } from "@/lib/dashboard/flow-report-params";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 

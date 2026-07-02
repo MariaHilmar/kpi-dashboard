@@ -14,7 +14,7 @@ type Props = {
   className?: string;
 };
 
-export function ParceriasSortableTh({ columnKey, label, className = "" }: Props) {
+export function ParceriasSortableTh({ columnKey, label, className = "" }: Readonly<Props>) {
   const searchParams = useSearchParams();
   const parceiro = searchParams.get("parceiro") ?? TODOS;
 

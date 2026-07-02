@@ -38,9 +38,9 @@ export function FluxoResumoExecutivo({
   wipTrend,
 }: Readonly<FluxoResumoExecutivoProps>) {
   const leadHint =
-    leadTimeMedio != null
-      ? `Média ${formatDecimal(leadTimeMedio)} dias · fechadas no período`
-      : "Issues fechadas no período";
+    leadTimeMedio === null
+      ? "Issues fechadas no período"
+      : `Média ${formatDecimal(leadTimeMedio)} dias · fechadas no período`;
 
   const gargaloValue = gargalo
     ? `${gargalo.etapa} · ${formatNumber(gargalo.quantidade_atual)} issues · média ${formatDecimal(gargalo.idade_media_dias ?? 0)} d`

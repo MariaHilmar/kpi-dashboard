@@ -120,8 +120,10 @@ function normalizeStatusKey(value: string): string {
 
 function hashLabel(value: string): number {
   let hash = 0;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 31 + value.charCodeAt(index)) >>> 0;
+  for (let index = 0; index < value.length; ) {
+    const codePoint = value.codePointAt(index) ?? 0;
+    hash = (hash * 31 + codePoint) >>> 0;
+    index += codePoint > 0xffff ? 2 : 1;
   }
   return hash;
 }
