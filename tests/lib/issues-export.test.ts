@@ -31,6 +31,7 @@ const SAMPLE_ROWS: IssueRow[] = [
     assignee: "Assignee A",
     criado_em: "2024-06-01T10:00:00Z",
     fechado_em: null,
+    entrega_prevista: null,
     lead_time_dias: null,
     idade_dias: 10,
     sla_mais_90_dias: false,
@@ -54,6 +55,7 @@ const SAMPLE_ROWS: IssueRow[] = [
     assignee: "Assignee B",
     criado_em: "2024-05-01T10:00:00Z",
     fechado_em: "2024-06-15T10:00:00Z",
+    entrega_prevista: "2024-06-20",
     lead_time_dias: 45,
     idade_dias: 0,
     sla_mais_90_dias: true,
@@ -79,6 +81,7 @@ describe("buildIssuesExportWorkbook", () => {
     const header = dados?.getRow(1).values as (string | undefined)[];
     expect(header).toContain("Parceria");
     expect(header).toContain("Fechado em");
+    expect(header).toContain("Estado");
     expect(header).toContain("Status");
     expect(header).toContain("Módulo");
 

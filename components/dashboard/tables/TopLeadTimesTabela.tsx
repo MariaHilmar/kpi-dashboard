@@ -1,5 +1,7 @@
 "use client";
 
+import { IssueEstadoBadge } from "@/components/issues/IssueEstadoBadge";
+import { IssueStatusBadge } from "@/components/issues/IssueStatusBadge";
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
 import { formatDate } from "@/lib/format";
 import type { TopLeadTime } from "@/types/database";
@@ -25,7 +27,16 @@ export function TopLeadTimesTabela({ rows }: Props) {
           ),
         },
         { key: "modulo", header: "Módulo" },
-        { key: "estado", header: "Estado" },
+        {
+          key: "estado",
+          header: "Estado",
+          render: (row) => <IssueEstadoBadge row={{ estado: row.estado }} />,
+        },
+        {
+          key: "status",
+          header: "Status",
+          render: (row) => <IssueStatusBadge row={{ status: row.status }} />,
+        },
         { key: "prioridade", header: "Prioridade" },
         { key: "equipe", header: "Equipe" },
         {

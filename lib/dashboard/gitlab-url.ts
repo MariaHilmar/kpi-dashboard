@@ -71,3 +71,24 @@ export function resolveGitlabWorkItemUrl(params: {
 
   return null;
 }
+
+/** Formato pipeline: `Contratos v2:2706` → URL GitLab work item. */
+export function gitlabWorkItemUrlFromIssueKey(issueKey: string | null | undefined): string | null {
+  const text = (issueKey ?? "").trim();
+  const separator = text.lastIndexOf(":");
+  if (separator <= 0) return null;
+
+  const repo = text.slice(0, separator).trim();
+  const iid = text.slice(separator + 1).trim();
+  if (!repo || !/^\d+$/.test(iid)) return null;
+
+  return gitlabWorkItemUrl(repo, iid);
+}
+
+/** Número da issue (IID) a partir de `Contratos v2:2706` → `2706`. */
+export function issueKeyToIid(issueKey: string | null | undefined): string {
+  const text = (issueKey ?? "").trim();
+  const separator = text.lastIndexOf(":");
+  if (separator <= 0) return text;
+  return text.slice(separator + 1).trim() || text;
+}

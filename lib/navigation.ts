@@ -7,6 +7,8 @@
 
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
+  faDiagramProject,
+  faHandshake,
   faAward,
   faBell,
   faChartLine,
@@ -62,6 +64,13 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: faChartLine,
       },
       {
+        href: "/fluxo",
+        label: "Fluxo Kanban",
+        shortLabel: "Fluxo",
+        icon: faDiagramProject,
+        description: "Métricas de fluxo Kanban",
+      },
+      {
         href: "/detalhamento",
         label: "Detalhamento",
         shortLabel: "Detalhe",
@@ -80,6 +89,12 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Analistas",
         icon: faFileLines,
         description: "Relatório mensal de atividades",
+      },
+      {
+        href: "/parcerias",
+        label: "Parcerias",
+        icon: faHandshake,
+        description: "Relatório mensal por parceiro",
       },
     ],
   },

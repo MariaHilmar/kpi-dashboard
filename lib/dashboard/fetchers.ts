@@ -431,17 +431,16 @@ async function fetchLastGitlabSyncFromRuns(): Promise<string | null> {
 }
 
 async function fetchLastGitlabSyncFromIssues(): Promise<string | null> {
-  const row = await selectOneLive("last-gitlab-synced-at", (client) =>
-    client
-      .from("issues")
-      .select("synced_at")
-      .order("synced_at", { ascending: false, nullsFirst: false })
-      .limit(1)
-      .maybeSingle(),
-  );
+  const client = createLiveSupabase();
+  if (!client) return null;
 
-  if (!row) return null;
-  return strOrNull(row.synced_at);
+  const { data, error } = await client.rpc("dashboard_last_issues_synced_at");
+  if (error) {
+    console.error("last-gitlab-synced-at", error.message);
+    return null;
+  }
+
+  return strOrNull(data);
 }
 
 /** Última carga GitLab → Supabase. Sem cache — o header deve refletir o banco ao vivo. */

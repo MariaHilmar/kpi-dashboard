@@ -119,8 +119,9 @@ async function renderSvgToPng(svg: string): Promise<Buffer> {
 export async function buildDistribuicaoPieChartPng(
   title: string,
   rows: AnalistaDistribuicaoRow[],
+  options?: { colorForLabel?: (label: string, index: number) => string },
 ): Promise<Buffer> {
-  const { svg } = buildDistribuicaoPieChartSvg(title, rows);
+  const { svg } = buildDistribuicaoPieChartSvg(title, rows, options);
   return renderSvgToPng(svg);
 }
 
@@ -132,6 +133,7 @@ export function getDistribuicaoPieChartHeight(rows: AnalistaDistribuicaoRow[]): 
 function buildDistribuicaoPieChartSvg(
   title: string,
   rows: AnalistaDistribuicaoRow[],
+  options?: { colorForLabel?: (label: string, index: number) => string },
 ): { svg: string; width: number; height: number } {
   const slices = rows.filter((row) => row.total > 0);
   const sum = slices.reduce((acc, row) => acc + row.total, 0);
@@ -151,7 +153,7 @@ function buildDistribuicaoPieChartSvg(
   slices.forEach((row, index) => {
     const pct = sum > 0 ? (row.total / sum) * 100 : 0;
     const sweep = sum > 0 ? (row.total / sum) * 360 : 0;
-    const color = PIE_COLORS[index % PIE_COLORS.length];
+    const color = options?.colorForLabel?.(row.label, index) ?? PIE_COLORS[index % PIE_COLORS.length];
     const startAngle = angle;
     const end = angle + sweep;
     paths.push(
@@ -205,8 +207,9 @@ function buildDistribuicaoPieChartSvg(
 export function buildDistribuicaoPieChartSvgForTest(
   title: string,
   rows: AnalistaDistribuicaoRow[],
+  options?: { colorForLabel?: (label: string, index: number) => string },
 ): string {
-  return buildDistribuicaoPieChartSvg(title, rows).svg;
+  return buildDistribuicaoPieChartSvg(title, rows, options).svg;
 }
 
 /** Fallback quando a RPC ainda não retorna por_tipo (pré-migration 013). */
