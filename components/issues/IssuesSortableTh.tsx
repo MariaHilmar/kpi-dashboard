@@ -1,65 +1,26 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
-
+import { SortableTh } from "@/components/ui/SortableTh";
 import {
-  getIssueColumnSortDirection,
-  toggleIssueColumnOrder,
-} from "@/lib/dashboard/issueOrders";
+  DEFAULT_ISSUE_LIST_ORDER,
+  ISSUE_LIST_SORT_COLUMNS,
+} from "@/lib/dashboard/issue-list-sort";
 
 type Props = {
   columnKey: string;
   label: string;
   align?: "left" | "right";
+  className?: string;
 };
 
-function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
-  if (direction === "asc") {
-    return <span aria-hidden="true" className="ml-1 text-govbr-blue">▲</span>;
-  }
-  if (direction === "desc") {
-    return <span aria-hidden="true" className="ml-1 text-govbr-blue">▼</span>;
-  }
-  return <span aria-hidden="true" className="ml-1 text-slate-300">↕</span>;
-}
-
-export function IssuesSortableTh({ columnKey, label, align = "left" }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
-
-  const currentOrder = searchParams.get("order") ?? "criado_em_desc";
-  const direction = getIssueColumnSortDirection(currentOrder, columnKey);
-
-  function handleSort() {
-    const nextOrder = toggleIssueColumnOrder(currentOrder, columnKey);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("order", nextOrder);
-    params.delete("page");
-    startTransition(() => {
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    });
-  }
-
+export function IssuesSortableTh(props: Props) {
   return (
-    <th
-      scope="col"
-      className={`px-3 py-2 font-medium ${align === "right" ? "text-right" : "text-left"}`}
-    >
-      <button
-        type="button"
-        onClick={handleSort}
-        className={`inline-flex items-center gap-0.5 hover:text-govbr-blue ${
-          align === "right" ? "ml-auto" : ""
-        } ${direction ? "text-govbr-blue" : ""}`}
-        aria-label={`Ordenar por ${label}${direction ? ` (${direction === "asc" ? "crescente" : "decrescente"})` : ""}`}
-      >
-        {label}
-        <SortIcon direction={direction} />
-      </button>
-    </th>
+    <SortableTh
+      {...props}
+      columns={ISSUE_LIST_SORT_COLUMNS}
+      defaultOrder={DEFAULT_ISSUE_LIST_ORDER}
+      clearParamsOnSort={["page"]}
+      className={`font-medium ${props.className ?? ""}`}
+    />
   );
 }

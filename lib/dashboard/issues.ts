@@ -22,6 +22,7 @@ export type IssueRow = {
   assignee: string | null;
   criado_em: string | null;
   fechado_em: string | null;
+  entrega_prevista: string | null;
   lead_time_dias: number | null;
   idade_dias: number | null;
   sla_mais_90_dias: boolean | null;
@@ -35,6 +36,9 @@ export type IssuesSearchParams = {
   autor: string;
   criadoDe: string | null;
   criadoAte: string | null;
+  fechadoDe?: string | null;
+  fechadoAte?: string | null;
+  exigeParceria?: boolean;
   order: string;
   page: number;
   pageSize: number;
@@ -98,6 +102,8 @@ export async function searchIssues(
     p_autor: params.autor,
     p_criado_de: params.criadoDe ?? filters.criadoDe,
     p_criado_ate: params.criadoAte ?? filters.criadoAte,
+    p_fechado_de: params.fechadoDe ?? filters.fechadoDe,
+    p_fechado_ate: params.fechadoAte ?? filters.fechadoAte,
     p_order: params.order,
     p_limit: params.pageSize,
     p_offset: offset,
@@ -105,6 +111,10 @@ export async function searchIssues(
 
   if (params.faixaIdade) {
     args.p_faixa_idade = params.faixaIdade;
+  }
+
+  if (params.exigeParceria) {
+    args.p_exige_parceria = true;
   }
 
   const { data, error } = await supabase.rpc("search_issues", args);

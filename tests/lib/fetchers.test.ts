@@ -355,6 +355,10 @@ describe("fetchers", () => {
   });
 
   it("fetchLastSync retorna finished_at da última sync GitLab", async () => {
+    rpcMock.mockResolvedValue({
+      data: "2024-05-01T08:00:00.000Z",
+      error: null,
+    });
     fromMock.mockImplementation((table: string) => {
       if (table === "sync_runs") {
         return queryChainWithMaybeSingle({
@@ -365,20 +369,19 @@ describe("fetchers", () => {
           error: null,
         });
       }
-      if (table === "issues") {
-        return queryChainWithMaybeSingle({
-          data: { synced_at: "2024-05-01T08:00:00.000Z" },
-          error: null,
-        });
-      }
       throw new Error(`tabela inesperada: ${table}`);
     });
 
     const { fetchLastSync } = await import("@/lib/dashboard/fetchers");
     expect(await fetchLastSync()).toBe("2024-06-01T10:00:00Z");
+    expect(rpcMock).toHaveBeenCalledWith("dashboard_last_issues_synced_at");
   });
 
   it("fetchLastSync usa started_at como fallback quando finished_at é nulo", async () => {
+    rpcMock.mockResolvedValue({
+      data: "2024-05-01T08:00:00.000Z",
+      error: null,
+    });
     fromMock.mockImplementation((table: string) => {
       if (table === "sync_runs") {
         return queryChainWithMaybeSingle({
@@ -386,12 +389,6 @@ describe("fetchers", () => {
             finished_at: null,
             started_at: "2024-06-01T09:00:00Z",
           },
-          error: null,
-        });
-      }
-      if (table === "issues") {
-        return queryChainWithMaybeSingle({
-          data: { synced_at: "2024-05-01T08:00:00.000Z" },
           error: null,
         });
       }
@@ -403,15 +400,13 @@ describe("fetchers", () => {
   });
 
   it("fetchLastSync usa max(synced_at) das issues quando não há sync_runs GitLab", async () => {
+    rpcMock.mockResolvedValue({
+      data: "2024-06-15T08:10:24.000Z",
+      error: null,
+    });
     fromMock.mockImplementation((table: string) => {
       if (table === "sync_runs") {
         return queryChainWithMaybeSingle({ data: null, error: null });
-      }
-      if (table === "issues") {
-        return queryChainWithMaybeSingle({
-          data: { synced_at: "2024-06-15T08:10:24.000Z" },
-          error: null,
-        });
       }
       throw new Error(`tabela inesperada: ${table}`);
     });
@@ -421,6 +416,10 @@ describe("fetchers", () => {
   });
 
   it("fetchLastSync retorna o timestamp mais recente entre sync_runs e issues", async () => {
+    rpcMock.mockResolvedValue({
+      data: "2024-06-15T08:10:24.000Z",
+      error: null,
+    });
     fromMock.mockImplementation((table: string) => {
       if (table === "sync_runs") {
         return queryChainWithMaybeSingle({
@@ -428,12 +427,6 @@ describe("fetchers", () => {
             finished_at: "2024-06-01T10:00:00Z",
             started_at: "2024-06-01T09:00:00Z",
           },
-          error: null,
-        });
-      }
-      if (table === "issues") {
-        return queryChainWithMaybeSingle({
-          data: { synced_at: "2024-06-15T08:10:24.000Z" },
           error: null,
         });
       }

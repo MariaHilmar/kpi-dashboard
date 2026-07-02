@@ -9,13 +9,18 @@ import {
   Tooltip,
 } from "recharts";
 
+import { getIssueStatusChartHex } from "@/lib/dashboard/issue-status";
 import type { ChartPoint } from "@/types/database";
+
+type DonutChartColorScheme = "default" | "issue-status";
 
 type DonutChartCardProps = {
   title: string;
   subtitle?: string;
   data: ChartPoint[];
   emptyMessage?: string;
+  /** Paleta padronizada do sistema; use `issue-status` no gráfico de status. */
+  colorScheme?: DonutChartColorScheme;
 };
 
 const PALETTE = [
@@ -37,13 +42,17 @@ export function DonutChartCard({
   subtitle,
   data,
   emptyMessage = "Sem dados para exibir.",
+  colorScheme = "default",
 }: DonutChartCardProps) {
   const chartData = data
     .filter((item) => item.quantidade > 0)
     .map((item, idx) => ({
       name: item.label,
       value: item.quantidade,
-      color: PALETTE[idx % PALETTE.length],
+      color:
+        colorScheme === "issue-status"
+          ? getIssueStatusChartHex(item.label)
+          : PALETTE[idx % PALETTE.length],
     }));
 
   return (

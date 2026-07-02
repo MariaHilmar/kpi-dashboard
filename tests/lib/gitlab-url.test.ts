@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   fixGitlabWorkItemUrl,
   gitlabWorkItemUrl,
+  gitlabWorkItemUrlFromIssueKey,
+  issueKeyToIid,
   normalizeGitlabRepoSlug,
   resolveGitlabWorkItemUrl,
 } from "@/lib/dashboard/gitlab-url";
@@ -21,6 +23,17 @@ describe("gitlab-url", () => {
     expect(gitlabWorkItemUrl("Contratos v1", 2715)).toBe(
       "https://gitlab.com/comprasnet/contratos/-/work_items/2715",
     );
+  });
+
+  it("monta URL a partir de issue_key pipeline", () => {
+    expect(gitlabWorkItemUrlFromIssueKey("Contratos v2:2706")).toBe(
+      "https://gitlab.com/comprasnet/contratos_v2/-/work_items/2706",
+    );
+  });
+
+  it("extrai IID numerico do issue_key", () => {
+    expect(issueKeyToIid("Contratos v1:175")).toBe("175");
+    expect(issueKeyToIid("Contratos v2:2706")).toBe("2706");
   });
 
   it("corrige URLs com %20 no path do repositório", () => {
