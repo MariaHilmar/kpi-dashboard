@@ -66,7 +66,12 @@ export default async function SprintPage({ searchParams }: DashboardPageProps) {
       <KpiGrid kpis={kpis} />
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <DonutChartCard title="Status" subtitle="Distribuição no recorte" data={status} />
+        <DonutChartCard
+          title="Status"
+          subtitle="Distribuição no recorte"
+          data={status}
+          colorScheme="issue-status"
+        />
         <DonutChartCard title="Tipo" subtitle="Distribuição no recorte" data={tipo} />
         <BarChartCard title="Equipes" subtitle="Volume por equipe" data={equipes} />
       </div>

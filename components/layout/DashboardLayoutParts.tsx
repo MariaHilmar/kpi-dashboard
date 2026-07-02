@@ -1,4 +1,4 @@
-import { GlobalFilters } from "@/components/layout/GlobalFilters";
+import { ConditionalGlobalFilters } from "@/components/layout/ConditionalGlobalFilters";
 import { GovBrHeader } from "@/components/layout/GovBrHeader";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -29,5 +29,5 @@ export async function MobileNavAsync() {
 
 export async function GlobalFiltersAsync() {
   const options = await fetchFilterOptions();
-  return <GlobalFilters options={options} />;
+  return <ConditionalGlobalFilters options={options} />;
 }

@@ -4,7 +4,7 @@ import {
   ISSUES_PAGE_SIZE,
   TODOS,
 } from "@/lib/dashboard/constants";
-import { DEFAULT_ISSUE_ORDER } from "@/lib/dashboard/issueOrders";
+import { resolveIssueListOrder } from "@/lib/dashboard/issue-list-sort";
 import type { IssuesSearchParams } from "@/lib/dashboard/issues";
 
 function str(value: string | null, fallback: string): string {
@@ -45,7 +45,7 @@ export function parseIssuesListParams(searchParams: URLSearchParams): {
       autor: str(searchParams.get("autor"), TODOS),
       criadoDe: dateOr(searchParams.get("criadoDe")),
       criadoAte: dateOr(searchParams.get("criadoAte")),
-      order: str(searchParams.get("order"), DEFAULT_ISSUE_ORDER),
+      order: resolveIssueListOrder(searchParams.get("order")),
       page,
       pageSize: ISSUES_PAGE_SIZE,
     },

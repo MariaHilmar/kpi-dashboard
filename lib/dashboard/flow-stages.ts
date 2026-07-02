@@ -17,6 +17,12 @@ export const FLOW_WIP_ETAPAS = [
   "Homologação",
 ] as const;
 
+/** Etapas incluídas no relatório de dwell time histórico. */
+export const FLOW_DWELL_ETAPAS = [
+  "Backlog",
+  ...FLOW_WIP_ETAPAS,
+] as const;
+
 export type FlowEtapa = (typeof FLOW_CFD_ETAPAS)[number];
 
 export function normalizeStatusKey(status: string | null | undefined): string {
@@ -110,6 +116,8 @@ export const FLOW_REPORT_APPROXIMATIONS = {
     "Idade = hoje − início do fluxo ativo (1ª entrada em A Fazer/Desenvolvimento). Issues sem eventos usam criado_em.",
   bottlenecks:
     "WIP atual + idade desde o início do fluxo ativo. Não inclui tempo histórico detalhado por etapa.",
+  stageDwell:
+    "Tempo por etapa reconstruído via issue_status_events (segmentos diários). Issues sem histórico no GitLab usam proxy: todo o lead time é atribuído à etapa final mapeada do status de fechamento.",
 } as const;
 
 /** Paleta gerencial alinhada ao fluxo GitLab / Gov.br. */
