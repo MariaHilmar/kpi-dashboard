@@ -1,7 +1,8 @@
 import { TODOS } from "@/lib/dashboard/constants";
 import { defaultFlowDateRange } from "@/lib/dashboard/flow-charts";
-import { parseFilters, type DashboardFilters } from "@/lib/dashboard/filters";
+import { parseFilters } from "@/lib/dashboard/filters";
 import type { DashboardSearchParams } from "@/lib/dashboard/page";
+import type { DashboardFilters } from "@/types/database";
 
 export type FlowReportFilters = DashboardFilters & {
   assignee: string;
