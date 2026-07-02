@@ -45,8 +45,10 @@ function issueIidCellValue(row: IssueRow): string | ExcelJS.CellHyperlinkValue {
     gitlabIid: row.gitlab_iid,
   });
 
-  if (!url || label === "—") return label;
-  return { text: label, hyperlink: url, tooltip: url };
+  if (url && label !== "—") {
+    return { text: label, hyperlink: url, tooltip: url };
+  }
+  return label;
 }
 
 function setIssueIidCell(cell: ExcelJS.Cell, row: IssueRow) {

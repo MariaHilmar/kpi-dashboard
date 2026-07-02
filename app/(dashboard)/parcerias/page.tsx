@@ -16,7 +16,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-export default async function ParceriasPage({ searchParams }: DashboardPageProps) {
+export default async function ParceriasPage({ searchParams }: Readonly<DashboardPageProps>) {
   if (!isSupabaseConfigured()) {
     return <SetupBanner />;
   }
