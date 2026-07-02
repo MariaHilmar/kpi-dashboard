@@ -10,7 +10,7 @@ import {
   YAxis,
   AreaChart,
 } from "recharts";
-import type { TooltipProps } from "recharts";
+import type { TooltipContentProps } from "recharts";
 
 import type { CfdChartPoint } from "@/lib/dashboard/flow-charts";
 import {
@@ -29,7 +29,7 @@ type CfdChartCardProps = {
   data: CfdChartPoint[];
 };
 
-type CfdTooltipProps = TooltipProps<number, string> & {
+type CfdTooltipProps = Pick<TooltipContentProps, "active" | "label" | "payload"> & {
   displayEtapas: FlowEtapa[];
 };
 
@@ -62,6 +62,26 @@ function CfdTooltipContent({ active, payload, label, displayEtapas }: CfdTooltip
         })}
       </ul>
     </div>
+  );
+}
+
+function CfdLegendContent({ displayEtapas }: { displayEtapas: FlowEtapa[] }) {
+  return (
+    <ul className="m-0 flex list-none flex-wrap justify-center gap-x-4 gap-y-1 p-0 pt-2">
+      {displayEtapas.map((etapa) => {
+        const color = getFlowEtapaChartColor(etapa);
+
+        return (
+          <li key={etapa} className="inline-flex items-center gap-1.5 text-sm">
+            <span
+              className="inline-block h-3.5 w-3.5 rounded-full"
+              style={{ backgroundColor: color }}
+            />
+            <span style={{ color }}>{etapa}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -102,14 +122,7 @@ export function CfdChartCard({ title, subtitle, data }: CfdChartCardProps) {
                   <CfdTooltipContent {...props} displayEtapas={displayEtapas} />
                 )}
               />
-              <Legend
-                payload={displayEtapas.map((etapa) => ({
-                  value: etapa,
-                  type: "circle",
-                  color: getFlowEtapaChartColor(etapa),
-                  id: etapa,
-                }))}
-              />
+              <Legend content={() => <CfdLegendContent displayEtapas={displayEtapas} />} />
               {stackEtapas.map((etapa) => (
                 <Area
                   key={etapa}
