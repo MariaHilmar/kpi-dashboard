@@ -20,7 +20,7 @@ type Props = {
   clearParamsOnSort?: string[];
 };
 
-function SortIcon({ direction }: { direction: "asc" | "desc" | null }) {
+function SortIcon({ direction }: Readonly<{ direction: "asc" | "desc" | null }>) {
   if (direction === "asc") {
     return (
       <span aria-hidden="true" className="ml-1 text-govbr-blue">
@@ -50,7 +50,7 @@ export function SortableTh({
   align = "left",
   className = "",
   clearParamsOnSort = [],
-}: Props) {
+}: Readonly<Props>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

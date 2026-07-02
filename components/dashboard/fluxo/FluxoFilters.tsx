@@ -17,7 +17,7 @@ export function FluxoFilters({
   endDate,
   assignee,
   granularity,
-}: FluxoFiltersProps) {
+}: Readonly<FluxoFiltersProps>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

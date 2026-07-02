@@ -8,7 +8,7 @@ type FluxoCfdSectionProps = {
   filters: FlowReportFilters;
 };
 
-export async function FluxoCfdSection({ filters }: FluxoCfdSectionProps) {
+export async function FluxoCfdSection({ filters }: Readonly<FluxoCfdSectionProps>) {
   const cfd = await fetchFlowCfd(filters);
   const cfdChart = pivotCfdRows(cfd);
 

@@ -6,7 +6,7 @@ type Props = {
   className?: string;
 };
 
-export function IssueEstadoBadge({ row, className = "" }: Props) {
+export function IssueEstadoBadge({ row, className = "" }: Readonly<Props>) {
   const label = resolveIssueEstadoLabel(row);
   const tone = getIssueEstadoTone(row);
 

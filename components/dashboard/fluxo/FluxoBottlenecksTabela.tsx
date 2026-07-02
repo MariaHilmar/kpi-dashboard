@@ -9,7 +9,7 @@ type Props = {
   highlightEtapa?: string | null;
 };
 
-export function FluxoBottlenecksTabela({ rows, highlightEtapa }: Props) {
+export function FluxoBottlenecksTabela({ rows, highlightEtapa }: Readonly<Props>) {
   return (
     <TabelaCard<FlowBottleneckRow>
       title="Gargalos por etapa"
@@ -54,7 +54,7 @@ export function FluxoBottlenecksTabela({ rows, highlightEtapa }: Props) {
           header: "Maior idade",
           align: "right",
           render: (row) =>
-            row.maior_idade_dias != null ? `${formatNumber(row.maior_idade_dias)} d` : "—",
+            row.maior_idade_dias === null ? "—" : `${formatNumber(row.maior_idade_dias)} d`,
         },
         {
           key: "observacao",

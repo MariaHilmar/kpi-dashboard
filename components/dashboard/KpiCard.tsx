@@ -25,7 +25,7 @@ function formatTrendPercent(percent: number): string {
   return `${formatDecimal(0, 0)}%`;
 }
 
-function KpiTrendLine({ trend }: { trend: KpiTrend }) {
+function KpiTrendLine({ trend }: Readonly<{ trend: KpiTrend }>) {
   if (trend.kind === "empty") {
     return <p className="mt-1 text-xs text-slate-400">{trend.label}</p>;
   }
@@ -60,7 +60,7 @@ export function KpiCard({
   accent = "default",
   href,
   externalHref,
-}: KpiCardProps) {
+}: Readonly<KpiCardProps>) {
   const baseClass = `rounded-xl border p-4 shadow-sm ${ACCENTS[accent]}`;
   const interactiveClass = `${baseClass} block transition hover:shadow-md hover:ring-2 hover:ring-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500`;
 
@@ -87,13 +87,13 @@ export function KpiCard({
     );
   }
 
-  if (!href) {
-    return <div className={baseClass}>{content}</div>;
+  if (href) {
+    return (
+      <Link href={href} aria-label={`Ver issues: ${label}`} className={interactiveClass}>
+        {content}
+      </Link>
+    );
   }
 
-  return (
-    <Link href={href} aria-label={`Ver issues: ${label}`} className={interactiveClass}>
-      {content}
-    </Link>
-  );
+  return <div className={baseClass}>{content}</div>;
 }
