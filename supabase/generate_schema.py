@@ -26,6 +26,9 @@ SUPABASE_DIR = Path(__file__).resolve().parent
 WORKSPACE_DIR = SUPABASE_DIR.parent
 MIGRATIONS_DIR = SUPABASE_DIR / "migrations"
 SCHEMA_FILE = SUPABASE_DIR / "schema.sql"
+SCHEMA_HEADER_TITLE = "-- schema.sql (gerado automaticamente)"
+SCHEMA_HEADER_RULE = "-- ============================================================================="
+MIGRATION_SEPARATOR = "-- -----------------------------------------------------------------------------"
 ENV_CANDIDATES = (
     WORKSPACE_DIR / ".env",
     WORKSPACE_DIR / "mgi-kpi-pipeline" / ".env",
@@ -82,15 +85,15 @@ def build_schema_from_migrations() -> str:
     files = migration_files()
     generated_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     parts = [
-        "-- =============================================================================",
-        "-- schema.sql (gerado automaticamente)",
+        SCHEMA_HEADER_RULE,
+        SCHEMA_HEADER_TITLE,
         f"-- Gerado em: {generated_at}",
         "-- Fonte: concatenacao ordenada de supabase/migrations/*.sql",
         "--",
         "-- IMPORTANTE: apos criar/editar uma migration, regenere com:",
         "--   python supabase/generate_schema.py",
         "-- Preferencialmente com DATABASE_URL no .env para dump fiel do banco.",
-        "-- =============================================================================",
+        SCHEMA_HEADER_RULE,
         "",
         "SET statement_timeout = 0;",
         "SET lock_timeout = 0;",
@@ -103,9 +106,9 @@ def build_schema_from_migrations() -> str:
         parts.extend(
             [
                 "",
-                "-- -----------------------------------------------------------------------------",
+                MIGRATION_SEPARATOR,
                 f"-- migration: {migration.name}",
-                "-- -----------------------------------------------------------------------------",
+                MIGRATION_SEPARATOR,
                 "",
                 body,
                 "",
@@ -139,16 +142,16 @@ def prepend_generation_header(from_source: str) -> None:
         return
     generated_at = datetime.now(UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
     original = SCHEMA_FILE.read_text(encoding="utf-8")
-    if original.startswith("-- schema.sql (gerado automaticamente)"):
+    if original.startswith(SCHEMA_HEADER_TITLE):
         return
     header = "\n".join(
         [
-            "-- =============================================================================",
-            "-- schema.sql (gerado automaticamente)",
+            SCHEMA_HEADER_RULE,
+            SCHEMA_HEADER_TITLE,
             f"-- Gerado em: {generated_at}",
             f"-- Fonte: {from_source}",
             "-- Regenerar: python supabase/generate_schema.py",
-            "-- =============================================================================",
+            SCHEMA_HEADER_RULE,
             "",
         ]
     )

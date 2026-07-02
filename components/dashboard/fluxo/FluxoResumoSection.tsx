@@ -45,7 +45,7 @@ type FluxoResumoSectionProps = {
   granularity: FlowGranularity;
 };
 
-export async function FluxoResumoSection({ filters, granularity }: FluxoResumoSectionProps) {
+export async function FluxoResumoSection({ filters, granularity }: Readonly<FluxoResumoSectionProps>) {
   const showComparisons = filters.assignee === TODOS;
   const previousFilters = showComparisons ? shiftFlowPeriod(filters) : null;
 

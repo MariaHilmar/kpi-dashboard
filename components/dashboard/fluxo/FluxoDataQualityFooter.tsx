@@ -5,8 +5,8 @@ type FluxoDataQualityFooterProps = {
   summary: FlowDataQualitySummary | null;
 };
 
-export function FluxoDataQualityFooter({ summary }: FluxoDataQualityFooterProps) {
-  if (!summary) return null;
+export function FluxoDataQualityFooter({ summary }: Readonly<FluxoDataQualityFooterProps>) {
+  if (summary === null) return null;
 
   return (
     <footer

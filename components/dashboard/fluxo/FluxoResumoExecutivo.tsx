@@ -18,6 +18,12 @@ type FluxoResumoExecutivoProps = {
   wipTrend?: KpiTrend;
 };
 
+function formatCriticalHint(titulo: string | null | undefined): string {
+  if (!titulo) return "Nenhuma issue aberta no recorte";
+  if (titulo.length > 60) return `${titulo.slice(0, 57)}…`;
+  return titulo;
+}
+
 export function FluxoResumoExecutivo({
   concluidas,
   leadTimeMedio,
@@ -30,7 +36,7 @@ export function FluxoResumoExecutivo({
   concluidasTrend,
   leadTimeMedianaTrend,
   wipTrend,
-}: FluxoResumoExecutivoProps) {
+}: Readonly<FluxoResumoExecutivoProps>) {
   const leadHint =
     leadTimeMedio != null
       ? `Média ${formatDecimal(leadTimeMedio)} dias · fechadas no período`
@@ -45,11 +51,7 @@ export function FluxoResumoExecutivo({
   const criticalValue = issueCritica
     ? `${issueKeyToIid(issueCritica.issue_key)} · ${issueCritica.etapa_atual} · ${formatNumber(issueCritica.dias_em_andamento)} d`
     : "—";
-  const criticalHint = issueCritica?.titulo
-    ? issueCritica.titulo.length > 60
-      ? `${issueCritica.titulo.slice(0, 57)}…`
-      : issueCritica.titulo
-    : "Nenhuma issue aberta no recorte";
+  const criticalHint = formatCriticalHint(issueCritica?.titulo);
 
   return (
     <section aria-label="Resumo executivo do fluxo">

@@ -105,18 +105,22 @@ export function flowRpcArgs(filters: FlowReportFilters) {
   };
 }
 
+function filterMetaValue(value: string): string | null {
+  return value === TODOS ? null : value;
+}
+
 export function buildFlowReportFiltersMeta(filters: FlowReportFilters) {
   return {
     project_id: filters.projectId ?? filters.repositorio,
-    module: filters.module ?? (filters.modulo !== TODOS ? filters.modulo : null),
-    milestone: filters.milestone ?? (filters.sprint !== TODOS ? filters.sprint : null),
-    assignee: filters.assignee !== TODOS ? filters.assignee : null,
+    module: filters.module ?? filterMetaValue(filters.modulo),
+    milestone: filters.milestone ?? filterMetaValue(filters.sprint),
+    assignee: filterMetaValue(filters.assignee),
     start_date: filters.startDate,
     end_date: filters.endDate,
-    modulo: filters.modulo !== TODOS ? filters.modulo : null,
-    area: filters.area !== TODOS ? filters.area : null,
-    tipo: filters.tipo !== TODOS ? filters.tipo : null,
-    repositorio: filters.repositorio !== TODOS ? filters.repositorio : null,
+    modulo: filterMetaValue(filters.modulo),
+    area: filterMetaValue(filters.area),
+    tipo: filterMetaValue(filters.tipo),
+    repositorio: filterMetaValue(filters.repositorio),
   };
 }
 

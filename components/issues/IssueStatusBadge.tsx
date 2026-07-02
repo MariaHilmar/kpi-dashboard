@@ -6,7 +6,7 @@ type Props = {
   className?: string;
 };
 
-export function IssueStatusBadge({ row, className = "" }: Props) {
+export function IssueStatusBadge({ row, className = "" }: Readonly<Props>) {
   const label = resolveIssueWorkflowStatusLabel(row);
   if (label === "—") {
     return <span className={`text-slate-500 ${className}`}>—</span>;

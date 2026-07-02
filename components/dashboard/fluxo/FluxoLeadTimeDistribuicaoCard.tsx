@@ -26,7 +26,9 @@ function Metric({
   );
 }
 
-export function FluxoLeadTimeDistribuicaoCard({ summary }: FluxoLeadTimeDistribuicaoCardProps) {
+export function FluxoLeadTimeDistribuicaoCard({
+  summary,
+}: Readonly<FluxoLeadTimeDistribuicaoCardProps>) {
   return (
     <section
       aria-label="Distribuição do lead time"
@@ -41,7 +43,7 @@ export function FluxoLeadTimeDistribuicaoCard({ summary }: FluxoLeadTimeDistribu
         </p>
       </div>
 
-      {!summary ? (
+      {summary === null ? (
         <div className="flex min-h-24 items-center justify-center rounded-lg bg-slate-50 text-sm text-slate-500">
           Sem conclusões no período.
         </div>
@@ -50,17 +52,17 @@ export function FluxoLeadTimeDistribuicaoCard({ summary }: FluxoLeadTimeDistribu
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <Metric
               label="Mediana"
-              value={summary.mediana != null ? `${formatDecimal(summary.mediana)} dias` : "—"}
+              value={summary.mediana === null ? "—" : `${formatDecimal(summary.mediana)} dias`}
               hint="Mesma base do KPI executivo"
             />
             <Metric
               label="P85"
-              value={summary.p85 != null ? `${formatDecimal(summary.p85)} dias` : "—"}
+              value={summary.p85 === null ? "—" : `${formatDecimal(summary.p85)} dias`}
               hint="85% concluídas até este prazo"
             />
             <Metric
               label="P95"
-              value={summary.p95 != null ? `${formatDecimal(summary.p95)} dias` : "—"}
+              value={summary.p95 === null ? "—" : `${formatDecimal(summary.p95)} dias`}
               hint="Cauda longa do período"
             />
             <Metric
@@ -70,12 +72,12 @@ export function FluxoLeadTimeDistribuicaoCard({ summary }: FluxoLeadTimeDistribu
             />
           </dl>
 
-          {summary.desvioPadrao != null ? (
+          {summary.desvioPadrao === null ? null : (
             <p className="mt-3 text-xs text-slate-500">
               Desvio padrão: {formatDecimal(summary.desvioPadrao)} dias · Percentis calculados em TS
               (método contínuo, alinhado ao SQL)
             </p>
-          ) : null}
+          )}
         </>
       )}
     </section>
