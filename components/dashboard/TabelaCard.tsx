@@ -16,6 +16,7 @@ type TabelaCardProps<T> = {
   columns: Column<T>[];
   rows: T[];
   emptyMessage?: string;
+  rowClassName?: (row: T) => string | undefined;
 };
 
 export function TabelaCard<T>({
@@ -24,6 +25,7 @@ export function TabelaCard<T>({
   columns,
   rows,
   emptyMessage = "Sem registros.",
+  rowClassName,
 }: TabelaCardProps<T>) {
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -53,7 +55,7 @@ export function TabelaCard<T>({
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {rows.map((row, idx) => (
-                <tr key={idx} className="hover:bg-slate-50">
+                <tr key={idx} className={rowClassName?.(row) ?? "hover:bg-slate-50"}>
                   {columns.map((col) => {
                     const align = col.align ?? "left";
                     const value = col.render
