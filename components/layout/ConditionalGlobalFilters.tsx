@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { GlobalFilters } from "@/components/layout/GlobalFilters";
 import type { FilterOptions } from "@/types/database";
 
-const ROUTES_WITHOUT_GLOBAL_FILTERS = ["/parcerias"];
+const ROUTES_WITHOUT_GLOBAL_FILTERS = ["/parcerias", "/importar-dados", "/milestone"];
 
 type Props = {
   options: FilterOptions;
