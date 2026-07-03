@@ -14,8 +14,10 @@ import {
   faChartLine,
   faChartPie,
   faClipboardList,
+  faFileArrowUp,
   faFileLines,
   faMagnifyingGlass,
+  faFlagCheckered,
   faRocket,
   faUser,
   faUsers,
@@ -84,6 +86,13 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: faRocket },
       {
+        href: "/milestone",
+        label: "Relatório Milestone",
+        shortLabel: "Milestone",
+        icon: faFlagCheckered,
+        description: "Throughput intra-sprint por IID GitLab",
+      },
+      {
         href: "/parcerias",
         label: "Parcerias",
         icon: faHandshake,
@@ -106,6 +115,13 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Issues",
         icon: faClipboardList,
         description: "Busca livre + tabela",
+      },
+      {
+        href: "/importar-dados",
+        label: "Importar Dados",
+        shortLabel: "Importar",
+        icon: faFileArrowUp,
+        description: "Planning Poker — Excel/CSV",
       },
     ],
   },
