@@ -31,6 +31,10 @@ export type NavItem = {
   shortLabel?: string;
   icon: IconDefinition;
   description?: string;
+  /** Exibe o sufixo "(BETA)" em vermelho após o rótulo. */
+  beta?: boolean;
+  /** Visível apenas quando a app roda em http://localhost/ */
+  localhostOnly?: boolean;
 };
 
 export type NavGroup = {
@@ -91,6 +95,15 @@ export const NAV_GROUPS: NavGroup[] = [
         shortLabel: "Milestone",
         icon: faFlagCheckered,
         description: "Throughput intra-sprint por IID GitLab",
+        beta: true,
+      },
+      {
+        href: "/milestone/roadmap",
+        label: "Roadmap PMO",
+        shortLabel: "Roadmap",
+        icon: faChartPie,
+        description: "Entregas por módulo/épico sprint a sprint",
+        localhostOnly: true,
       },
       {
         href: "/parcerias",
@@ -149,23 +162,45 @@ export const ADMIN_NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export function getNavGroups(isAdmin: boolean): NavGroup[] {
+/** Indica se a app está sendo executada em http://localhost/ (qualquer porta). */
+export function isLocalhostOrigin(hostname: string): boolean {
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+export function shouldShowNavItem(item: NavItem, isLocalhost: boolean): boolean {
+  if (item.localhostOnly && !isLocalhost) return false;
+  return true;
+}
+
+export function filterNavGroups(groups: NavGroup[], isLocalhost: boolean): NavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => shouldShowNavItem(item, isLocalhost)),
+    }))
+    .filter((group) => group.items.length > 0);
+}
+
+export function getNavGroups(isAdmin: boolean, isLocalhost = false): NavGroup[] {
   const administrationItems = isAdmin
     ? [...ADMINISTRATION_NAV_GROUP.items, ...ADMIN_NAV_ITEMS]
     : ADMINISTRATION_NAV_GROUP.items;
 
-  return [
-    ...NAV_GROUPS,
-    {
-      ...ADMINISTRATION_NAV_GROUP,
-      items: administrationItems,
-    },
-  ];
+  return filterNavGroups(
+    [
+      ...NAV_GROUPS,
+      {
+        ...ADMINISTRATION_NAV_GROUP,
+        items: administrationItems,
+      },
+    ],
+    isLocalhost,
+  );
 }
 
 /** Lista achatada de itens, na ordem dos grupos (usada no mobile). */
-export function getNavItems(isAdmin: boolean): NavItem[] {
-  return getNavGroups(isAdmin).flatMap((group) => group.items);
+export function getNavItems(isAdmin: boolean, isLocalhost = false): NavItem[] {
+  return getNavGroups(isAdmin, isLocalhost).flatMap((group) => group.items);
 }
 
 /** Indica se uma rota está ativa para um dado pathname. */

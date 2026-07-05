@@ -16,6 +16,8 @@ Documentação do sistema **mgi-kpi-dashboard**: dashboard web de KPIs, alertas 
 | [08-autenticacao.md](./08-autenticacao.md) | Login, cadastro, Minha conta e sessão (Supabase Auth) |
 | [09-admin-usuarios.md](./09-admin-usuarios.md) | CRUD de usuários (somente admin) |
 | [10-identidades-gitlab.md](./10-identidades-gitlab.md) | Vínculo issue ↔ usuário por ID GitLab, sync e backfill |
+| [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) | Relatório Kanban: CFD, throughput, lead time, WIP, APIs `/api/reports/flow/*` |
+| [12-importar-dados.md](./12-importar-dados.md) | Importação Planning Poker (Excel/CSV) — story points e campos de sprint |
 
 ## Documentação relacionada no workspace
 
@@ -42,4 +44,4 @@ Material de contexto em `D:\mgi-workspace\docs`:
 
 ---
 
-**Última atualização:** 2026-06-30
+**Última atualização:** 2026-07-03

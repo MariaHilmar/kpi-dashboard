@@ -113,13 +113,13 @@ export default async function AnalistasPage({ searchParams }: DashboardPageProps
           <div className="flex shrink-0 flex-wrap gap-2">
             <a
               href={exportWordHref}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-button border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
             >
               Exportar Word
             </a>
             <a
               href={exportHref}
-              className="inline-flex items-center gap-2 rounded-lg bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+              className="inline-flex items-center gap-2 rounded-button bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
             >
               Exportar Excel
             </a>

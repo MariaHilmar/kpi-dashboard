@@ -34,6 +34,31 @@ export async function isCurrentUserAdmin(): Promise<boolean> {
   return Boolean(profile?.active && profile.role === "admin");
 }
 
+export type ActiveSessionContext = {
+  userId: string;
+  email: string;
+  profile: UserProfile;
+};
+
+export async function requireActiveSession(): Promise<
+  { ok: true; context: ActiveSessionContext } | { ok: false; status: number; message: string }
+> {
+  const user = await getSessionUser();
+  if (!user?.email) {
+    return { ok: false, status: 401, message: "Não autenticado." };
+  }
+
+  const profile = await getProfile(user.id);
+  if (!profile?.active) {
+    return { ok: false, status: 403, message: "Conta inativa." };
+  }
+
+  return {
+    ok: true,
+    context: { userId: user.id, email: user.email, profile },
+  };
+}
+
 export async function requireAdmin(): Promise<
   { ok: true; context: AdminContext } | { ok: false; status: number; message: string }
 > {

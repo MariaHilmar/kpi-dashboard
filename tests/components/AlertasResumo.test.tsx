@@ -20,9 +20,9 @@ describe("AlertasResumo", () => {
 
     expect(screen.getByText("Issues Abertas")).toBeInTheDocument();
     expect(screen.getByText("1.500")).toBeInTheDocument();
-    expect(screen.getByText("Sem Épico")).toBeInTheDocument();
+    expect(screen.getByText("Issues sem épicos definidos")).toBeInTheDocument();
     expect(screen.getByText("42")).toBeInTheDocument();
-    expect(screen.getByText("Sem Parceria")).toBeInTheDocument();
+    expect(screen.getByText("Issues sem parcerias definidas")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
   });
 });

@@ -85,7 +85,7 @@ export function ParceriasToolbar({ parcerias, exportHref }: Readonly<Props>) {
         <h3 className="text-sm font-semibold text-slate-700">Recorte do relatório</h3>
         <a
           href={exportHref}
-          className="inline-flex items-center gap-2 rounded-lg bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+          className="inline-flex items-center gap-2 rounded-button bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
         >
           Exportar Excel
         </a>
@@ -159,7 +159,7 @@ export function ParceriasToolbar({ parcerias, exportHref }: Readonly<Props>) {
 
         <button
           type="submit"
-          className="rounded-lg bg-govbr-blue px-4 py-1.5 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+          className="rounded-button bg-govbr-blue px-4 py-1.5 text-sm font-medium text-white hover:bg-govbr-blue-dark"
         >
           Aplicar
         </button>
@@ -167,7 +167,7 @@ export function ParceriasToolbar({ parcerias, exportHref }: Readonly<Props>) {
         <button
           type="button"
           onClick={applyPreviousMonth}
-          className="rounded-lg border border-govbr-blue px-3 py-1.5 text-sm font-medium text-govbr-blue hover:bg-blue-50"
+          className="rounded-button border border-govbr-blue px-3 py-1.5 text-sm font-medium text-govbr-blue hover:bg-blue-50"
         >
           Mês Anterior
         </button>
@@ -176,7 +176,7 @@ export function ParceriasToolbar({ parcerias, exportHref }: Readonly<Props>) {
           <button
             type="button"
             onClick={clearCreationDates}
-            className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+            className="rounded-button px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
           >
             Limpar datas de criação
           </button>

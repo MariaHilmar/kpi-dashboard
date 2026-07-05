@@ -40,7 +40,7 @@ export function IssuesPagination({ page, pageSize, total }: Props) {
           type="button"
           disabled={page <= 1 || isPending}
           onClick={() => goTo(page - 1)}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-50"
+          className="rounded-button border border-slate-300 px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-50"
         >
           Anterior
         </button>
@@ -51,7 +51,7 @@ export function IssuesPagination({ page, pageSize, total }: Props) {
           type="button"
           disabled={page >= totalPages || isPending}
           onClick={() => goTo(page + 1)}
-          className="rounded-lg border border-slate-300 px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-50"
+          className="rounded-button border border-slate-300 px-3 py-1.5 font-medium disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-50"
         >
           Próxima
         </button>

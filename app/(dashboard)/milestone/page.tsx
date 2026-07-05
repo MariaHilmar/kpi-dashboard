@@ -1,12 +1,21 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 
+import { MilestoneBurndownSection } from "@/components/dashboard/milestone/MilestoneBurndownSection";
+import { MilestoneCommitmentSection } from "@/components/dashboard/milestone/MilestoneCommitmentSection";
+import { MilestoneDeliveryByDimensionSection } from "@/components/dashboard/milestone/MilestoneDeliveryByDimensionSection";
+import { MilestoneFlowMetricsSection } from "@/components/dashboard/milestone/MilestoneFlowMetricsSection";
+import { MilestoneIssuesSection } from "@/components/dashboard/milestone/MilestoneIssuesSection";
 import { MilestoneSelector } from "@/components/dashboard/milestone/MilestoneSelector";
 import { MilestoneThroughputSection } from "@/components/dashboard/milestone/MilestoneThroughputSection";
+import { MilestoneTendenciasSection } from "@/components/dashboard/milestone/MilestoneTendenciasSection";
+import { MilestoneWipMixSection } from "@/components/dashboard/milestone/MilestoneWipMixSection";
 import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { parseFlowGranularity } from "@/lib/dashboard/flow-report-params";
+import { parseMilestoneIssuesListParams, recordFromSearchParams } from "@/lib/dashboard/milestone-issues-params";
 import { fetchMilestoneDetail } from "@/lib/dashboard/milestone-report";
+import { milestoneIidsDesc, resolveLatestMilestoneIid } from "@/lib/dashboard/milestone-options";
 import { listMilestoneOptions } from "@/lib/dashboard/milestones";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
@@ -18,7 +27,20 @@ function parseMilestoneIid(raw: string | string[] | undefined): number | null {
   return Number.isInteger(iid) && iid > 0 ? iid : null;
 }
 
-function MilestoneThroughputSkeleton() {
+function buildMilestoneSearchParams(
+  searchParams: Record<string, string | string[] | undefined>,
+  milestoneIid: number,
+): string {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (key === "iid" || typeof value !== "string" || value === "") continue;
+    params.set(key, value);
+  }
+  params.set("iid", String(milestoneIid));
+  return params.toString();
+}
+
+function MilestoneSectionSkeleton() {
   return (
     <div className="animate-pulse rounded-xl border border-slate-200 bg-white p-5">
       <div className="mb-4 h-6 w-48 rounded bg-slate-200" />
@@ -39,18 +61,22 @@ export default async function MilestonePage({ searchParams }: DashboardPageProps
 
   const rawParams = await searchParams;
   const milestones = await listMilestoneOptions();
-  let milestoneIid = parseMilestoneIid(rawParams.iid);
+  const availableIids = milestoneIidsDesc(milestones);
 
-  if (milestoneIid == null && milestones.length > 0) {
-    const latest = milestones[0]?.gitlab_milestone_iid;
-    if (latest != null) {
-      redirect(`/milestone?iid=${latest}`);
+  if (!("iid" in rawParams)) {
+    const latestIid = resolveLatestMilestoneIid(milestones);
+    if (latestIid != null) {
+      redirect(`/milestone?${buildMilestoneSearchParams(rawParams, latestIid)}`);
     }
   }
+
+  const milestoneIid = parseMilestoneIid(rawParams.iid);
 
   const granularity = parseFlowGranularity(
     typeof rawParams.granularity === "string" ? rawParams.granularity : null,
   );
+
+  const issuesListParams = parseMilestoneIssuesListParams(recordFromSearchParams(rawParams));
 
   const milestone = milestoneIid != null ? await fetchMilestoneDetail(milestoneIid) : null;
 
@@ -63,7 +89,7 @@ export default async function MilestonePage({ searchParams }: DashboardPageProps
     <div className="flex flex-col gap-6">
       <PageHeader
         title={pageTitle}
-        subtitle="Throughput intra-sprint reutilizando o motor de /fluxo, recortado pela janela da milestone."
+        subtitle="Ao entrar, a sprint mais recente é selecionada. Você pode trocar a milestone no seletor abaixo — WIP, mix, throughput, lead time e dwell no recorte da sprint."
       />
 
       <MilestoneSelector milestones={milestones} selectedIid={milestoneIid} />
@@ -76,15 +102,66 @@ export default async function MilestonePage({ searchParams }: DashboardPageProps
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
           Milestone {milestoneIid} não encontrada. Sincronize ou importe os dados da sprint.
         </div>
-      ) : !milestone.start_date || !milestone.due_date ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          A milestone não possui start_date e due_date definidos. Throughput intra-sprint requer
-          ambas as datas.
-        </div>
       ) : (
-        <Suspense fallback={<MilestoneThroughputSkeleton />}>
-          <MilestoneThroughputSection milestone={milestone} granularity={granularity} />
-        </Suspense>
+        <>
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneCommitmentSection milestone={milestone} />
+          </Suspense>
+
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneWipMixSection milestone={milestone} />
+          </Suspense>
+
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneBurndownSection
+              milestone={milestone}
+              availableIids={availableIids}
+              burndownMetric={rawParams.burndownMetric}
+              burndownGranularity={rawParams.burndownGranularity}
+            />
+          </Suspense>
+
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneIssuesSection milestone={milestone} listParams={issuesListParams} />
+          </Suspense>
+
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneDeliveryByDimensionSection
+              milestone={milestone}
+              deliveryDim={rawParams.deliveryDim}
+              deliveryLimit={rawParams.deliveryLimit}
+              deliveryOrder={rawParams.deliveryOrder}
+            />
+          </Suspense>
+
+          {!milestone.start_date || !milestone.due_date ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              A milestone não possui start_date e due_date definidos. Throughput intra-sprint, lead
+              time e dwell requerem ambas as datas.
+            </div>
+          ) : (
+            <>
+              <Suspense fallback={<MilestoneSectionSkeleton />}>
+                <MilestoneThroughputSection milestone={milestone} granularity={granularity} />
+              </Suspense>
+
+              <Suspense fallback={<MilestoneSectionSkeleton />}>
+                <MilestoneFlowMetricsSection milestone={milestone} granularity={granularity} />
+              </Suspense>
+            </>
+          )}
+
+          <Suspense fallback={<MilestoneSectionSkeleton />}>
+            <MilestoneTendenciasSection
+              milestones={milestones}
+              anchorIid={milestone.gitlab_milestone_iid}
+              fromRaw={rawParams.from}
+              toRaw={rawParams.to}
+              metricRaw={rawParams.capacityMetric}
+              teamRaw={rawParams.capacityTeam}
+            />
+          </Suspense>
+        </>
       )}
     </div>
   );

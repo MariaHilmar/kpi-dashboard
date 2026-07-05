@@ -26,6 +26,14 @@ export type IssueRow = {
   lead_time_dias: number | null;
   idade_dias: number | null;
   sla_mais_90_dias: boolean | null;
+  story_points: number | null;
+  aceita: string | null;
+  justificada: string | null;
+  historico: string | null;
+  recorrente: string | null;
+  horas_estimada: number | null;
+  horas_prevista: number | null;
+  homologado: string | null;
 };
 
 export type IssuesSearchParams = {
