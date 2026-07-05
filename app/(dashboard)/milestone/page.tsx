@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { MilestoneBurndownSection } from "@/components/dashboard/milestone/MilestoneBurndownSection";
 import { MilestoneCommitmentSection } from "@/components/dashboard/milestone/MilestoneCommitmentSection";
 import { MilestoneDeliveryByDimensionSection } from "@/components/dashboard/milestone/MilestoneDeliveryByDimensionSection";
+import { MilestoneEmptyState } from "@/components/dashboard/milestone/MilestoneEmptyState";
 import { MilestoneFlowMetricsSection } from "@/components/dashboard/milestone/MilestoneFlowMetricsSection";
 import { MilestoneIssuesSection } from "@/components/dashboard/milestone/MilestoneIssuesSection";
 import { MilestoneSelector } from "@/components/dashboard/milestone/MilestoneSelector";
@@ -95,13 +96,9 @@ export default async function MilestonePage({ searchParams }: DashboardPageProps
       <MilestoneSelector milestones={milestones} selectedIid={milestoneIid} />
 
       {milestoneIid == null ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Selecione uma sprint ou importe milestones do GitLab em Importar Dados.
-        </div>
+        <MilestoneEmptyState type="no-milestone" />
       ) : milestone == null ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          Milestone {milestoneIid} não encontrada. Sincronize ou importe os dados da sprint.
-        </div>
+        <MilestoneEmptyState type="not-found" milestoneIid={milestoneIid} />
       ) : (
         <>
           <Suspense fallback={<MilestoneSectionSkeleton />}>
@@ -135,10 +132,7 @@ export default async function MilestonePage({ searchParams }: DashboardPageProps
           </Suspense>
 
           {!milestone.start_date || !milestone.due_date ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-              A milestone não possui start_date e due_date definidos. Throughput intra-sprint, lead
-              time e dwell requerem ambas as datas.
-            </div>
+            <MilestoneEmptyState type="missing-dates" />
           ) : (
             <>
               <Suspense fallback={<MilestoneSectionSkeleton />}>
