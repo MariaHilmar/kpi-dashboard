@@ -1,5 +1,3 @@
-import { BarChartCard } from "@/components/dashboard/BarChartCard";
-
 import { DonutChartCard } from "@/components/dashboard/DonutChartCard";
 
 import { fetchAggregate } from "@/lib/dashboard/fetchers";
@@ -66,7 +64,7 @@ export async function DistribuicaoSection({ filters }: DistribuicaoSectionProps)
 
       />
 
-      <BarChartCard
+      <DonutChartCard
 
         title="Prioridade"
 

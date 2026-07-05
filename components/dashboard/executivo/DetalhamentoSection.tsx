@@ -1,41 +1,32 @@
 import { BarChartCard } from "@/components/dashboard/BarChartCard";
-import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { KpisPorTipoTabela } from "@/components/dashboard/tables/KpisPorTipoTabela";
-import { PageHeader } from "@/components/layout/PageHeader";
 import { TOP_LIMIT } from "@/lib/dashboard/constants";
 import { DETALHAMENTO_SECTION_TOOLTIPS } from "@/lib/dashboard/detalhamento-section-tooltips";
-import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
 import {
   fetchAggregate,
   fetchKpisPorTipo,
   fetchLeadTimePorModulo,
 } from "@/lib/dashboard/fetchers";
-import type { ChartPoint } from "@/types/database";
+import type { ChartPoint, DashboardFilters } from "@/types/database";
 
-export default async function DetalhamentoPage({ searchParams }: DashboardPageProps) {
-  const { configured, filters } = await getDashboardContext(searchParams);
-  if (!configured) {
-    return <SetupBanner />;
-  }
+type DetalhamentoSectionProps = {
+  filters: DashboardFilters;
+};
 
-  const [parceria, modulos, areaFuncional, categoria, leadTimePorModulo, kpisPorTipo] =
+export async function DetalhamentoSection({ filters }: DetalhamentoSectionProps) {
+  const [parceria, modulos, areaFuncional, equipes, leadTimePorModulo, kpisPorTipo] =
     await Promise.all([
       fetchAggregate("parceria", filters),
       fetchAggregate("modulo", filters, { limit: TOP_LIMIT.modulo }),
       fetchAggregate("area_funcional", filters, { limit: TOP_LIMIT.area }),
-      fetchAggregate("categoria", filters),
+      fetchAggregate("equipe", filters, { limit: TOP_LIMIT.equipe }),
       fetchLeadTimePorModulo(filters),
       fetchKpisPorTipo(filters),
     ]);
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        title="Detalhamento"
-        subtitle="Quebras por parceria, repositório, área funcional, categoria e lead time por módulo."
-        titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.page}
-      />
-
       <div className="grid gap-6 xl:grid-cols-2">
         <BarChartCard
           title="Parcerias"
@@ -45,12 +36,18 @@ export default async function DetalhamentoPage({ searchParams }: DashboardPagePr
           issuesDrilldown={{ filters, dimension: "parceria" }}
         />
         <BarChartCard
-          title="Issues por Módulo"
-          subtitle="Volume por módulo (top 14)"
-          titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.modulos}
-          data={modulos}
-          horizontal
-          issuesDrilldown={{ filters, dimension: "modulo" }}
+          title="Equipes"
+          subtitle="Volume por equipe (top 14)"
+          titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.equipes}
+          data={equipes}
+          issuesDrilldown={{ filters, dimension: "equipe" }}
+        />
+        <BarChartCard
+          title="Equipes"
+          subtitle="Volume por equipe (top 14)"
+          titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.equipes}
+          data={equipes}
+          issuesDrilldown={{ filters, dimension: "equipe" }}
         />
         <BarChartCard
           title="Área Funcional"
@@ -60,10 +57,12 @@ export default async function DetalhamentoPage({ searchParams }: DashboardPagePr
           issuesDrilldown={{ filters, dimension: "area_funcional" }}
         />
         <BarChartCard
-          title="Categoria Funcional"
-          subtitle="Core / Compliance / Finance / Platform / Operations"
-          titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.categoriaFuncional}
-          data={categoria}
+          title="Módulos"
+          subtitle="Volume por módulo (top 14)"
+          titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.modulos}
+          data={modulos}
+          horizontal
+          issuesDrilldown={{ filters, dimension: "modulo" }}
         />
         <BarChartCard
           title="Lead time médio por módulo"
