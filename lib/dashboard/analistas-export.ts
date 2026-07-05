@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 
 import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
+import { formatIssueStatusDisplayLabel } from "@/lib/dashboard/issue-status";
 import type { AnalistaRelatorioSnapshot, AnalistaIssueRow } from "@/types/analistas";
 import { formatAnoMesLabel } from "@/lib/dashboard/analistas-utils";
 
@@ -94,7 +95,7 @@ export async function buildAnalistaRelatorioWorkbook(
     "Fechadas",
     "Canceladas",
     "Entregues",
-    "Doing",
+    "Em execução",
     "Sprint Atual",
   ]);
   styleHeaderRow(kpiHeaderRow);
@@ -228,7 +229,9 @@ export async function buildAnalistaRelatorioWorkbook(
       issue.modulo ?? "—",
       issue.colaborador ?? "—",
       issue.status ?? "—",
-      issue.status_label ?? "—",
+      issue.status_label
+        ? formatIssueStatusDisplayLabel(issue.status_label)
+        : "—",
       issue.parceiro ?? "—",
       issue.sprint ?? "—",
     ]);
@@ -298,7 +301,9 @@ export async function buildAnalistaRelatorioWorkbook(
       issue.modulo ?? "—",
       issue.colaborador ?? "—",
       issue.status ?? "—",
-      issue.status_label ?? "—",
+      issue.status_label
+        ? formatIssueStatusDisplayLabel(issue.status_label)
+        : "—",
       issue.parceiro ?? "—",
       issue.sprint ?? "—",
       issue.criado_em ? new Date(issue.criado_em).toLocaleDateString("pt-BR") : "—",

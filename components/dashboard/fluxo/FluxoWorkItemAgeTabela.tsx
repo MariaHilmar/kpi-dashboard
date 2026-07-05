@@ -2,6 +2,8 @@
 
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
 import { IssueKeyLink } from "@/components/dashboard/fluxo/IssueKeyLink";
+import { FLUXO_TOP10_TABLE_BODY_MAX_HEIGHT } from "@/components/dashboard/fluxo/fluxo-top10-layout";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 import type { FlowWorkItemAgeRow } from "@/lib/dashboard/flow-report";
 import { formatDate, formatNumber } from "@/lib/format";
 
@@ -14,6 +16,8 @@ export function FluxoWorkItemAgeTabela({ rows }: Readonly<Props>) {
     <TabelaCard<FlowWorkItemAgeRow>
       title="Top 10 — issues mais antigas em andamento"
       subtitle="Idade = hoje − início do fluxo ativo (A Fazer ou Desenvolvimento)"
+      titleTooltip={FLUXO_SECTION_TOOLTIPS.top10Issues}
+      bodyMaxHeight={FLUXO_TOP10_TABLE_BODY_MAX_HEIGHT}
       rows={rows}
       columns={[
         {

@@ -1,10 +1,12 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 
 import { FAIXAS_IDADE_ISSUES, TODOS } from "@/lib/dashboard/constants";
 import { ensureFilterOption } from "@/lib/dashboard/filters";
+
+import { IssuesColumnToggle } from "./IssuesColumnToggle";
 
 const ESTADOS = [
   { value: "Todos", label: "Todos os estados" },
@@ -61,7 +63,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  const [search, setSearch] = useState(searchParams.get("q") ?? "");
+  const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
 
   const estadoValue = searchParams.get("estado") ?? TODOS;
   const faixaValue = searchParams.get("faixaIdade") ?? TODOS;
@@ -73,10 +75,6 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
     value,
     label: value === TODOS ? "Todas as faixas" : value,
   }));
-
-  useEffect(() => {
-    setSearch(searchParams.get("q") ?? "");
-  }, [searchParams]);
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -130,7 +128,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
         <h3 className="text-sm font-semibold text-slate-700">Filtros da listagem</h3>
         <a
           href={exportHref}
-          className="inline-flex items-center gap-2 rounded-lg bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+          className="inline-flex items-center gap-2 rounded-button bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
         >
           Exportar Excel
         </a>
@@ -150,7 +148,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
         />
         <button
           type="submit"
-          className="rounded-lg bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
+          className="rounded-button bg-govbr-blue px-4 py-2 text-sm font-medium text-white hover:bg-govbr-blue-dark"
         >
           Buscar
         </button>
@@ -219,7 +217,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
 
           <button
             type="submit"
-            className="rounded-lg border border-govbr-blue px-3 py-1.5 text-sm font-medium text-govbr-blue hover:bg-blue-50"
+            className="rounded-button border border-govbr-blue px-3 py-1.5 text-sm font-medium text-govbr-blue hover:bg-blue-50"
           >
             Aplicar período
           </button>
@@ -229,7 +227,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
           <button
             type="button"
             onClick={clearDateRange}
-            className="rounded-lg px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
+            className="rounded-button px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
           >
             Limpar datas
           </button>
@@ -237,6 +235,8 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
 
         {isPending ? <span className="self-center text-xs text-slate-400">Buscando…</span> : null}
       </div>
+
+      <IssuesColumnToggle />
 
       <p className="text-xs text-slate-500">
         Clique nos cabeçalhos da tabela para ordenar por qualquer coluna.

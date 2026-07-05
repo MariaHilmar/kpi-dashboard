@@ -11,6 +11,7 @@ import { KpiSection } from "@/components/dashboard/executivo/KpiSection";
 import { VolumeSection } from "@/components/dashboard/executivo/VolumeSection";
 import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 
 export default async function ExecutivoPage({ searchParams }: DashboardPageProps) {
@@ -26,6 +27,7 @@ export default async function ExecutivoPage({ searchParams }: DashboardPageProps
       <PageHeader
         title="Dashboard Executivo"
         subtitle="Visão consolidada de KPIs, evolução mensal e distribuição por status, tipo e prioridade."
+        titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.page}
       />
 
       <Suspense fallback={<KpiGridSkeleton />}>

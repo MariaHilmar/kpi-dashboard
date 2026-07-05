@@ -35,6 +35,7 @@ describe("tabelas do dashboard", () => {
   it("KpisPorTipoTabela formata lead time nulo", () => {
     render(
       <KpisPorTipoTabela
+        filters={DEFAULT_FILTERS}
         rows={[
           {
             tipo: "Bug",

@@ -64,7 +64,7 @@ export function UserTable({ users, loading, saving, onEdit, onToggleActive }: Pr
                   <button
                     type="button"
                     onClick={() => onEdit(user)}
-                    className="inline-flex items-center gap-1.5 rounded border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                    className="inline-flex items-center gap-1.5 rounded-button border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
                   >
                     <FontAwesomeIcon icon={faPenToSquare} className="w-3" aria-hidden />
                     Editar
@@ -73,7 +73,7 @@ export function UserTable({ users, loading, saving, onEdit, onToggleActive }: Pr
                     type="button"
                     disabled={saving}
                     onClick={() => onToggleActive(user)}
-                    className={`inline-flex items-center gap-1.5 rounded border px-2 py-1 text-xs disabled:opacity-50 ${
+                    className={`inline-flex items-center gap-1.5 rounded-button border px-2 py-1 text-xs disabled:opacity-50 ${
                       user.active
                         ? "border-rose-200 text-rose-600 hover:bg-rose-50"
                         : "border-emerald-200 text-emerald-600 hover:bg-emerald-50"

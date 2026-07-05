@@ -2,6 +2,7 @@
 
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
 import type { FlowBottleneckRow } from "@/lib/dashboard/flow-report";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 import { formatDecimal, formatNumber } from "@/lib/format";
 
 type Props = {
@@ -13,6 +14,7 @@ export function FluxoBottlenecksTabela({ rows, highlightEtapa }: Readonly<Props>
   return (
     <TabelaCard<FlowBottleneckRow>
       title="Gargalos por etapa"
+      titleTooltip={FLUXO_SECTION_TOOLTIPS.gargalosPorEtapa}
       subtitle={
         highlightEtapa
           ? `Destaque: ${highlightEtapa} (maior retenção estimada no resumo)`

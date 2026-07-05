@@ -3,6 +3,7 @@
 import { IssueEstadoBadge } from "@/components/issues/IssueEstadoBadge";
 import { IssueStatusBadge } from "@/components/issues/IssueStatusBadge";
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
+import { ALERTAS_SECTION_TOOLTIPS } from "@/lib/dashboard/alertas-section-tooltips";
 import { formatDate } from "@/lib/format";
 import type { TopLeadTime } from "@/types/database";
 
@@ -15,6 +16,7 @@ export function TopLeadTimesTabela({ rows }: Props) {
     <TabelaCard<TopLeadTime>
       title="Alertas — maiores lead times"
       subtitle="Top 20 issues mais longas"
+      titleTooltip={ALERTAS_SECTION_TOOLTIPS.maioresLeadTimes}
       columns={[
         { key: "id", header: "#", align: "right" },
         {
