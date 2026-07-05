@@ -1,6 +1,40 @@
 -- Migration 047 — KPI Comprometido vs Entregue por sprint (issue #32)
 -- RPC dedicada + filtro not_delivered em report_milestone_issues.
 
+-- Constantes para condições de entrega
+create or replace function public._is_delivered_condition(
+  p_fechado_em timestamptz,
+  p_start_date date,
+  p_due_date date
+)
+returns boolean
+language sql
+immutable
+as $$
+  select
+    p_fechado_em is not null
+    and p_start_date is not null
+    and p_due_date is not null
+    and p_fechado_em::date between p_start_date and p_due_date;
+$$;
+
+create or replace function public._is_not_delivered_condition(
+  p_fechado_em timestamptz,
+  p_start_date date,
+  p_due_date date
+)
+returns boolean
+language sql
+immutable
+as $$
+  select
+    p_fechado_em is null
+    or p_start_date is null
+    or p_due_date is null
+    or p_fechado_em::date < p_start_date
+    or p_fechado_em::date > p_due_date;
+$$;
+
 create or replace function public.report_milestone_commitment(
   p_milestone_iid integer
 )
@@ -28,6 +62,7 @@ as $$
       m.due_date
     from public.milestones m
     where m.gitlab_milestone_iid = p_milestone_iid
+    order by m.id asc
     limit 1
   ),
   scoped as (
@@ -58,30 +93,16 @@ as $$
       count(*)::bigint as committed_issues,
       coalesce(sum(s.story_points), 0)::bigint as committed_story_points,
       count(*) filter (
-        where s.fechado_em is not null
-          and s.start_date is not null
-          and s.due_date is not null
-          and s.fechado_em::date between s.start_date and s.due_date
+        where public._is_delivered_condition(s.fechado_em, s.start_date, s.due_date)
       )::bigint as delivered_issues,
       coalesce(sum(s.story_points) filter (
-        where s.fechado_em is not null
-          and s.start_date is not null
-          and s.due_date is not null
-          and s.fechado_em::date between s.start_date and s.due_date
+        where public._is_delivered_condition(s.fechado_em, s.start_date, s.due_date)
       ), 0)::bigint as delivered_story_points,
       count(*) filter (
-        where s.fechado_em is null
-          or s.start_date is null
-          or s.due_date is null
-          or s.fechado_em::date < s.start_date
-          or s.fechado_em::date > s.due_date
+        where public._is_not_delivered_condition(s.fechado_em, s.start_date, s.due_date)
       )::bigint as not_delivered_issues,
       coalesce(sum(s.story_points) filter (
-        where s.fechado_em is null
-          or s.start_date is null
-          or s.due_date is null
-          or s.fechado_em::date < s.start_date
-          or s.fechado_em::date > s.due_date
+        where public._is_not_delivered_condition(s.fechado_em, s.start_date, s.due_date)
       ), 0)::bigint as not_delivered_story_points,
       count(*) filter (
         where s.fechado_em is null and s.estado = 'Fechado'
@@ -233,18 +254,9 @@ begin
                and (w.fechado_em is null or w.fechado_em::date > w.ref_date)
                and public.flow_is_wip_etapa(w.etapa))
            or (p_metric = 'delivered'
-               and w.fechado_em is not null
-               and w.start_date is not null
-               and w.due_date is not null
-               and w.fechado_em::date between w.start_date and w.due_date)
+               and public._is_delivered_condition(w.fechado_em, w.start_date, w.due_date))
            or (p_metric = 'not_delivered'
-               and (
-                 w.fechado_em is null
-                 or w.start_date is null
-                 or w.due_date is null
-                 or w.fechado_em::date < w.start_date
-                 or w.fechado_em::date > w.due_date
-               )))
+               and public._is_not_delivered_condition(w.fechado_em, w.start_date, w.due_date)))
   ),
   counted as (
     select count(*)::bigint as total_count from filtered
