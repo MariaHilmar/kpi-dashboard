@@ -124,6 +124,140 @@ function fileFingerprint(file: File): string {
   return `${file.name}:${file.size}:${file.lastModified}`;
 }
 
+interface FileInputProps {
+  readonly file: File | null;
+  readonly onChange: (file: File | null) => void;
+}
+
+function FileInput({ file, onChange }: FileInputProps) {
+  if (file) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <FontAwesomeIcon icon={faFileExcel} className="shrink-0 text-blue-700" />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
+            <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="br-button circle small"
+          aria-label="Remover arquivo"
+          onClick={() => onChange(null)}
+        >
+          <FontAwesomeIcon icon={faXmark} />
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <label
+      htmlFor="import-file"
+      className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40"
+    >
+      <FontAwesomeIcon icon={faFileArrowUp} className="text-2xl text-blue-700" />
+      <span className="text-sm font-medium text-slate-800">
+        Clique para escolher ou arraste o arquivo aqui
+      </span>
+      <span className="text-xs text-slate-500">Excel (.xlsx) ou CSV</span>
+      <input
+        id="import-file"
+        type="file"
+        accept=".xlsx,.xlsm,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+        className="sr-only"
+        onChange={(event) => onChange(event.target.files?.[0] ?? null)}
+      />
+    </label>
+  );
+}
+
+interface ValidationResultProps {
+  readonly result: DryRunResult;
+}
+
+function ValidationResult({ result }: ValidationResultProps) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <SystemFeedback
+        variant="success"
+        title="Validação concluída"
+        message={`${result.rows} ${result.rows === 1 ? "linha pronta" : "linhas prontas"} para importação.`}
+      />
+      {result.warnings.length > 0 ? (
+        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <h3 className="text-sm font-semibold text-amber-950">Avisos — revise antes de importar</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
+            {result.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="mt-3 text-sm text-slate-600">
+          Nenhum problema encontrado. Clique em <strong>Importar dados</strong> para aplicar as
+          alterações.
+        </p>
+      )}
+    </section>
+  );
+}
+
+interface ImportResultProps {
+  readonly result: Exclude<PlanningPokerImportStats, any>;
+}
+
+function ImportResult({ result }: ImportResultProps) {
+  return (
+    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <SystemFeedback
+        variant={result.errors > 0 ? "warning" : "success"}
+        title="Importação concluída"
+        message={`${result.upserted_issues} de ${result.processed} ${result.processed === 1 ? "linha foi aplicada" : "linhas foram aplicadas"} nas issues.`}
+      />
+      <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Issues não encontradas
+          </dt>
+          <dd className="mt-1 text-lg font-semibold text-slate-900">
+            {result.not_found_in_issues}
+          </dd>
+          <dd className="mt-0.5 text-xs text-slate-500">
+            Confira repositório e número da issue no GitLab.
+          </dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Registros na sprint
+          </dt>
+          <dd className="mt-1 text-lg font-semibold text-slate-900">
+            {result.upserted_milestone_issues}
+          </dd>
+          <dd className="mt-0.5 text-xs text-slate-500">
+            Preenchido quando uma sprint é selecionada.
+          </dd>
+        </div>
+        <div className="rounded-lg bg-slate-50 px-3 py-2">
+          <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Erros</dt>
+          <dd className="mt-1 text-lg font-semibold text-slate-900">{result.errors}</dd>
+        </div>
+      </dl>
+      {result.warnings.length > 0 ? (
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-slate-800">Avisos</h3>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
+            {result.warnings.map((warning) => (
+              <li key={warning}>{warning}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export function ImportarDadosPanel({ milestones }: Props) {
   const [file, setFile] = useState<File | null>(null);
   const [milestoneId, setMilestoneId] = useState("");
@@ -241,44 +375,7 @@ export function ImportarDadosPanel({ milestones }: Props) {
           <form onSubmit={handleValidate} className="mt-6 flex flex-col gap-5">
             <div className="flex flex-col gap-2">
               <span className="text-sm font-medium text-slate-700">Arquivo da planilha</span>
-
-              {!file ? (
-                <label
-                  htmlFor="import-file"
-                  className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40"
-                >
-                  <FontAwesomeIcon icon={faFileArrowUp} className="text-2xl text-blue-700" />
-                  <span className="text-sm font-medium text-slate-800">
-                    Clique para escolher ou arraste o arquivo aqui
-                  </span>
-                  <span className="text-xs text-slate-500">Excel (.xlsx) ou CSV</span>
-                  <input
-                    id="import-file"
-                    type="file"
-                    accept=".xlsx,.xlsm,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
-                    className="sr-only"
-                    onChange={(event) => resetFileState(event.target.files?.[0] ?? null)}
-                  />
-                </label>
-              ) : (
-                <div className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <FontAwesomeIcon icon={faFileExcel} className="shrink-0 text-blue-700" />
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-slate-900">{file.name}</p>
-                      <p className="text-xs text-slate-500">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="br-button circle small"
-                    aria-label="Remover arquivo"
-                    onClick={() => resetFileState(null)}
-                  >
-                    <FontAwesomeIcon icon={faXmark} />
-                  </button>
-                </div>
-              )}
+              <FileInput file={file} onChange={resetFileState} />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -371,77 +468,10 @@ export function ImportarDadosPanel({ milestones }: Props) {
 
         {error ? <SystemFeedback variant="danger" message={error} /> : null}
 
-        {result && isDryRunResult(result) ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <SystemFeedback
-              variant="success"
-              title="Validação concluída"
-              message={`${result.rows} ${result.rows === 1 ? "linha pronta" : "linhas prontas"} para importação.`}
-            />
-            {result.warnings.length > 0 ? (
-              <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4">
-                <h3 className="text-sm font-semibold text-amber-950">Avisos — revise antes de importar</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-amber-900">
-                  {result.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : (
-              <p className="mt-3 text-sm text-slate-600">
-                Nenhum problema encontrado. Clique em <strong>Importar dados</strong> para aplicar as
-                alterações.
-              </p>
-            )}
-          </section>
-        ) : null}
+        {result && isDryRunResult(result) ? <ValidationResult result={result} /> : null}
 
         {result && !isDryRunResult(result) ? (
-          <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <SystemFeedback
-              variant={result.errors > 0 ? "warning" : "success"}
-              title="Importação concluída"
-              message={`${result.upserted_issues} de ${result.processed} ${result.processed === 1 ? "linha foi aplicada" : "linhas foram aplicadas"} nas issues.`}
-            />
-            <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-lg bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Issues não encontradas
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-slate-900">
-                  {result.not_found_in_issues}
-                </dd>
-                <dd className="mt-0.5 text-xs text-slate-500">
-                  Confira repositório e número da issue no GitLab.
-                </dd>
-              </div>
-              <div className="rounded-lg bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                  Registros na sprint
-                </dt>
-                <dd className="mt-1 text-lg font-semibold text-slate-900">
-                  {result.upserted_milestone_issues}
-                </dd>
-                <dd className="mt-0.5 text-xs text-slate-500">
-                  Preenchido quando uma sprint é selecionada.
-                </dd>
-              </div>
-              <div className="rounded-lg bg-slate-50 px-3 py-2">
-                <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">Erros</dt>
-                <dd className="mt-1 text-lg font-semibold text-slate-900">{result.errors}</dd>
-              </div>
-            </dl>
-            {result.warnings.length > 0 ? (
-              <div className="mt-4">
-                <h3 className="text-sm font-semibold text-slate-800">Avisos</h3>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-slate-600">
-                  {result.warnings.map((warning) => (
-                    <li key={warning}>{warning}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-          </section>
+          <ImportResult result={result} />
         ) : null}
       </div>
 
