@@ -11,6 +11,8 @@ import {
 } from "recharts";
 
 import type { FlowStageDwellChartPoint, FlowStageDwellMeta } from "@/lib/dashboard/flow-charts";
+import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 import { FLOW_REPORT_APPROXIMATIONS } from "@/lib/dashboard/flow-stages";
 import { formatDecimal, formatNumber } from "@/lib/format";
 
@@ -35,16 +37,21 @@ export function FluxoStageDwellChartCard({
       : "Mediana de dias por etapa (issues concluídas no período)";
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">Tempo por etapa Kanban</h2>
-        <p className="text-sm text-slate-500">{subtitle}</p>
-        {meta ? (
-          <p className="mt-1 text-xs text-slate-500">
-            Base: {formatNumber(meta.issuesTotalPeriodo)} issues concluídas no recorte
-          </p>
-        ) : null}
-      </div>
+    <section className="overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <CardSectionHeader
+        title="Tempo por etapa Kanban"
+        subtitle={
+          <>
+            <p className="text-sm text-slate-500">{subtitle}</p>
+            {meta ? (
+              <p className="mt-1 text-xs text-slate-500">
+                Base: {formatNumber(meta.issuesTotalPeriodo)} issues concluídas no recorte
+              </p>
+            ) : null}
+          </>
+        }
+        tooltip={FLUXO_SECTION_TOOLTIPS.tempoPorEtapa}
+      />
 
       {data.length === 0 ? (
         <div className="flex h-64 items-center justify-center rounded-lg bg-slate-50 text-sm text-slate-500">

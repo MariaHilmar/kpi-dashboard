@@ -7,6 +7,12 @@ const GITLAB_PROJECT_PATHS: Record<string, string> = {
 
 const DEFAULT_REPO_SLUG = "contratos_v2";
 
+/** Slug → rótulo gravado em `issues.gitlab_repo` / `issue_key`. */
+const REPO_DISPLAY_NAMES: Record<string, string> = {
+  contratos_v2: "Contratos v2",
+  contratos: "Contratos v1",
+};
+
 /** Aliases gravados no banco (nome legível ou slug) → slug GitLab. */
 const REPO_ALIASES: Record<string, string> = {
   "contratos v2": "contratos_v2",
@@ -15,6 +21,15 @@ const REPO_ALIASES: Record<string, string> = {
   contratos_v2: "contratos_v2",
   contratos: "contratos",
 };
+
+export function repoDisplayName(raw: string | null | undefined): string {
+  const slug = normalizeGitlabRepoSlug(raw) ?? DEFAULT_REPO_SLUG;
+  return REPO_DISPLAY_NAMES[slug] ?? slug;
+}
+
+export function makeIssueKeyFromParts(repo: string | null | undefined, iid: number | string): string {
+  return `${repoDisplayName(repo)}:${iid}`;
+}
 
 export function normalizeGitlabRepoSlug(raw: string | null | undefined): string | null {
   const text = (raw ?? "").trim();

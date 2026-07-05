@@ -12,6 +12,7 @@ import {
   parseFlowGranularity,
   resolveFlowPageFilters,
 } from "@/lib/dashboard/flow-report-params";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 
 export default async function FluxoPage({ searchParams }: DashboardPageProps) {
@@ -31,6 +32,7 @@ export default async function FluxoPage({ searchParams }: DashboardPageProps) {
       <PageHeader
         title="Fluxo Kanban"
         subtitle="Resumo executivo, CFD, throughput, lead time, WIP e gargalos — histórico de status GitLab."
+        titleTooltip={FLUXO_SECTION_TOOLTIPS.page}
       />
 
       <FluxoApproximationNotice />

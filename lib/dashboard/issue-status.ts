@@ -25,7 +25,7 @@ const STATUS_TONE_DEFINITIONS: StatusToneDefinition[] = [
     chartHex: "#64748B",
   },
   {
-    keys: ["doing", "em andamento"],
+    keys: ["doing", "em andamento", "em execucao"],
     badgeClassName: "bg-blue-100 text-blue-800",
     excelFillArgb: "FFDBEAFE",
     excelFontArgb: "FF1E40AF",
@@ -103,19 +103,29 @@ const FALLBACK_TONES: IssueStatusTone[] = [
 
 const STATUS_TONE_LOOKUP = new Map<string, IssueStatusTone>();
 
-for (const definition of STATUS_TONE_DEFINITIONS) {
-  const { keys, ...tone } = definition;
-  for (const key of keys) {
-    STATUS_TONE_LOOKUP.set(normalizeStatusKey(key), tone);
-  }
-}
-
 function normalizeStatusKey(value: string): string {
   return value
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{M}/gu, "");
+}
+
+/** Valor bruto GitLab → rótulo exibido ao usuário. */
+const STATUS_DISPLAY_OVERRIDES: Readonly<Record<string, string>> = {
+  doing: "Em execução",
+};
+
+/** Rótulo exibido → valor de filtro/RPC (status na base). */
+const STATUS_FILTER_OVERRIDES: Readonly<Record<string, string>> = {
+  "em execucao": "Doing",
+};
+
+for (const definition of STATUS_TONE_DEFINITIONS) {
+  const { keys, ...tone } = definition;
+  for (const key of keys) {
+    STATUS_TONE_LOOKUP.set(normalizeStatusKey(key), tone);
+  }
 }
 
 function hashLabel(value: string): number {
@@ -128,18 +138,35 @@ function hashLabel(value: string): number {
   return hash;
 }
 
+/** Converte status bruto (GitLab) para rótulo exibido na UI. */
+export function formatIssueStatusDisplayLabel(status: string): string {
+  const trimmed = status.trim();
+  if (!trimmed) return trimmed;
+  return STATUS_DISPLAY_OVERRIDES[normalizeStatusKey(trimmed)] ?? trimmed;
+}
+
+/** Converte rótulo exibido (ou bruto) para valor de filtro na listagem/RPC. */
+export function issueStatusFilterValue(displayOrRawLabel: string): string {
+  const trimmed = displayOrRawLabel.trim();
+  if (!trimmed) return trimmed;
+  const normalized = normalizeStatusKey(trimmed);
+  return STATUS_FILTER_OVERRIDES[normalized] ?? trimmed;
+}
+
 /** Rótulo exibido: label GitLab (`status::`) ou fallback Aberta/Fechada (agregações). */
 export function resolveIssueStatusLabel(
   row: Pick<IssueRow, "status" | "estado">,
 ): string {
   const trimmed = row.status?.trim();
-  if (trimmed) return trimmed;
+  if (trimmed) return formatIssueStatusDisplayLabel(trimmed);
   return issueEstadoLabel(row.estado);
 }
 
 /** Rótulo de workflow GitLab para colunas de listagem (sem duplicar Estado). */
 export function resolveIssueWorkflowStatusLabel(row: Pick<IssueRow, "status">): string {
-  return row.status?.trim() || "—";
+  const trimmed = row.status?.trim();
+  if (!trimmed) return "—";
+  return formatIssueStatusDisplayLabel(trimmed);
 }
 
 export function getIssueStatusTone(label: string): IssueStatusTone {

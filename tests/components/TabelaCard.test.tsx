@@ -44,4 +44,19 @@ describe("TabelaCard", () => {
     expect(screen.getByText("PNCP")).toBeInTheDocument();
     expect(screen.getByText("10 itens")).toBeInTheDocument();
   });
+
+  it("aplica altura maxima e rolagem quando bodyMaxHeight e informado", () => {
+    const { container } = render(
+      <TabelaCard<Row>
+        title="Ranking"
+        columns={[{ key: "nome", header: "Nome" }]}
+        rows={[{ nome: "PNCP", qtde: 10 }]}
+        bodyMaxHeight="max-h-80"
+      />,
+    );
+
+    const scrollArea = container.querySelector(".max-h-80.overflow-y-auto");
+    expect(scrollArea).toBeInTheDocument();
+    expect(container.querySelector("thead.sticky")).toBeInTheDocument();
+  });
 });

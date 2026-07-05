@@ -142,16 +142,28 @@ export function pivotCfdRows(rows: FlowCfdRow[]): CfdChartPoint[] {
   return Array.from(byDate.values()).sort((a, b) => a.data.localeCompare(b.data));
 }
 
+const FLOW_WEEK_PERIOD_RE = /^(\d{4})-W(\d{1,2})$/i;
+
+/** Converte período ISO semanal (ex.: 2026-W22) para rótulo legível (2026 - 22ª semana). */
+export function formatFlowWeekPeriodLabel(periodo: string): string {
+  const match = FLOW_WEEK_PERIOD_RE.exec(periodo);
+  if (!match) return periodo;
+
+  const year = match[1];
+  const week = Number.parseInt(match[2], 10);
+  return `${year} - ${week}ª semana`;
+}
+
 export function throughputToChartPoints(rows: FlowThroughputRow[]) {
   return rows.map((row) => ({
-    periodo: row.periodo,
+    periodo: formatFlowWeekPeriodLabel(row.periodo),
     concluidas: row.quantidade_concluida,
   }));
 }
 
 export function leadTimeAggToChartPoints(rows: FlowLeadTimeAggRow[]) {
   return rows.map((row) => ({
-    periodo: row.periodo,
+    periodo: formatFlowWeekPeriodLabel(row.periodo),
     media: row.lead_time_medio ?? 0,
     mediana: row.lead_time_mediana ?? 0,
     p85: row.percentil_85 ?? 0,

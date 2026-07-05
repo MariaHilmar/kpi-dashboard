@@ -1,9 +1,6 @@
 import { DEFAULT_FILTERS } from "@/lib/dashboard/filters";
 import { TODOS } from "@/lib/dashboard/constants";
-import {
-  parceriasDefaultOrder,
-  resolveParceriasOrder,
-} from "@/lib/dashboard/parcerias-sort";
+import { resolveParceriasOrder } from "@/lib/dashboard/parcerias-sort";
 import type { DashboardFilters } from "@/types/database";
 
 export type ParceriasSearchParams = {

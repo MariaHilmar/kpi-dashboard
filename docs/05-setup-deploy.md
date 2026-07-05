@@ -14,7 +14,7 @@
 ### Criar projeto
 
 1. Acesse [supabase.com](https://supabase.com) e crie um projeto.
-2. No **SQL Editor**, execute as migrations em ordem a partir de `supabase/migrations/` (001 … 020).
+2. No **SQL Editor**, execute as migrations em ordem a partir de `supabase/migrations/` (001 … 035).
 
 Ou aplique todas via `supabase db push` a partir da raiz deste repositório (pasta `supabase/`).
 
@@ -63,9 +63,11 @@ Edite `.env.local`:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+# Opcional — admin de usuários e importação Planning Poker (somente servidor):
+# SUPABASE_SERVICE_ROLE_KEY=eyJ...
 ```
 
-> Use **somente** a anon key no frontend. A service role bypassa RLS e não deve ser exposta.
+> Use **somente** a anon key no frontend. A `service_role` bypassa RLS — configure no Vercel para produção se usar `/admin/usuarios` ou `/importar-dados`.
 
 ### Executar
 
@@ -95,9 +97,16 @@ npm run start
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
    - `REVALIDATE_SECRET` (mesmo valor usado no pipeline para invalidar cache)
+   - `SUPABASE_SERVICE_ROLE_KEY` (admin de usuários + importação Planning Poker)
 5. Deploy.
 
-O `vercel.json` fixa a região **`gru1`** (São Paulo), alinhada ao Supabase do projeto (`sa-east-1`), reduzindo latência das RPCs.
+O `vercel.json` fixa a região **`gru1`** (São Paulo) e restringe deploy de produção à branch **`main`** via `ignoreCommand`:
+
+```json
+"ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]"
+```
+
+Branches de feature geram previews; apenas merges em `main` disparam deploy de produção.
 
 ### Via CLI
 
@@ -149,7 +158,7 @@ Sync automático via HTTP trigger + endpoint protegido — item de roadmap em `S
 | `NEXT_PUBLIC_SUPABASE_URL` | Sim | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sim | Chave pública anon |
 | `REVALIDATE_SECRET` | Recomendada | Segredo para `POST /api/revalidate` (invalidação de cache após sync) |
-| `SUPABASE_SERVICE_ROLE_KEY` | Admin only | CRUD de usuários em `/admin/usuarios` — nunca expor no browser |
+| `SUPABASE_SERVICE_ROLE_KEY` | Admin + import | CRUD `/admin/usuarios` e `POST /api/import/planning-poker` — nunca expor no browser |
 
 ### Pipeline Python (sync)
 
@@ -198,11 +207,11 @@ Tabela `sync_runs` vazia ou sem registro `status = 'success'`. Execute o pipelin
 
 ## Checklist de go-live
 
-- [ ] Migrations 001–012 aplicadas no Supabase
+- [ ] Migrations 001–035 aplicadas no Supabase
 - [ ] `atualizar_gitlab_issues.py` + `sync_supabase.py` executados
 - [ ] `backfill_profile_gitlab_ids.py` executado (perfis com `gitlab_user_id`)
 - [ ] Pipeline/sync com sucesso (`sync_runs.status = success`)
-- [ ] `.env.local` / Vercel env vars configuradas (anon key + `REVALIDATE_SECRET`)
+- [ ] `.env.local` / Vercel env vars configuradas (anon key + `REVALIDATE_SECRET` + `SUPABASE_SERVICE_ROLE_KEY` se admin/import)
 - [ ] `npm run build` passa localmente
 - [ ] CI GitHub Actions verde (`tsc` + testes)
 - [ ] Deploy Vercel acessível

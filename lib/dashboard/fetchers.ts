@@ -17,6 +17,7 @@ import {
 } from "@/lib/dashboard/constants";
 import { cachedFetch } from "@/lib/dashboard/cache";
 import { normalizeFaixaIdadeRows } from "@/lib/dashboard/faixa-idade";
+import { formatIssueStatusDisplayLabel } from "@/lib/dashboard/issue-status";
 import { createLiveSupabase, createStaticSupabase } from "@/lib/supabase/server";
 import type {
   AlertaPorModulo,
@@ -74,21 +75,6 @@ async function selectRows(
   return (data ?? []) as DbRow[];
 }
 
-async function selectOne(
-  label: string,
-  run: (client: DbClient) => PromiseLike<DbResult>,
-): Promise<DbRow | null> {
-  const client = createStaticSupabase();
-  if (!client) return null;
-
-  const { data, error } = await run(client);
-  if (error) {
-    console.error(label, error.message);
-    return null;
-  }
-  return (data ?? null) as DbRow | null;
-}
-
 async function selectOneLive(
   label: string,
   run: (client: DbClient) => PromiseLike<DbResult>,
@@ -129,10 +115,15 @@ export const fetchAggregate = cachedFetch(
       }),
     );
 
-    return rows.map((row) => ({
-      label: str(row.label, NAO_INFORMADO),
-      quantidade: num(row.quantidade),
-    }));
+    return rows.map((row) => {
+      const rawLabel = str(row.label, NAO_INFORMADO);
+      const label =
+        dimension === "status" ? formatIssueStatusDisplayLabel(rawLabel) : rawLabel;
+      return {
+        label,
+        quantidade: num(row.quantidade),
+      };
+    });
   },
 );
 
