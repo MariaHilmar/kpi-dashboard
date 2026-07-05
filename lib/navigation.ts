@@ -63,11 +63,10 @@ export const NAV_GROUPS: NavGroup[] = [
       },
       {
         href: "/milestone",
-        label: "Relatório Milestone",
+        label: "Relatório Milestone (DEV)",
         shortLabel: "Milestone",
         icon: faFlagCheckered,
         description: "Throughput intra-sprint por IID GitLab",
-        beta: true,
       },
     ],
   },
