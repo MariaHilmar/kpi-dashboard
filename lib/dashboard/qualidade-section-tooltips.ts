@@ -14,4 +14,8 @@ export const QUALIDADE_SECTION_TOOLTIPS = {
     "Contagem de issues com resposta \"Sim\" em cada flag de qualidade.\n\nMódulo OK, Área OK, Padrão de Título e Padrão Completo.",
   backlogAbertoModulo:
     "Issues abertas agrupadas por módulo ou repositório.\n\nExibe os 14 módulos com maior volume de backlog ativo.",
+  semEpicoDados:
+    "Issues abertas sem épico vinculado.\n\nDados não informados que impactam o planejamento e organização do backlog.",
+  semParceriaDados:
+    "Issues abertas sem label de parceria.\n\nDados não informados que prejudicam o rastreamento de entregas por parceiro.",
 } as const;
