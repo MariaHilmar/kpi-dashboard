@@ -205,7 +205,7 @@ function ValidationResult({ result }: ValidationResultProps) {
 }
 
 interface ImportResultProps {
-  readonly result: Exclude<PlanningPokerImportStats, any>;
+  readonly result: PlanningPokerImportStats;
 }
 
 function ImportResult({ result }: ImportResultProps) {
