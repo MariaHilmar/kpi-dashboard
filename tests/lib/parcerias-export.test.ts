@@ -36,6 +36,14 @@ const SAMPLE_ROWS: IssueRow[] = [
     lead_time_dias: 45,
     idade_dias: 0,
     sla_mais_90_dias: false,
+    story_points: 5,
+    aceita: null,
+    justificada: null,
+    historico: null,
+    recorrente: null,
+    horas_estimada: null,
+    horas_prevista: null,
+    homologado: null,
   },
 ];
 

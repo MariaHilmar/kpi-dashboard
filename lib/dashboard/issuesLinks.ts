@@ -169,7 +169,7 @@ export function buildMilestoneRoadmapIssuesHref(
 
   const extra: Record<string, string> = {
     estado: "closed",
-    [filterKey]: aggregateLabelToFilterValue(label, filterKey),
+    [filterKey]: aggregateLabelToFilterValue(label),
   };
 
   if (milestone.titulo?.trim()) {

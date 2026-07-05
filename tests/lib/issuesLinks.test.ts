@@ -72,14 +72,16 @@ describe("issuesLinks", () => {
 
   it("buildAggregateIssuesHref mapeia dimensão para filtro", () => {
     const href = buildAggregateIssuesHref(filters, "modulo", "PNCP", { estado: "open" });
-    const params = new URL(href, "http://localhost").searchParams;
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("modulo")).toBe("PNCP");
     expect(params.get("estado")).toBe("open");
   });
 
   it("buildAggregateIssuesHref converte Em execução para filtro Doing", () => {
     const href = buildAggregateIssuesHref(filters, "status", "Em execução");
-    expect(new URL(href, "http://localhost").searchParams.get("status")).toBe("Doing");
+    expect(href).not.toBeNull();
+    expect(new URL(href!, "http://localhost").searchParams.get("status")).toBe("Doing");
   });
 
   it("buildFlowPeriodIssuesHref inclui fechadoDe/fechadoAte", () => {
@@ -95,7 +97,8 @@ describe("issuesLinks", () => {
       },
       "closed",
     );
-    const params = new URL(href, "http://localhost").searchParams;
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("estado")).toBe("closed");
     expect(params.get("fechadoDe")).toBe("2026-01-01");
     expect(params.get("fechadoAte")).toBe("2026-03-31");
@@ -112,7 +115,8 @@ describe("issuesLinks", () => {
       "PNCP",
       "entregues",
     );
-    const params = new URL(href, "http://localhost").searchParams;
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("estado")).toBe("closed");
     expect(params.get("modulo")).toBe("PNCP");
     expect(params.get("sprint")).toBe("Sprint 90 - Contratos");
@@ -130,7 +134,8 @@ describe("issuesLinks", () => {
       "modulo",
       "PNCP",
     );
-    const params = new URL(href, "http://localhost").searchParams;
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("estado")).toBe("closed");
     expect(params.get("modulo")).toBe("PNCP");
     expect(params.get("sprint")).toBe("Sprint 90 - Contratos");
@@ -144,7 +149,8 @@ describe("issuesLinks", () => {
       "epico",
       "Épico Compras",
     );
-    expect(new URL(href, "http://localhost").searchParams.get("epico")).toBe("Épico Compras");
+    expect(href).not.toBeNull();
+    expect(new URL(href!, "http://localhost").searchParams.get("epico")).toBe("Épico Compras");
   });
 
   it("buildMilestoneDeliveryIssuesHref usa busca livre para assignee", () => {
@@ -154,7 +160,8 @@ describe("issuesLinks", () => {
       "Maria Silva",
       "wip",
     );
-    const params = new URL(href, "http://localhost").searchParams;
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("estado")).toBe("open");
     expect(params.get("q")).toBe("Maria Silva");
     expect(params.get("sprint")).toBe("Sprint 90");
