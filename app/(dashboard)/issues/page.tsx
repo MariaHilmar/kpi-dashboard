@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { fetchFilterOptions } from "@/lib/dashboard/fetchers";
 import { parseFilters } from "@/lib/dashboard/filters";
 import { parseIssuesListParams } from "@/lib/dashboard/issues-page-params";
+import { parseIssuesTableColumns } from "@/lib/dashboard/issues-table-columns";
 import { searchIssues } from "@/lib/dashboard/issues";
 import type { DashboardPageProps } from "@/lib/dashboard/page";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
@@ -31,6 +32,7 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
   const sp = await searchParams;
   const filters = parseFilters(sp);
   const { page, list } = parseIssuesListParams(recordFromSearchParams(sp));
+  const visibleColumns = parseIssuesTableColumns(sp.cols?.toString() ?? null);
 
   const [filterOptions, result] = await Promise.all([
     fetchFilterOptions(),
@@ -51,7 +53,7 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
 
       <IssuesToolbar autores={filterOptions.autores} exportHref={exportHref} />
 
-      <IssuesTable rows={result.rows} />
+      <IssuesTable rows={result.rows} visibleColumns={visibleColumns} />
 
       <IssuesPagination page={result.page} pageSize={result.pageSize} total={result.total} />
     </div>

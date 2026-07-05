@@ -148,6 +148,8 @@ Mapeamento em `flow_map_etapa` (SQL) e `lib/dashboard/flow-stages.ts`:
 - `supabase/migrations/029_flow_events_analytics.sql` — RPCs consumindo `issue_status_events`
 - `supabase/migrations/032_report_flow_stage_dwell.sql` — dwell time por etapa Kanban
 - `supabase/migrations/033_report_flow_data_quality.sql` — cobertura eventos/snapshot/proxy
+- `supabase/migrations/034_milestone_report_schema.sql` — campos Planning Poker em `issues` (não usados pelo CFD)
+- `supabase/migrations/035_milestone_iid.sql` — IID do milestone na URL GitLab
 
 ## Testes
 
@@ -155,6 +157,8 @@ Mapeamento em `flow_map_etapa` (SQL) e `lib/dashboard/flow-stages.ts`:
 cd mgi-kpi-dashboard
 npm test -- tests/lib/flow-stages.test.ts tests/lib/flow-report.test.ts tests/lib/flow-charts.test.ts
 ```
+
+**Última atualização da documentação:** 2026-07-03
 
 ## Página do dashboard
 

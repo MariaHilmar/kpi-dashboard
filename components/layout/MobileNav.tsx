@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { getNavItems, isNavItemActive, buildNavHref } from "@/lib/navigation";
+import { useIsLocalhost } from "@/hooks/useIsLocalhost";
+import { NavItemLabel } from "@/components/layout/NavItemLabel";
 
 type MobileNavProps = {
   isAdmin?: boolean;
@@ -14,7 +16,8 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
-  const items = getNavItems(isAdmin);
+  const isLocalhost = useIsLocalhost();
+  const items = getNavItems(isAdmin, isLocalhost);
 
   return (
     <nav
@@ -42,7 +45,7 @@ export function MobileNav({ isAdmin = false }: MobileNavProps) {
               }`}
               aria-hidden
             />
-            {item.shortLabel ?? item.label}
+            <NavItemLabel item={item} preferShort />
           </Link>
         );
       })}

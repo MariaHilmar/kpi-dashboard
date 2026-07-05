@@ -35,6 +35,14 @@ const SAMPLE_ROWS: IssueRow[] = [
     lead_time_dias: null,
     idade_dias: 10,
     sla_mais_90_dias: false,
+    story_points: 3,
+    aceita: "Sim",
+    justificada: null,
+    historico: null,
+    recorrente: null,
+    horas_estimada: 4,
+    horas_prevista: null,
+    homologado: "Não",
   },
   {
     total_count: 2,
@@ -59,6 +67,14 @@ const SAMPLE_ROWS: IssueRow[] = [
     lead_time_dias: 45,
     idade_dias: 0,
     sla_mais_90_dias: true,
+    story_points: null,
+    aceita: null,
+    justificada: null,
+    historico: null,
+    recorrente: null,
+    horas_estimada: null,
+    horas_prevista: null,
+    homologado: null,
   },
 ];
 
@@ -84,6 +100,8 @@ describe("buildIssuesExportWorkbook", () => {
     expect(header).toContain("Estado");
     expect(header).toContain("Status");
     expect(header).toContain("Módulo");
+    expect(header).toContain("Story points");
+    expect(header).toContain("Homologado");
 
     const row2 = dados?.getRow(2).values as (string | undefined)[];
     expect(row2).toContain("BCB");

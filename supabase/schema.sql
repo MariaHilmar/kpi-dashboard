@@ -1,6 +1,6 @@
 -- =============================================================================
 -- schema.sql (gerado automaticamente)
--- Gerado em: 2026-07-02 01:48:15 UTC
+-- Gerado em: 2026-07-05 13:34:29 UTC
 -- Fonte: concatenacao ordenada de supabase/migrations/*.sql
 --
 -- IMPORTANTE: apos criar/editar uma migration, regenere com:
@@ -6325,5 +6325,2105 @@ create index if not exists idx_issue_status_events_issue_key
 
 comment on function public.report_flow_cfd is
   'CFD diário: eventos (segmentos) > snapshots > proxy. Otimizado para evitar N×M chamadas PL/pgSQL.';
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 032_report_flow_stage_dwell.sql
+-- -----------------------------------------------------------------------------
+
+-- =============================================================================
+-- Migration 032 — Tempo de permanência (dwell) por etapa Kanban
+-- =============================================================================
+-- Agrega dias por etapa a partir de flow_etapa_segments (issue_status_events).
+-- Escopo: issues concluídas no período. Proxy quando não há eventos.
+
+create or replace function public.flow_dwell_etapas()
+returns text[]
+language sql
+immutable
+as $$
+  select array[
+    'Backlog', 'A Fazer', 'Em Desenvolvimento', 'Em Teste', 'Homologação'
+  ]::text[];
+$$;
+
+comment on function public.flow_dwell_etapas() is
+  'Etapas Kanban incluídas no relatório de dwell time (exclui Concluído/Cancelado).';
+
+create or replace function public.report_flow_stage_dwell(
+  p_modulo text default null,
+  p_area text default null,
+  p_tipo text default null,
+  p_prioridade text default null,
+  p_equipe text default null,
+  p_status text default null,
+  p_parceria text default null,
+  p_sprint text default null,
+  p_epico text default null,
+  p_repositorio text default null,
+  p_situacao text default null,
+  p_ano integer default null,
+  p_assignee text default null,
+  p_start_date date default null,
+  p_end_date date default null
+)
+returns table (
+  etapa text,
+  tempo_medio_dias numeric,
+  tempo_mediano_dias numeric,
+  quantidade_issues bigint,
+  issues_total_periodo bigint,
+  issues_com_proxy bigint
+)
+language sql
+stable
+set search_path = public, pg_temp
+as $$
+  with bounds as (
+    select
+      coalesce(p_start_date, date_trunc('year', current_date)::date) as d_start,
+      coalesce(p_end_date, current_date) as d_end
+  ),
+  scoped as (
+    select i.*
+    from public._flow_issues_filtered(
+      p_modulo, p_area, p_tipo, p_prioridade, p_equipe, p_status,
+      p_parceria, p_sprint, p_epico, p_repositorio, p_situacao,
+      p_ano, p_assignee, null, null, false, false
+    ) i
+    cross join bounds b
+    where i.fechado_em is not null
+      and i.criado_em is not null
+      and i.fechado_em::date between b.d_start and b.d_end
+  ),
+  meta as (
+    select
+      count(*)::bigint as issues_total_periodo,
+      count(*) filter (
+        where not exists (
+          select 1
+          from public.issue_status_events e
+          where e.issue_key = scoped.issue_key
+        )
+      )::bigint as issues_com_proxy
+    from scoped
+  ),
+  segment_days as (
+    select
+      i.issue_key,
+      seg.etapa,
+      greatest(
+        0,
+        (
+          least(coalesce(seg.valid_to, i.fechado_em::date), i.fechado_em::date)
+          - greatest(seg.valid_from, i.criado_em::date)
+          + 1
+        )
+      )::numeric as dias
+    from scoped i
+    cross join lateral public.flow_etapa_segments(i.issue_key) seg
+    where exists (
+        select 1
+        from public.issue_status_events e
+        where e.issue_key = i.issue_key
+      )
+      and seg.etapa = any (public.flow_dwell_etapas())
+      and least(coalesce(seg.valid_to, i.fechado_em::date), i.fechado_em::date)
+          >= greatest(seg.valid_from, i.criado_em::date)
+  ),
+  proxy_days as (
+    select
+      i.issue_key,
+      public.flow_map_etapa(i.status, i.estado) as etapa,
+      (i.fechado_em::date - i.criado_em::date + 1)::numeric as dias
+    from scoped i
+    where not exists (
+        select 1
+        from public.issue_status_events e
+        where e.issue_key = i.issue_key
+      )
+      and public.flow_map_etapa(i.status, i.estado) = any (public.flow_dwell_etapas())
+  ),
+  all_days as (
+    select issue_key, etapa, dias
+    from segment_days
+    where dias > 0
+    union all
+    select issue_key, etapa, dias
+    from proxy_days
+    where dias > 0
+  ),
+  issue_stage_totals as (
+    select
+      issue_key,
+      etapa,
+      sum(dias) as dias
+    from all_days
+    group by issue_key, etapa
+  ),
+  aggregated as (
+    select
+      ist.etapa,
+      round(avg(ist.dias), 2) as tempo_medio_dias,
+      round(
+        (percentile_cont(0.5) within group (order by ist.dias))::numeric,
+        2
+      ) as tempo_mediano_dias,
+      count(*)::bigint as quantidade_issues
+    from issue_stage_totals ist
+    group by ist.etapa
+  )
+  select
+    e.etapa,
+    agg.tempo_medio_dias,
+    agg.tempo_mediano_dias,
+    coalesce(agg.quantidade_issues, 0::bigint) as quantidade_issues,
+    m.issues_total_periodo,
+    m.issues_com_proxy
+  from unnest(public.flow_dwell_etapas()) as e(etapa)
+  cross join meta m
+  left join aggregated agg on agg.etapa = e.etapa
+  order by array_position(public.flow_dwell_etapas(), e.etapa);
+$$;
+
+comment on function public.report_flow_stage_dwell is
+  'Tempo médio/mediano de permanência por etapa Kanban (issues concluídas no período). '
+  'Segmentos via issue_status_events; proxy atribui todo lead time à etapa final quando sem eventos.';
+
+alter function public.report_flow_stage_dwell(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date
+) security definer set search_path = public, pg_temp;
+
+grant execute on function public.report_flow_stage_dwell(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date
+) to anon, authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 033_report_flow_data_quality.sql
+-- -----------------------------------------------------------------------------
+
+-- =============================================================================
+-- Migration 033 — Qualidade do histórico Kanban no recorte (CFD scope)
+-- =============================================================================
+-- Classifica issues ativas no período: eventos > snapshot > proxy (mesma prioridade do CFD).
+
+create or replace function public.report_flow_data_quality(
+  p_modulo text default null,
+  p_area text default null,
+  p_tipo text default null,
+  p_prioridade text default null,
+  p_equipe text default null,
+  p_status text default null,
+  p_parceria text default null,
+  p_sprint text default null,
+  p_epico text default null,
+  p_repositorio text default null,
+  p_situacao text default null,
+  p_ano integer default null,
+  p_assignee text default null,
+  p_start_date date default null,
+  p_end_date date default null
+)
+returns table (
+  total_issues bigint,
+  com_eventos bigint,
+  com_snapshot_apenas bigint,
+  com_proxy bigint,
+  pct_eventos_reais numeric,
+  pct_snapshot_apenas numeric,
+  pct_proxy numeric
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with bounds as (
+    select
+      coalesce(p_start_date, (select min(criado_em::date) from public.issues)) as d_start,
+      coalesce(p_end_date, current_date) as d_end
+  ),
+  issues_scoped as (
+    select i.issue_key
+    from public._flow_issues_filtered(
+      p_modulo, p_area, p_tipo, p_prioridade, p_equipe, p_status,
+      p_parceria, p_sprint, p_epico, p_repositorio, p_situacao,
+      p_ano, p_assignee,
+      (select d_start from bounds),
+      (select d_end from bounds),
+      true, false
+    ) i
+  ),
+  classified as (
+    select
+      s.issue_key,
+      case
+        when exists (
+          select 1
+          from public.issue_status_events e
+          where e.issue_key = s.issue_key
+        ) then 'eventos'
+        when exists (
+          select 1
+          from public.issue_status_snapshots snap
+          cross join bounds b
+          where snap.issue_key = s.issue_key
+            and snap.snapshot_date between b.d_start and b.d_end
+        ) then 'snapshot'
+        else 'proxy'
+      end as fonte
+    from issues_scoped s
+  )
+  select
+    count(*)::bigint as total_issues,
+    count(*) filter (where c.fonte = 'eventos')::bigint as com_eventos,
+    count(*) filter (where c.fonte = 'snapshot')::bigint as com_snapshot_apenas,
+    count(*) filter (where c.fonte = 'proxy')::bigint as com_proxy,
+    round(
+      100.0 * count(*) filter (where c.fonte = 'eventos') / nullif(count(*), 0),
+      1
+    ) as pct_eventos_reais,
+    round(
+      100.0 * count(*) filter (where c.fonte = 'snapshot') / nullif(count(*), 0),
+      1
+    ) as pct_snapshot_apenas,
+    round(
+      100.0 * count(*) filter (where c.fonte = 'proxy') / nullif(count(*), 0),
+      1
+    ) as pct_proxy
+  from classified c;
+$$;
+
+comment on function public.report_flow_data_quality is
+  'Cobertura de histórico Kanban no recorte CFD: eventos GitLab, snapshot diário ou proxy (status atual).';
+
+grant execute on function public.report_flow_data_quality(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date
+) to anon, authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 034_milestone_report_schema.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 034 — Base para relatório de milestone e importação (Excel / GitLab)
+
+-- ---------------------------------------------------------------------------
+-- Milestones do grupo GitLab (comprasnet)
+-- ---------------------------------------------------------------------------
+create table if not exists public.milestones (
+  id uuid primary key default gen_random_uuid(),
+  gitlab_group_path text not null default 'comprasnet',
+  gitlab_milestone_id bigint not null,
+  titulo text not null,
+  description text,
+  start_date date,
+  due_date date,
+  state text,
+  web_url text,
+  synced_at timestamptz not null default now(),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint milestones_gitlab_group_milestone_unique unique (gitlab_group_path, gitlab_milestone_id)
+);
+
+create index if not exists idx_milestones_gitlab_id
+  on public.milestones (gitlab_milestone_id);
+
+create index if not exists idx_milestones_titulo
+  on public.milestones (titulo);
+
+-- ---------------------------------------------------------------------------
+-- Snapshot por issue × milestone (histórico de sprints)
+-- ---------------------------------------------------------------------------
+create table if not exists public.milestone_issues (
+  id uuid primary key default gen_random_uuid(),
+  milestone_id uuid not null references public.milestones (id) on delete cascade,
+  issue_key text not null,
+  gitlab_repo text not null,
+  gitlab_iid integer not null,
+  titulo text,
+  status text,
+  assignee text,
+  story_points integer,
+  gitlab_weight integer,
+  aceita text,
+  justificada text,
+  historico text,
+  recorrente text,
+  horas_estimada numeric,
+  horas_prevista numeric,
+  homologado text,
+  ultimo_comentario text,
+  issue_state text,
+  fechado_em timestamptz,
+  imported_at timestamptz not null default now(),
+  import_source text not null default 'gitlab',
+  constraint milestone_issues_milestone_issue_unique unique (milestone_id, issue_key)
+);
+
+create index if not exists idx_milestone_issues_milestone
+  on public.milestone_issues (milestone_id);
+
+create index if not exists idx_milestone_issues_issue_key
+  on public.milestone_issues (issue_key);
+
+create index if not exists idx_milestone_issues_gitlab
+  on public.milestone_issues (gitlab_repo, gitlab_iid);
+
+-- ---------------------------------------------------------------------------
+-- Auditoria de importações (GitLab / Excel)
+-- ---------------------------------------------------------------------------
+create table if not exists public.milestone_import_runs (
+  id uuid primary key default gen_random_uuid(),
+  source text not null,
+  milestone_gitlab_id bigint,
+  sprint_titulo text,
+  rows_processed integer not null default 0,
+  rows_upserted integer not null default 0,
+  rows_error integer not null default 0,
+  message text,
+  started_at timestamptz not null default now(),
+  finished_at timestamptz,
+  status text not null default 'running'
+);
+
+-- ---------------------------------------------------------------------------
+-- Colunas denormalizadas em issues (valor mais recente / importação Excel)
+-- ---------------------------------------------------------------------------
+alter table public.issues
+  add column if not exists story_points integer,
+  add column if not exists gitlab_weight integer,
+  add column if not exists aceita text,
+  add column if not exists justificada text,
+  add column if not exists historico text,
+  add column if not exists recorrente text,
+  add column if not exists horas_estimada numeric,
+  add column if not exists horas_prevista numeric,
+  add column if not exists homologado text,
+  add column if not exists ultimo_comentario text,
+  add column if not exists milestone_gitlab_id bigint,
+  add column if not exists report_fields_synced_at timestamptz;
+
+create index if not exists idx_issues_story_points on public.issues (story_points);
+create index if not exists idx_issues_milestone_gitlab_id on public.issues (milestone_gitlab_id);
+
+-- ---------------------------------------------------------------------------
+-- Grants (service_role / pipeline)
+-- ---------------------------------------------------------------------------
+grant select, insert, update, delete on public.milestones to service_role;
+grant select, insert, update, delete on public.milestone_issues to service_role;
+grant select, insert, update, delete on public.milestone_import_runs to service_role;
+
+grant select on public.milestones to authenticated;
+grant select on public.milestone_issues to authenticated;
+grant select on public.milestone_import_runs to authenticated;
+
+comment on table public.milestones is
+  'Metadados de milestones do grupo GitLab (comprasnet).';
+
+comment on table public.milestone_issues is
+  'Snapshot de issues por milestone para relatório histórico e burndown.';
+
+comment on column public.issues.story_points is
+  'Story points (Planning Poker / Excel). Preservado pelo sync incremental.';
+
+comment on column public.issues.gitlab_weight is
+  'Campo weight nativo do GitLab (Premium).';
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 035_milestone_iid.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 035 — IID do milestone (número da URL GitLab: /milestones/90)
+
+alter table public.milestones
+  add column if not exists gitlab_milestone_iid integer;
+
+create unique index if not exists idx_milestones_group_iid
+  on public.milestones (gitlab_group_path, gitlab_milestone_iid)
+  where gitlab_milestone_iid is not null;
+
+comment on column public.milestones.gitlab_milestone_iid is
+  'IID do milestone na URL GitLab (ex.: /milestones/90). Distinto de gitlab_milestone_id (ID interno).';
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 036_report_milestone_throughput.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 036 — Throughput intra-sprint (wrapper sobre report_flow_throughput)
+-- Issue #33: recorte automático pela janela start_date–due_date da milestone.
+
+create or replace function public.report_milestone_throughput(
+  p_milestone_iid integer,
+  p_granularity text default 'week'
+)
+returns table (
+  periodo text,
+  quantidade_concluida bigint,
+  story_points bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  flow_rows as (
+    select
+      f.periodo,
+      f.quantidade_concluida
+    from milestone_bounds mb
+    cross join lateral public.report_flow_throughput(
+      null, null, null, null, null, null, null, null, null, null, null, null, null,
+      mb.start_date,
+      mb.due_date,
+      p_granularity
+    ) f
+    where mb.start_date is not null
+      and mb.due_date is not null
+  ),
+  points_rows as (
+    select
+      case
+        when coalesce(p_granularity, 'week') = 'month'
+          then to_char(date_trunc('month', mi.fechado_em::date), 'YYYY-MM')
+        else to_char(mi.fechado_em::date, 'IYYY') || '-W' || lpad(to_char(mi.fechado_em::date, 'IW'), 2, '0')
+      end as periodo,
+      coalesce(sum(coalesce(mi.story_points, 0)), 0)::bigint as story_points
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    where mb.start_date is not null
+      and mb.due_date is not null
+      and mi.fechado_em is not null
+      and mi.fechado_em::date between mb.start_date and mb.due_date
+    group by 1
+  )
+  select
+    f.periodo,
+    f.quantidade_concluida,
+    coalesce(p.story_points, 0)::bigint as story_points
+  from flow_rows f
+  left join points_rows p on p.periodo = f.periodo
+  order by f.periodo;
+$$;
+
+comment on function public.report_milestone_throughput(integer, text) is
+  'Throughput semanal/mensal intra-sprint: delega a report_flow_throughput com datas da milestone + série opcional de story points (milestone_issues).';
+
+grant execute on function public.report_milestone_throughput(integer, text) to authenticated;
+grant execute on function public.report_milestone_throughput(integer, text) to service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 037_report_milestone_wip_mix.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 037 — WIP no fechamento + mix comprometido vs entregue (issue #34)
+-- Compõe /fluxo (flow_map_etapa, flow_resolve_etapa_on_date) e /sprint (rótulos de dimensão).
+
+-- -----------------------------------------------------------------------------
+-- Rótulo de dimensão — espelha dashboard_aggregate_v2 para recorte milestone
+-- -----------------------------------------------------------------------------
+create or replace function public._milestone_dimension_label(
+  p_dimension text,
+  p_parceria text,
+  p_repositorio text,
+  p_area_funcional text,
+  p_desenvolvedor text,
+  p_dev_mergeado text,
+  p_modulo text,
+  p_tipo text,
+  p_prioridade text,
+  p_status text,
+  p_equipe text,
+  p_epico text,
+  p_sprint text,
+  p_categoria text,
+  p_modulo_ok text,
+  p_area_ok text,
+  p_padrao_titulo text,
+  p_padrao_completo text
+)
+returns text
+language sql
+immutable
+as $$
+  select case p_dimension
+    when 'parceria' then coalesce(nullif(trim(p_parceria), ''), 'Não informado')
+    when 'repositorio' then coalesce(nullif(trim(p_repositorio), ''), 'Não informado')
+    when 'area_funcional' then coalesce(nullif(trim(p_area_funcional), ''), 'Não informado')
+    when 'desenvolvedor' then coalesce(nullif(trim(p_desenvolvedor), ''), 'Não informado')
+    when 'dev_mergeado' then coalesce(nullif(trim(p_dev_mergeado), ''), 'Não informado')
+    when 'modulo' then coalesce(nullif(trim(p_modulo), ''), 'Não informado')
+    when 'tipo' then coalesce(nullif(trim(p_tipo), ''), 'Não informado')
+    when 'prioridade' then coalesce(nullif(trim(p_prioridade), ''), 'Não informado')
+    when 'status' then coalesce(nullif(trim(p_status), ''), 'Não informado')
+    when 'equipe' then coalesce(nullif(trim(p_equipe), ''), 'Não informado')
+    when 'epico' then coalesce(nullif(trim(p_epico), ''), 'Não informado')
+    when 'sprint' then coalesce(nullif(trim(p_sprint), ''), 'Não informado')
+    when 'categoria' then coalesce(nullif(trim(p_categoria), ''), 'Sem categoria')
+    when 'qualidade_modulo_ok' then coalesce(nullif(trim(p_modulo_ok), ''), 'Não informado')
+    when 'qualidade_area_ok' then coalesce(nullif(trim(p_area_ok), ''), 'Não informado')
+    when 'qualidade_padrao_titulo' then coalesce(nullif(trim(p_padrao_titulo), ''), 'Não informado')
+    when 'qualidade_padrao_completo' then coalesce(nullif(trim(p_padrao_completo), ''), 'Não informado')
+    else 'Outros'
+  end;
+$$;
+
+comment on function public._milestone_dimension_label(text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text, text) is
+  'Rótulo de agregação por dimensão — espelha dashboard_aggregate_v2 para milestone_issues.';
+
+-- -----------------------------------------------------------------------------
+-- Data de referência do snapshot WIP (due_date ou hoje se milestone aberta)
+-- -----------------------------------------------------------------------------
+create or replace function public._milestone_wip_ref_date(
+  p_due_date date,
+  p_state text
+)
+returns date
+language sql
+immutable
+as $$
+  select case
+    when p_due_date is null then current_date
+    when coalesce(lower(trim(p_state)), '') = 'active' or p_due_date >= current_date then current_date
+    else p_due_date
+  end;
+$$;
+
+-- -----------------------------------------------------------------------------
+-- WIP por etapa Kanban no fechamento (ou hoje)
+-- -----------------------------------------------------------------------------
+create or replace function public.report_milestone_wip(
+  p_milestone_iid integer
+)
+returns table (
+  ref_date date,
+  etapa text,
+  quantidade bigint,
+  story_points bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      public._milestone_wip_ref_date(m.due_date, m.state) as ref_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  milestone_scoped as (
+    select
+      mi.issue_key,
+      mi.story_points,
+      coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')) as status,
+      coalesce(
+        nullif(trim(i.estado), ''),
+        case
+          when lower(coalesce(trim(mi.issue_state), '')) in ('closed', 'close') then 'Fechado'
+          else 'Aberto'
+        end
+      ) as estado,
+      coalesce(i.criado_em, mi.imported_at) as criado_em,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      snap.etapa as snapshot_etapa,
+      mb.ref_date
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+    left join public.issue_status_snapshots snap
+      on snap.issue_key = mi.issue_key
+     and snap.snapshot_date = mb.ref_date
+  ),
+  open_at_ref as (
+    select ms.*
+    from milestone_scoped ms
+    where ms.criado_em::date <= ms.ref_date
+      and (ms.fechado_em is null or ms.fechado_em::date > ms.ref_date)
+  ),
+  with_etapa as (
+    select
+      o.*,
+      public.flow_resolve_etapa_on_date(
+        o.issue_key,
+        o.status,
+        o.estado,
+        o.criado_em,
+        o.fechado_em,
+        o.ref_date,
+        o.snapshot_etapa
+      ) as etapa
+    from open_at_ref o
+  )
+  select
+    (select ref_date from milestone_bounds limit 1) as ref_date,
+    w.etapa,
+    count(*)::bigint as quantidade,
+    coalesce(sum(coalesce(w.story_points, 0)), 0)::bigint as story_points
+  from with_etapa w
+  where public.flow_is_wip_etapa(w.etapa)
+  group by w.etapa
+  order by array_position(
+    array['A Fazer', 'Em Desenvolvimento', 'Em Teste', 'Homologação']::text[],
+    w.etapa
+  );
+$$;
+
+comment on function public.report_milestone_wip(integer) is
+  'WIP por etapa Kanban no fechamento da milestone (due_date) ou hoje se ainda aberta. Usa flow_resolve_etapa_on_date + story_points de milestone_issues.';
+
+-- -----------------------------------------------------------------------------
+-- Mix comprometido vs entregue por dimensão
+-- -----------------------------------------------------------------------------
+create or replace function public.report_milestone_mix(
+  p_milestone_iid integer,
+  p_dimension text default 'tipo',
+  p_limit integer default null
+)
+returns table (
+  serie text,
+  label text,
+  quantidade bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  scoped as (
+    select
+      mi.issue_key,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      mb.start_date,
+      mb.due_date,
+      public._milestone_dimension_label(
+        p_dimension,
+        i.parceria, i.repositorio, i.area_funcional, i.desenvolvedor, i.dev_mergeado,
+        i.modulo, i.tipo, i.prioridade,
+        coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')),
+        i.equipe, i.epico, i.sprint, i.categoria,
+        i.modulo_ok, i.area_ok, i.padrao_titulo, i.padrao_completo
+      ) as lbl
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+  ),
+  committed as (
+    select s.lbl as label, count(*)::bigint as quantidade
+    from scoped s
+    group by s.lbl
+  ),
+  delivered as (
+    select s.lbl as label, count(*)::bigint as quantidade
+    from scoped s
+    where s.fechado_em is not null
+      and s.start_date is not null
+      and s.due_date is not null
+      and s.fechado_em::date between s.start_date and s.due_date
+    group by s.lbl
+  ),
+  top_labels as (
+    select c.label
+    from committed c
+    order by c.quantidade desc, c.label asc
+    limit case when p_limit is null or p_limit <= 0 then null else p_limit end
+  ),
+  unioned as (
+    select 'comprometido'::text as serie, c.label, c.quantidade from committed c
+    union all
+    select 'entregue'::text as serie, d.label, d.quantidade from delivered d
+  )
+  select u.serie, u.label, u.quantidade
+  from unioned u
+  where p_limit is null
+     or p_limit <= 0
+     or u.label in (select tl.label from top_labels tl)
+  order by u.serie, u.quantidade desc, u.label asc;
+$$;
+
+comment on function public.report_milestone_mix(integer, text, integer) is
+  'Mix por dimensão: comprometido (milestone_issues) vs entregue (fechado_em no intervalo start_date–due_date). Rótulos espelham dashboard_aggregate_v2.';
+
+-- -----------------------------------------------------------------------------
+-- Resumo headline (totais WIP + commitment)
+-- -----------------------------------------------------------------------------
+create or replace function public.report_milestone_summary(
+  p_milestone_iid integer
+)
+returns table (
+  ref_date date,
+  wip_issues bigint,
+  wip_story_points bigint,
+  committed_issues bigint,
+  committed_story_points bigint,
+  delivered_issues bigint,
+  delivered_story_points bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date,
+      public._milestone_wip_ref_date(m.due_date, m.state) as ref_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  scoped as (
+    select
+      mi.story_points,
+      coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')) as status,
+      coalesce(
+        nullif(trim(i.estado), ''),
+        case
+          when lower(coalesce(trim(mi.issue_state), '')) in ('closed', 'close') then 'Fechado'
+          else 'Aberto'
+        end
+      ) as estado,
+      coalesce(i.criado_em, mi.imported_at) as criado_em,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      snap.etapa as snapshot_etapa,
+      mi.issue_key,
+      mb.ref_date,
+      mb.start_date,
+      mb.due_date
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+    left join public.issue_status_snapshots snap
+      on snap.issue_key = mi.issue_key
+     and snap.snapshot_date = mb.ref_date
+  ),
+  wip as (
+    select
+      count(*) filter (
+        where s.criado_em::date <= s.ref_date
+          and (s.fechado_em is null or s.fechado_em::date > s.ref_date)
+          and public.flow_is_wip_etapa(
+            public.flow_resolve_etapa_on_date(
+              s.issue_key, s.status, s.estado, s.criado_em, s.fechado_em, s.ref_date, s.snapshot_etapa
+            )
+          )
+      )::bigint as wip_issues,
+      coalesce(sum(s.story_points) filter (
+        where s.criado_em::date <= s.ref_date
+          and (s.fechado_em is null or s.fechado_em::date > s.ref_date)
+          and public.flow_is_wip_etapa(
+            public.flow_resolve_etapa_on_date(
+              s.issue_key, s.status, s.estado, s.criado_em, s.fechado_em, s.ref_date, s.snapshot_etapa
+            )
+          )
+      ), 0)::bigint as wip_story_points
+    from scoped s
+  ),
+  commitment as (
+    select
+      count(*)::bigint as committed_issues,
+      coalesce(sum(coalesce(s.story_points, 0)), 0)::bigint as committed_story_points,
+      count(*) filter (
+        where s.fechado_em is not null
+          and s.start_date is not null
+          and s.due_date is not null
+          and s.fechado_em::date between s.start_date and s.due_date
+      )::bigint as delivered_issues,
+      coalesce(sum(coalesce(s.story_points, 0)) filter (
+        where s.fechado_em is not null
+          and s.start_date is not null
+          and s.due_date is not null
+          and s.fechado_em::date between s.start_date and s.due_date
+      ), 0)::bigint as delivered_story_points
+    from scoped s
+  )
+  select
+    (select ref_date from milestone_bounds limit 1),
+    w.wip_issues,
+    w.wip_story_points,
+    c.committed_issues,
+    c.committed_story_points,
+    c.delivered_issues,
+    c.delivered_story_points
+  from wip w
+  cross join commitment c;
+$$;
+
+comment on function public.report_milestone_summary(integer) is
+  'Totais headline: WIP no fechamento + comprometido vs entregue (issues e story points).';
+
+grant execute on function public.report_milestone_wip(integer) to authenticated, service_role;
+grant execute on function public.report_milestone_mix(integer, text, integer) to authenticated, service_role;
+grant execute on function public.report_milestone_summary(integer) to authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 038_flow_milestone_scope.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 038 — Escopo milestone em dwell e lead time (issue #35)
+-- Reutiliza lógica de report_flow_stage_dwell / report_flow_lead_time_detail;
+-- adiciona p_milestone_iid opcional + CTE de issues entregues na sprint.
+
+-- -----------------------------------------------------------------------------
+-- Issues entregues na milestone (fechado_em ∈ [start_date, due_date])
+-- -----------------------------------------------------------------------------
+create or replace function public._milestone_delivered_issue_keys(p_milestone_iid integer)
+returns table (issue_key text)
+language sql
+stable
+as $$
+  select mi.issue_key
+  from public.milestones m
+  join public.milestone_issues mi on mi.milestone_id = m.id
+  left join public.issues i on i.issue_key = mi.issue_key
+  where m.gitlab_milestone_iid = p_milestone_iid
+    and m.start_date is not null
+    and m.due_date is not null
+    and coalesce(i.fechado_em, mi.fechado_em) is not null
+    and coalesce(i.fechado_em, mi.fechado_em)::date between m.start_date and m.due_date;
+$$;
+
+comment on function public._milestone_delivered_issue_keys(integer) is
+  'Issue keys entregues na janela start_date–due_date da milestone (snapshot milestone_issues + issues).';
+
+-- -----------------------------------------------------------------------------
+-- report_flow_stage_dwell — parâmetro opcional p_milestone_iid
+-- -----------------------------------------------------------------------------
+drop function if exists public.report_flow_stage_dwell(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date
+);
+
+create or replace function public.report_flow_stage_dwell(
+  p_modulo text default null,
+  p_area text default null,
+  p_tipo text default null,
+  p_prioridade text default null,
+  p_equipe text default null,
+  p_status text default null,
+  p_parceria text default null,
+  p_sprint text default null,
+  p_epico text default null,
+  p_repositorio text default null,
+  p_situacao text default null,
+  p_ano integer default null,
+  p_assignee text default null,
+  p_start_date date default null,
+  p_end_date date default null,
+  p_milestone_iid integer default null
+)
+returns table (
+  etapa text,
+  tempo_medio_dias numeric,
+  tempo_mediano_dias numeric,
+  quantidade_issues bigint,
+  issues_total_periodo bigint,
+  issues_com_proxy bigint
+)
+language sql
+stable
+set search_path = public, pg_temp
+as $$
+  with milestone_ctx as (
+    select m.start_date, m.due_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  bounds as (
+    select
+      coalesce(
+        (select mc.start_date from milestone_ctx mc where p_milestone_iid is not null),
+        p_start_date,
+        date_trunc('year', current_date)::date
+      ) as d_start,
+      coalesce(
+        (select mc.due_date from milestone_ctx mc where p_milestone_iid is not null),
+        p_end_date,
+        current_date
+      ) as d_end
+  ),
+  scoped as (
+    select i.*
+    from public._flow_issues_filtered(
+      p_modulo, p_area, p_tipo, p_prioridade, p_equipe, p_status,
+      p_parceria, p_sprint, p_epico, p_repositorio, p_situacao,
+      p_ano, p_assignee, null, null, false, false
+    ) i
+    cross join bounds b
+    where i.fechado_em is not null
+      and i.criado_em is not null
+      and i.fechado_em::date between b.d_start and b.d_end
+      and (
+        p_milestone_iid is null
+        or i.issue_key in (
+          select dk.issue_key
+          from public._milestone_delivered_issue_keys(p_milestone_iid) dk
+        )
+      )
+  ),
+  meta as (
+    select
+      count(*)::bigint as issues_total_periodo,
+      count(*) filter (
+        where not exists (
+          select 1
+          from public.issue_status_events e
+          where e.issue_key = scoped.issue_key
+        )
+      )::bigint as issues_com_proxy
+    from scoped
+  ),
+  segment_days as (
+    select
+      i.issue_key,
+      seg.etapa,
+      greatest(
+        0,
+        (
+          least(coalesce(seg.valid_to, i.fechado_em::date), i.fechado_em::date)
+          - greatest(seg.valid_from, i.criado_em::date)
+          + 1
+        )
+      )::numeric as dias
+    from scoped i
+    cross join lateral public.flow_etapa_segments(i.issue_key) seg
+    where exists (
+        select 1
+        from public.issue_status_events e
+        where e.issue_key = i.issue_key
+      )
+      and seg.etapa = any (public.flow_dwell_etapas())
+      and least(coalesce(seg.valid_to, i.fechado_em::date), i.fechado_em::date)
+          >= greatest(seg.valid_from, i.criado_em::date)
+  ),
+  proxy_days as (
+    select
+      i.issue_key,
+      public.flow_map_etapa(i.status, i.estado) as etapa,
+      (i.fechado_em::date - i.criado_em::date + 1)::numeric as dias
+    from scoped i
+    where not exists (
+        select 1
+        from public.issue_status_events e
+        where e.issue_key = i.issue_key
+      )
+      and public.flow_map_etapa(i.status, i.estado) = any (public.flow_dwell_etapas())
+  ),
+  all_days as (
+    select issue_key, etapa, dias
+    from segment_days
+    where dias > 0
+    union all
+    select issue_key, etapa, dias
+    from proxy_days
+    where dias > 0
+  ),
+  issue_stage_totals as (
+    select
+      issue_key,
+      etapa,
+      sum(dias) as dias
+    from all_days
+    group by issue_key, etapa
+  ),
+  aggregated as (
+    select
+      ist.etapa,
+      round(avg(ist.dias), 2) as tempo_medio_dias,
+      round(
+        (percentile_cont(0.5) within group (order by ist.dias))::numeric,
+        2
+      ) as tempo_mediano_dias,
+      count(*)::bigint as quantidade_issues
+    from issue_stage_totals ist
+    group by ist.etapa
+  )
+  select
+    e.etapa,
+    agg.tempo_medio_dias,
+    agg.tempo_mediano_dias,
+    coalesce(agg.quantidade_issues, 0::bigint) as quantidade_issues,
+    m.issues_total_periodo,
+    m.issues_com_proxy
+  from unnest(public.flow_dwell_etapas()) as e(etapa)
+  cross join meta m
+  left join aggregated agg on agg.etapa = e.etapa
+  order by array_position(public.flow_dwell_etapas(), e.etapa);
+$$;
+
+comment on function public.report_flow_stage_dwell is
+  'Tempo médio/mediano de permanência por etapa Kanban (issues concluídas no período). '
+  'Com p_milestone_iid: recorte automático por milestone_issues entregues na sprint.';
+
+-- -----------------------------------------------------------------------------
+-- report_flow_lead_time_detail — parâmetro opcional p_milestone_iid
+-- -----------------------------------------------------------------------------
+drop function if exists public.report_flow_lead_time_detail(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date
+);
+
+create or replace function public.report_flow_lead_time_detail(
+  p_modulo text default null,
+  p_area text default null,
+  p_tipo text default null,
+  p_prioridade text default null,
+  p_equipe text default null,
+  p_status text default null,
+  p_parceria text default null,
+  p_sprint text default null,
+  p_epico text default null,
+  p_repositorio text default null,
+  p_situacao text default null,
+  p_ano integer default null,
+  p_assignee text default null,
+  p_start_date date default null,
+  p_end_date date default null,
+  p_milestone_iid integer default null
+)
+returns table (
+  issue_id uuid,
+  issue_key text,
+  titulo text,
+  data_inicio_fluxo date,
+  data_inicio_cycle date,
+  data_conclusao date,
+  lead_time_dias integer,
+  cycle_time_dias integer
+)
+language sql
+stable
+set search_path = public, pg_temp
+as $$
+  with milestone_ctx as (
+    select m.start_date, m.due_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  bounds as (
+    select
+      coalesce(
+        (select mc.start_date from milestone_ctx mc where p_milestone_iid is not null),
+        p_start_date,
+        date_trunc('year', current_date)::date
+      ) as d_start,
+      coalesce(
+        (select mc.due_date from milestone_ctx mc where p_milestone_iid is not null),
+        p_end_date,
+        current_date
+      ) as d_end
+  ),
+  scoped as (
+    select i.*
+    from public._flow_issues_filtered(
+      p_modulo, p_area, p_tipo, p_prioridade, p_equipe, p_status,
+      p_parceria, p_sprint, p_epico, p_repositorio, p_situacao,
+      p_ano, p_assignee, null, null, false, false
+    ) i
+    cross join bounds b
+    where i.fechado_em is not null
+      and i.fechado_em::date between b.d_start and b.d_end
+      and i.criado_em is not null
+      and (
+        p_milestone_iid is null
+        or i.issue_key in (
+          select dk.issue_key
+          from public._milestone_delivered_issue_keys(p_milestone_iid) dk
+        )
+      )
+  )
+  select
+    s.id as issue_id,
+    s.issue_key,
+    s.titulo,
+    s.criado_em::date as data_inicio_fluxo,
+    public.flow_data_inicio_cycle(s.issue_key, s.criado_em) as data_inicio_cycle,
+    s.fechado_em::date as data_conclusao,
+    greatest((s.fechado_em::date - s.criado_em::date), 0)::integer as lead_time_dias,
+    greatest(
+      (s.fechado_em::date - public.flow_data_inicio_cycle(s.issue_key, s.criado_em)),
+      0
+    )::integer as cycle_time_dias
+  from scoped s
+  order by lead_time_dias desc nulls last;
+$$;
+
+comment on function public.report_flow_lead_time_detail is
+  'Lead time por issue concluída no período. Com p_milestone_iid: recorte por milestone_issues entregues na sprint.';
+
+-- -----------------------------------------------------------------------------
+-- Wrappers milestone (API simétrica a report_milestone_throughput)
+-- -----------------------------------------------------------------------------
+create or replace function public.report_milestone_stage_dwell(p_milestone_iid integer)
+returns table (
+  etapa text,
+  tempo_medio_dias numeric,
+  tempo_mediano_dias numeric,
+  quantidade_issues bigint,
+  issues_total_periodo bigint,
+  issues_com_proxy bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select *
+  from public.report_flow_stage_dwell(p_milestone_iid := p_milestone_iid);
+$$;
+
+comment on function public.report_milestone_stage_dwell(integer) is
+  'Dwell por etapa Kanban para issues entregues na milestone — delega a report_flow_stage_dwell.';
+
+create or replace function public.report_milestone_lead_time_detail(p_milestone_iid integer)
+returns table (
+  issue_id uuid,
+  issue_key text,
+  titulo text,
+  data_inicio_fluxo date,
+  data_inicio_cycle date,
+  data_conclusao date,
+  lead_time_dias integer,
+  cycle_time_dias integer
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  select *
+  from public.report_flow_lead_time_detail(p_milestone_iid := p_milestone_iid);
+$$;
+
+comment on function public.report_milestone_lead_time_detail(integer) is
+  'Lead time por issue entregue na milestone — delega a report_flow_lead_time_detail.';
+
+-- -----------------------------------------------------------------------------
+-- Grants e security definer
+-- -----------------------------------------------------------------------------
+alter function public.report_flow_stage_dwell(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date, integer
+) security definer set search_path = public, pg_temp;
+
+alter function public.report_flow_lead_time_detail(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date, integer
+) security definer set search_path = public, pg_temp;
+
+grant execute on function public.report_flow_stage_dwell(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date, integer
+) to anon, authenticated, service_role;
+
+grant execute on function public.report_flow_lead_time_detail(
+  text, text, text, text, text, text, text, text, text, text, text, integer, text, date, date, integer
+) to anon, authenticated, service_role;
+
+grant execute on function public.report_milestone_stage_dwell(integer) to authenticated, service_role;
+grant execute on function public.report_milestone_lead_time_detail(integer) to authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 039_report_milestone_delivery_by_dimension.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 039 — Entrega por dimensão no recorte milestone (issue #36)
+-- Métricas: entregues, pontos entregues, WIP restante por equipe/assignee/módulo/parceria.
+
+create or replace function public._milestone_assignee_label(
+  p_dev_mergeado text,
+  p_desenvolvedor text,
+  p_assignee text
+)
+returns text
+language sql
+immutable
+as $$
+  select coalesce(
+    nullif(trim(p_dev_mergeado), ''),
+    nullif(trim(p_desenvolvedor), ''),
+    nullif(trim(p_assignee), ''),
+    'Não informado'
+  );
+$$;
+
+comment on function public._milestone_assignee_label(text, text, text) is
+  'Rótulo de assignee — dev_mergeado → desenvolvedor → milestone_issues.assignee.';
+
+create or replace function public.report_milestone_delivery_by_dimension(
+  p_milestone_iid integer,
+  p_dimension text default 'equipe',
+  p_limit integer default null
+)
+returns table (
+  label text,
+  entregues bigint,
+  pontos_entregues bigint,
+  wip_restante bigint,
+  wip_pontos bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date,
+      public._milestone_wip_ref_date(m.due_date, m.state) as ref_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  scoped as (
+    select
+      mi.story_points,
+      coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')) as status,
+      coalesce(
+        nullif(trim(i.estado), ''),
+        case
+          when lower(coalesce(trim(mi.issue_state), '')) in ('closed', 'close') then 'Fechado'
+          else 'Aberto'
+        end
+      ) as estado,
+      coalesce(i.criado_em, mi.imported_at) as criado_em,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      snap.etapa as snapshot_etapa,
+      mi.issue_key,
+      mb.ref_date,
+      mb.start_date,
+      mb.due_date,
+      case p_dimension
+        when 'assignee' then public._milestone_assignee_label(
+          i.dev_mergeado, i.desenvolvedor, mi.assignee
+        )
+        else public._milestone_dimension_label(
+          p_dimension,
+          i.parceria, i.repositorio, i.area_funcional, i.desenvolvedor, i.dev_mergeado,
+          i.modulo, i.tipo, i.prioridade,
+          coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')),
+          i.equipe, i.epico, i.sprint, i.categoria,
+          i.modulo_ok, i.area_ok, i.padrao_titulo, i.padrao_completo
+        )
+      end as lbl
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+    left join public.issue_status_snapshots snap
+      on snap.issue_key = mi.issue_key
+     and snap.snapshot_date = mb.ref_date
+  ),
+  aggregated as (
+    select
+      s.lbl as label,
+      count(*) filter (
+        where s.fechado_em is not null
+          and s.start_date is not null
+          and s.due_date is not null
+          and s.fechado_em::date between s.start_date and s.due_date
+      )::bigint as entregues,
+      coalesce(sum(coalesce(s.story_points, 0)) filter (
+        where s.fechado_em is not null
+          and s.start_date is not null
+          and s.due_date is not null
+          and s.fechado_em::date between s.start_date and s.due_date
+      ), 0)::bigint as pontos_entregues,
+      count(*) filter (
+        where s.criado_em::date <= s.ref_date
+          and (s.fechado_em is null or s.fechado_em::date > s.ref_date)
+          and public.flow_is_wip_etapa(
+            public.flow_resolve_etapa_on_date(
+              s.issue_key, s.status, s.estado, s.criado_em, s.fechado_em, s.ref_date, s.snapshot_etapa
+            )
+          )
+      )::bigint as wip_restante,
+      coalesce(sum(coalesce(s.story_points, 0)) filter (
+        where s.criado_em::date <= s.ref_date
+          and (s.fechado_em is null or s.fechado_em::date > s.ref_date)
+          and public.flow_is_wip_etapa(
+            public.flow_resolve_etapa_on_date(
+              s.issue_key, s.status, s.estado, s.criado_em, s.fechado_em, s.ref_date, s.snapshot_etapa
+            )
+          )
+      ), 0)::bigint as wip_pontos
+    from scoped s
+    group by s.lbl
+  ),
+  ranked as (
+    select a.*
+    from aggregated a
+    order by a.entregues desc, a.wip_restante desc, a.label asc
+    limit case when p_limit is null or p_limit <= 0 then null else p_limit end
+  )
+  select
+    r.label,
+    r.entregues,
+    r.pontos_entregues,
+    r.wip_restante,
+    r.wip_pontos
+  from ranked r
+  order by r.entregues desc, r.wip_restante desc, r.label asc;
+$$;
+
+comment on function public.report_milestone_delivery_by_dimension(integer, text, integer) is
+  'Entrega por dimensão (equipe, assignee, modulo, parceria): issues/pontos entregues no intervalo da sprint e WIP restante no snapshot.';
+
+grant execute on function public.report_milestone_delivery_by_dimension(integer, text, integer) to authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 040_report_milestone_capacity_by_team.sql
+-- migration: 048_report_milestone_capacity_fechadas.sql
+-- -----------------------------------------------------------------------------
+
+create or replace function public._milestone_matches_issue_sprint(
+  p_milestone_titulo text,
+  p_milestone_iid integer,
+  p_issue_sprint text
+)
+returns boolean
+language sql
+immutable
+as $$
+  select
+    coalesce(trim(p_issue_sprint), '') <> ''
+    and (
+      trim(p_issue_sprint) = trim(p_milestone_titulo)
+      or trim(p_issue_sprint) ~ (
+        '^Sprint\s+' || p_milestone_iid::text || '(\s|-|$)'
+      )
+    );
+$$;
+
+comment on function public._milestone_matches_issue_sprint(text, integer, text) is
+  'True quando issues.sprint corresponde ao título ou ao IID da milestone GitLab (ex.: Sprint 90 - Contratos).';
+
+drop function if exists public.report_milestone_capacity_by_team(integer, integer);
+
+create or replace function public.report_milestone_capacity_by_team(
+  p_from_iid integer,
+  p_to_iid integer
+)
+returns table (
+  milestone_iid integer,
+  milestone_titulo text,
+  equipe text,
+  fechadas bigint,
+  entregues bigint,
+  pontos_entregues bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with bounds as (
+    select
+      least(p_from_iid, p_to_iid) as from_iid,
+      greatest(p_from_iid, p_to_iid) as to_iid
+  ),
+  milestones_in_range as (
+    select
+      m.id as milestone_id,
+      m.gitlab_milestone_iid,
+      m.titulo,
+      m.start_date,
+      m.due_date
+    from public.milestones m
+    cross join bounds b
+    where m.gitlab_milestone_iid is not null
+      and m.gitlab_milestone_iid between b.from_iid and b.to_iid
+  ),
+  scoped as (
+    select
+      mir.gitlab_milestone_iid,
+      mir.titulo as milestone_titulo,
+      public._milestone_dimension_label(
+        'equipe',
+        i.parceria, i.repositorio, i.area_funcional, i.desenvolvedor, i.dev_mergeado,
+        i.modulo, i.tipo, i.prioridade,
+        coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')),
+        i.equipe, i.epico, i.sprint, i.categoria,
+        i.modulo_ok, i.area_ok, i.padrao_titulo, i.padrao_completo
+      ) as equipe,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      coalesce(mi.story_points, mi.gitlab_weight, 0) as story_points,
+      mir.start_date,
+      mir.due_date
+    from milestones_in_range mir
+    join public.milestone_issues mi on mi.milestone_id = mir.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+  ),
+  delivered as (
+    select
+      s.gitlab_milestone_iid,
+      s.milestone_titulo,
+      s.equipe,
+      count(*)::bigint as entregues,
+      coalesce(sum(s.story_points), 0)::bigint as pontos_entregues
+    from scoped s
+    where s.fechado_em is not null
+      and s.start_date is not null
+      and s.due_date is not null
+      and s.fechado_em::date between s.start_date and s.due_date
+    group by s.gitlab_milestone_iid, s.milestone_titulo, s.equipe
+  ),
+  closed_by_team as (
+    select
+      mir.gitlab_milestone_iid,
+      mir.titulo as milestone_titulo,
+      coalesce(nullif(trim(i.equipe), ''), 'Não informado') as equipe,
+      count(*)::bigint as fechadas
+    from milestones_in_range mir
+    join public.issues i
+      on public._milestone_matches_issue_sprint(mir.titulo, mir.gitlab_milestone_iid, i.sprint)
+    where coalesce(i.ano_criacao, 0) >= 2024
+      and i.fechado is true
+    group by mir.gitlab_milestone_iid, mir.titulo, 3
+  ),
+  combined as (
+    select
+      coalesce(c.gitlab_milestone_iid, d.gitlab_milestone_iid) as gitlab_milestone_iid,
+      coalesce(c.milestone_titulo, d.milestone_titulo) as milestone_titulo,
+      coalesce(c.equipe, d.equipe) as equipe,
+      coalesce(c.fechadas, 0)::bigint as fechadas,
+      coalesce(d.entregues, 0)::bigint as entregues,
+      coalesce(d.pontos_entregues, 0)::bigint as pontos_entregues
+    from closed_by_team c
+    full outer join delivered d
+      on c.gitlab_milestone_iid = d.gitlab_milestone_iid
+     and c.equipe = d.equipe
+  )
+  select
+    x.gitlab_milestone_iid as milestone_iid,
+    x.milestone_titulo,
+    x.equipe,
+    x.fechadas,
+    x.entregues,
+    x.pontos_entregues
+  from combined x
+  where x.fechadas > 0 or x.entregues > 0 or x.pontos_entregues > 0
+  order by x.gitlab_milestone_iid asc, x.equipe asc;
+$$;
+
+comment on function public.report_milestone_capacity_by_team(integer, integer) is
+  'Capacidade por equipe sprint a sprint: fechadas (issues.sprint + fechado) alinhadas ao KPI Sprint; entregues/pontos no intervalo da milestone.';
+
+grant execute on function public._milestone_matches_issue_sprint(text, integer, text) to authenticated, service_role;
+grant execute on function public.report_milestone_capacity_by_team(integer, integer) to authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 041_milestones_read_grants.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 041 — Leitura de milestones pelo dashboard (anon + authenticated)
+--
+-- A migration 034 concedia SELECT só a authenticated; em produção os grants
+-- não foram aplicados (tabela visível só para postgres). O Relatório Milestone
+-- e Importar Dados leem public.milestones via chave anon (RPCs) ou sessão
+-- authenticated — alinhado a releases e demais catálogos públicos do dashboard.
+
+grant select on public.milestones to anon, authenticated;
+grant select on public.milestone_issues to anon, authenticated;
+grant select on public.milestone_import_runs to anon, authenticated;
+
+CREATE POLICY milestones_select_public
+  ON public.milestones
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+CREATE POLICY milestone_issues_select_public
+  ON public.milestone_issues
+  FOR SELECT
+  TO anon, authenticated
+  USING (true);
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 042_milestone_daily_snapshots.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 042 — Snapshots diários por milestone (issue #30)
+-- Burndown histórico fiel: pontos restantes e issues abertas por dia.
+
+-- ---------------------------------------------------------------------------
+-- Tabela
+-- ---------------------------------------------------------------------------
+create table if not exists public.milestone_daily_snapshots (
+  milestone_id uuid not null references public.milestones (id) on delete cascade,
+  snapshot_date date not null,
+  points_remaining bigint not null default 0,
+  issues_open bigint not null default 0,
+  points_done bigint not null default 0,
+  issues_done bigint not null default 0,
+  synced_at timestamptz not null default now(),
+  constraint milestone_daily_snapshots_pkey primary key (milestone_id, snapshot_date)
+);
+
+create index if not exists idx_milestone_daily_snapshots_date
+  on public.milestone_daily_snapshots (snapshot_date);
+
+comment on table public.milestone_daily_snapshots is
+  'Série temporal diária por milestone para burndown/burnup (job milestone_capture_daily_snapshots).';
+
+-- ---------------------------------------------------------------------------
+-- Milestones alvo: state=active ou últimos 3 IIDs
+-- ---------------------------------------------------------------------------
+create or replace function public._milestone_snapshot_targets()
+returns table (milestone_id uuid)
+language sql
+stable
+set search_path = public, pg_temp
+as $$
+  with last_three as (
+    select m.id
+    from public.milestones m
+    where m.gitlab_milestone_iid is not null
+    order by m.gitlab_milestone_iid desc
+    limit 3
+  )
+  select distinct m.id as milestone_id
+  from public.milestones m
+  where lower(coalesce(m.state, '')) = 'active'
+     or m.id in (select lt.id from last_three lt);
+$$;
+
+comment on function public._milestone_snapshot_targets() is
+  'Milestones elegíveis ao snapshot diário: active ou 3 maiores gitlab_milestone_iid.';
+
+-- ---------------------------------------------------------------------------
+-- Batch idempotente (executar após flow_capture_daily_snapshots)
+-- ---------------------------------------------------------------------------
+create or replace function public.milestone_capture_daily_snapshots(p_date date default current_date)
+returns integer
+language plpgsql
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_count integer;
+begin
+  insert into public.milestone_daily_snapshots (
+    milestone_id,
+    snapshot_date,
+    points_remaining,
+    issues_open,
+    points_done,
+    issues_done
+  )
+  select
+    m.id,
+    p_date,
+    coalesce(sum(s.story_points) filter (where s.is_open), 0)::bigint,
+    count(*) filter (where s.is_open)::bigint,
+    coalesce(sum(s.story_points) filter (where s.is_done), 0)::bigint,
+    count(*) filter (where s.is_done)::bigint
+  from public._milestone_snapshot_targets() t
+  join public.milestones m on m.id = t.milestone_id
+  join public.milestone_issues mi on mi.milestone_id = m.id
+  left join public.issues i on i.issue_key = mi.issue_key
+  cross join lateral (
+    select
+      coalesce(mi.story_points, mi.gitlab_weight, 0)::bigint as story_points,
+      coalesce(i.criado_em, mi.imported_at) as criado_em,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      (
+        coalesce(i.criado_em, mi.imported_at)::date <= p_date
+        and (
+          coalesce(i.fechado_em, mi.fechado_em) is null
+          or coalesce(i.fechado_em, mi.fechado_em)::date > p_date
+        )
+      ) as is_open,
+      (
+        coalesce(i.fechado_em, mi.fechado_em) is not null
+        and coalesce(i.fechado_em, mi.fechado_em)::date <= p_date
+        and (
+          m.start_date is null
+          or m.due_date is null
+          or coalesce(i.fechado_em, mi.fechado_em)::date between m.start_date and m.due_date
+        )
+      ) as is_done
+  ) s
+  group by m.id
+  on conflict (milestone_id, snapshot_date) do update set
+    points_remaining = excluded.points_remaining,
+    issues_open = excluded.issues_open,
+    points_done = excluded.points_done,
+    issues_done = excluded.issues_done,
+    synced_at = now();
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end;
+$$;
+
+comment on function public.milestone_capture_daily_snapshots(date) is
+  'Grava snapshot diário por milestone ativo (idempotente). Retorna linhas upsertadas.';
+
+-- ---------------------------------------------------------------------------
+-- Burndown: preferência por milestone_daily_snapshots; fallback por dia ausente
+-- ---------------------------------------------------------------------------
+create or replace function public.report_milestone_burndown(p_milestone_iid integer)
+returns table (
+  snapshot_date date,
+  points_remaining bigint,
+  issues_open bigint,
+  points_done bigint,
+  issues_done bigint,
+  points_committed bigint,
+  issues_committed bigint,
+  points_ideal numeric,
+  source text
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with milestone_ctx as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  commitment as (
+    select
+      count(*)::bigint as issues_committed,
+      coalesce(sum(coalesce(mi.story_points, mi.gitlab_weight, 0)), 0)::bigint as points_committed
+    from milestone_ctx mc
+    join public.milestone_issues mi on mi.milestone_id = mc.milestone_id
+  ),
+  bounds as (
+    select
+      mc.milestone_id,
+      coalesce(mc.start_date, (
+        select min(s.snapshot_date)
+        from public.milestone_daily_snapshots s
+        where s.milestone_id = mc.milestone_id
+      ), current_date) as d_start,
+      coalesce(mc.due_date, current_date) as d_end
+    from milestone_ctx mc
+  ),
+  days as (
+    select gs::date as snapshot_date
+    from bounds b
+    cross join generate_series(b.d_start, least(b.d_end, current_date), interval '1 day') gs
+  ),
+  stored as (
+    select
+      s.snapshot_date,
+      s.points_remaining,
+      s.issues_open,
+      s.points_done,
+      s.issues_done
+    from milestone_ctx mc
+    join public.milestone_daily_snapshots s on s.milestone_id = mc.milestone_id
+    cross join bounds b
+    where s.snapshot_date between b.d_start and b.d_end
+  ),
+  reconstructed as (
+    select
+      d.snapshot_date,
+      coalesce(sum(s.story_points) filter (where s.is_open), 0)::bigint as points_remaining,
+      count(*) filter (where s.is_open)::bigint as issues_open,
+      coalesce(sum(s.story_points) filter (where s.is_done), 0)::bigint as points_done,
+      count(*) filter (where s.is_done)::bigint as issues_done
+    from days d
+    cross join milestone_ctx mc
+    join public.milestone_issues mi on mi.milestone_id = mc.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+    cross join lateral (
+      select
+        coalesce(mi.story_points, mi.gitlab_weight, 0)::bigint as story_points,
+        (
+          coalesce(i.criado_em, mi.imported_at)::date <= d.snapshot_date
+          and (
+            coalesce(i.fechado_em, mi.fechado_em) is null
+            or coalesce(i.fechado_em, mi.fechado_em)::date > d.snapshot_date
+          )
+        ) as is_open,
+        (
+          coalesce(i.fechado_em, mi.fechado_em) is not null
+          and coalesce(i.fechado_em, mi.fechado_em)::date <= d.snapshot_date
+          and (
+            mc.start_date is null
+            or mc.due_date is null
+            or coalesce(i.fechado_em, mi.fechado_em)::date between mc.start_date and mc.due_date
+          )
+        ) as is_done
+    ) s
+    group by d.snapshot_date
+  )
+  select
+    d.snapshot_date,
+    coalesce(st.points_remaining, r.points_remaining, 0)::bigint as points_remaining,
+    coalesce(st.issues_open, r.issues_open, 0)::bigint as issues_open,
+    coalesce(st.points_done, r.points_done, 0)::bigint as points_done,
+    coalesce(st.issues_done, r.issues_done, 0)::bigint as issues_done,
+    c.points_committed,
+    c.issues_committed,
+    case
+      when mc.start_date is not null
+           and mc.due_date is not null
+           and mc.due_date > mc.start_date then
+        round(
+          c.points_committed::numeric
+          * greatest(
+              0,
+              (mc.due_date - d.snapshot_date)::numeric
+              / nullif((mc.due_date - mc.start_date)::numeric, 0)
+            ),
+          2
+        )
+      else null
+    end as points_ideal,
+    case when st.snapshot_date is not null then 'snapshot' else 'reconstructed' end as source
+  from days d
+  cross join commitment c
+  cross join milestone_ctx mc
+  left join stored st on st.snapshot_date = d.snapshot_date
+  left join reconstructed r on r.snapshot_date = d.snapshot_date
+  order by d.snapshot_date;
+$$;
+
+comment on function public.report_milestone_burndown(integer) is
+  'Série burndown diária: usa milestone_daily_snapshots por dia; reconstrói dias ausentes de milestone_issues.';
+
+-- ---------------------------------------------------------------------------
+-- Permissões
+-- ---------------------------------------------------------------------------
+grant select, insert, update, delete on public.milestone_daily_snapshots to service_role;
+grant select on public.milestone_daily_snapshots to authenticated;
+
+grant execute on function public.milestone_capture_daily_snapshots(date) to service_role;
+grant execute on function public.report_milestone_burndown(integer) to anon, authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 043_report_milestone_roadmap.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 043 — Roadmap executivo por milestone (issue #45)
+-- Entregas sprint a sprint agrupadas por módulo ou épico (top N por sprint).
+
+create or replace function public.report_milestone_roadmap(
+  p_from_iid integer,
+  p_to_iid integer,
+  p_group_by text default 'modulo',
+  p_top_n integer default 5
+)
+returns table (
+  milestone_iid integer,
+  milestone_titulo text,
+  milestone_start_date date,
+  milestone_due_date date,
+  label text,
+  rank_in_sprint integer,
+  entregues bigint,
+  pontos_entregues bigint
+)
+language sql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+  with bounds as (
+    select
+      least(p_from_iid, p_to_iid) as from_iid,
+      greatest(p_from_iid, p_to_iid) as to_iid
+  ),
+  group_dimension as (
+    select case
+      when lower(trim(coalesce(p_group_by, ''))) in ('epico', 'épico') then 'epico'
+      else 'modulo'
+    end as dimension
+  ),
+  milestones_in_range as (
+    select
+      m.id as milestone_id,
+      m.gitlab_milestone_iid,
+      m.titulo,
+      m.start_date,
+      m.due_date
+    from public.milestones m
+    cross join bounds b
+    where m.gitlab_milestone_iid is not null
+      and m.gitlab_milestone_iid between b.from_iid and b.to_iid
+  ),
+  scoped as (
+    select
+      mir.gitlab_milestone_iid,
+      mir.titulo as milestone_titulo,
+      public._milestone_dimension_label(
+        gd.dimension,
+        i.parceria, i.repositorio, i.area_funcional, i.desenvolvedor, i.dev_mergeado,
+        i.modulo, i.tipo, i.prioridade,
+        coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')),
+        i.equipe, i.epico, i.sprint, i.categoria,
+        i.modulo_ok, i.area_ok, i.padrao_titulo, i.padrao_completo
+      ) as lbl,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      coalesce(mi.story_points, mi.gitlab_weight, 0) as story_points,
+      mir.start_date,
+      mir.due_date
+    from milestones_in_range mir
+    cross join group_dimension gd
+    join public.milestone_issues mi on mi.milestone_id = mir.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+  ),
+  delivered as (
+    select
+      s.gitlab_milestone_iid,
+      s.milestone_titulo,
+      s.lbl as label,
+      count(*)::bigint as entregues,
+      coalesce(sum(s.story_points), 0)::bigint as pontos_entregues
+    from scoped s
+    where s.fechado_em is not null
+      and s.start_date is not null
+      and s.due_date is not null
+      and s.fechado_em::date between s.start_date and s.due_date
+    group by s.gitlab_milestone_iid, s.milestone_titulo, s.lbl
+  ),
+  ranked as (
+    select
+      d.*,
+      row_number() over (
+        partition by d.gitlab_milestone_iid
+        order by d.entregues desc, d.pontos_entregues desc, d.label asc
+      )::integer as rank_in_sprint
+    from delivered d
+  )
+  select
+    r.gitlab_milestone_iid as milestone_iid,
+    r.milestone_titulo,
+    mir.start_date as milestone_start_date,
+    mir.due_date as milestone_due_date,
+    r.label,
+    r.rank_in_sprint,
+    r.entregues,
+    r.pontos_entregues
+  from ranked r
+  join milestones_in_range mir on mir.gitlab_milestone_iid = r.gitlab_milestone_iid
+  where r.rank_in_sprint <= greatest(coalesce(nullif(p_top_n, 0), 5), 1)
+  order by r.gitlab_milestone_iid asc, r.rank_in_sprint asc, r.label asc;
+$$;
+
+comment on function public.report_milestone_roadmap(integer, integer, text, integer) is
+  'Roadmap PMO: top entregas por módulo ou épico em cada milestone GitLab no intervalo de IIDs — timeline sprint a sprint.';
+
+grant execute on function public.report_milestone_roadmap(integer, integer, text, integer) to authenticated, service_role;
+
+
+-- -----------------------------------------------------------------------------
+-- migration: 044_report_milestone_issues.sql
+-- -----------------------------------------------------------------------------
+
+-- Migration 044 — Tabela operacional milestone_issues (issue #27)
+-- Lista paginada do snapshot issue×milestone para relatório operacional GitLab.
+
+create or replace function public.report_milestone_issues(
+  p_milestone_iid integer,
+  p_search text default null,
+  p_status text default null,
+  p_estado text default null,
+  p_metric text default null,
+  p_order text default 'gitlab_iid_asc',
+  p_limit integer default 50,
+  p_offset integer default 0
+)
+returns table (
+  total_count bigint,
+  issue_key text,
+  gitlab_iid integer,
+  gitlab_repo text,
+  titulo text,
+  story_points integer,
+  status text,
+  etapa text,
+  assignee text,
+  ultimo_comentario text,
+  homologado text,
+  estado text,
+  fechado_em timestamptz
+)
+language plpgsql
+stable
+security definer
+set search_path = public, pg_temp
+as $$
+declare
+  v_search_pattern text;
+  v_search_id integer;
+begin
+  v_search_pattern := case
+    when p_search is null or trim(p_search) = '' then null
+    else '%' || trim(p_search) || '%'
+  end;
+
+  v_search_id := case
+    when p_search ~ '^\d+$' then p_search::integer
+    else null
+  end;
+
+  return query
+  with milestone_bounds as (
+    select
+      m.id as milestone_id,
+      m.start_date,
+      m.due_date,
+      public._milestone_wip_ref_date(m.due_date, m.state) as ref_date
+    from public.milestones m
+    where m.gitlab_milestone_iid = p_milestone_iid
+    limit 1
+  ),
+  scoped as (
+    select
+      mi.issue_key,
+      mi.gitlab_iid,
+      mi.gitlab_repo,
+      coalesce(nullif(trim(i.titulo), ''), nullif(trim(mi.titulo), '')) as titulo,
+      coalesce(mi.story_points, i.story_points) as story_points,
+      coalesce(nullif(trim(i.status), ''), nullif(trim(mi.status), '')) as status,
+      coalesce(
+        nullif(trim(i.desenvolvedor), ''),
+        nullif(trim(i.assignee), ''),
+        nullif(trim(mi.assignee), '')
+      ) as assignee,
+      coalesce(nullif(trim(i.ultimo_comentario), ''), nullif(trim(mi.ultimo_comentario), '')) as ultimo_comentario,
+      coalesce(nullif(trim(i.homologado), ''), nullif(trim(mi.homologado), '')) as homologado,
+      coalesce(
+        nullif(trim(i.estado), ''),
+        case
+          when lower(coalesce(trim(mi.issue_state), '')) in ('closed', 'close') then 'Fechado'
+          else 'Aberto'
+        end
+      ) as estado,
+      coalesce(i.criado_em, mi.imported_at) as criado_em,
+      coalesce(i.fechado_em, mi.fechado_em) as fechado_em,
+      snap.etapa as snapshot_etapa,
+      mb.ref_date,
+      mb.start_date,
+      mb.due_date
+    from milestone_bounds mb
+    join public.milestone_issues mi on mi.milestone_id = mb.milestone_id
+    left join public.issues i on i.issue_key = mi.issue_key
+    left join public.issue_status_snapshots snap
+      on snap.issue_key = mi.issue_key
+     and snap.snapshot_date = mb.ref_date
+  ),
+  with_etapa as (
+    select
+      s.*,
+      public.flow_resolve_etapa_on_date(
+        s.issue_key,
+        s.status,
+        s.estado,
+        s.criado_em,
+        s.fechado_em,
+        s.ref_date,
+        s.snapshot_etapa
+      ) as etapa
+    from scoped s
+  ),
+  filtered as (
+    select w.*
+    from with_etapa w
+    where (v_search_pattern is null
+           or w.titulo ilike v_search_pattern
+           or w.assignee ilike v_search_pattern
+           or (v_search_id is not null and w.gitlab_iid = v_search_id))
+      and (p_status is null or p_status = 'Todos'
+           or (p_status = 'Não informado' and coalesce(trim(w.status), '') = '')
+           or w.status = p_status)
+      and (p_estado is null or p_estado = 'Todos'
+           or (p_estado in ('Aberto', 'open') and w.estado = 'Aberto')
+           or (p_estado in ('Fechado', 'closed') and w.estado = 'Fechado'))
+      and (p_metric is null or p_metric = 'Todos' or p_metric = 'committed'
+           or (p_metric = 'wip'
+               and w.criado_em::date <= w.ref_date
+               and (w.fechado_em is null or w.fechado_em::date > w.ref_date)
+               and public.flow_is_wip_etapa(w.etapa))
+           or (p_metric = 'delivered'
+               and w.fechado_em is not null
+               and w.start_date is not null
+               and w.due_date is not null
+               and w.fechado_em::date between w.start_date and w.due_date))
+  ),
+  counted as (
+    select count(*)::bigint as total_count from filtered
+  )
+  select
+    c.total_count,
+    f.issue_key,
+    f.gitlab_iid,
+    f.gitlab_repo,
+    f.titulo,
+    f.story_points,
+    f.status,
+    f.etapa,
+    f.assignee,
+    f.ultimo_comentario,
+    f.homologado,
+    f.estado,
+    f.fechado_em
+  from filtered f
+  cross join counted c
+  order by
+    case when p_order = 'gitlab_iid_desc' then f.gitlab_iid end desc nulls last,
+    case when p_order = 'story_points_desc' then f.story_points end desc nulls last,
+    case when p_order = 'story_points_asc' then f.story_points end asc nulls last,
+    case when p_order = 'status_asc' then f.status end asc nulls last,
+    case when p_order = 'assignee_asc' then f.assignee end asc nulls last,
+    f.gitlab_iid asc nulls last
+  limit greatest(coalesce(p_limit, 50), 1)
+  offset greatest(coalesce(p_offset, 0), 0);
+end;
+$$;
+
+comment on function public.report_milestone_issues(integer, text, text, text, text, text, integer, integer) is
+  'Tabela operacional paginada do snapshot milestone_issues — Issue, Peso, Status, Responsável, Comentário, Homologado.';
+
+grant execute on function public.report_milestone_issues(integer, text, text, text, text, text, integer, integer)
+  to authenticated, service_role;
+
+-- migration: 045_search_issues_story_points.sql
+-- (conteúdo em supabase/migrations/045_search_issues_story_points.sql)
+
+-- migration: 046_dashboard_story_points_kpis.sql
+-- (conteúdo em supabase/migrations/046_dashboard_story_points_kpis.sql)
 
 -- fim schema.sql

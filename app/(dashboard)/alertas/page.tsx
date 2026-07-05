@@ -4,6 +4,7 @@ import { AlertasPorModuloTabela } from "@/components/dashboard/tables/AlertasPor
 import { FaixaIdadeTabela } from "@/components/dashboard/tables/FaixaIdadeTabela";
 import { TopLeadTimesTabela } from "@/components/dashboard/tables/TopLeadTimesTabela";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ALERTAS_SECTION_TOOLTIPS } from "@/lib/dashboard/alertas-section-tooltips";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
 import {
   fetchAlertasPorModulo,
@@ -40,12 +41,14 @@ export default async function AlertasPage({ searchParams }: DashboardPageProps) 
       <div className="grid gap-6 xl:grid-cols-2">
         <AlertasPorModuloTabela
           title="Issues abertas sem Épico — por Módulo"
+          titleTooltip={ALERTAS_SECTION_TOOLTIPS.semEpicoPorModulo}
           dimensao="sem_epico"
           filters={filters}
           rows={semEpico}
         />
         <AlertasPorModuloTabela
           title="Issues abertas sem Parceria — por Módulo"
+          titleTooltip={ALERTAS_SECTION_TOOLTIPS.semParceriaPorModulo}
           dimensao="sem_parceria"
           filters={filters}
           rows={semParceria}

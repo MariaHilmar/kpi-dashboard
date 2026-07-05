@@ -39,6 +39,8 @@ import {
   fetchFlowWip,
   fetchFlowWorkItemAge,
 } from "@/lib/dashboard/flow-report";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
+import { buildFlowPeriodIssuesHref, buildIssuesHref } from "@/lib/dashboard/issuesLinks";
 
 type FluxoResumoSectionProps = {
   filters: FlowReportFilters;
@@ -136,21 +138,38 @@ export async function FluxoResumoSection({ filters, granularity }: Readonly<Flux
         concluidasTrend={concluidasTrend}
         leadTimeMedianaTrend={leadTimeMedianaTrend}
         wipTrend={wipTrend}
+        concluidasIssuesHref={
+          throughputTotal > 0 ? buildFlowPeriodIssuesHref(filters, "closed") : null
+        }
+        wipIssuesHref={wipTotal > 0 ? buildIssuesHref(filters, { estado: "open" }) : null}
       />
 
       <div className="grid gap-6 xl:grid-cols-2">
         <ThroughputChartCard
           title="Throughput"
           subtitle={`Issues concluídas por ${granularity === "month" ? "mês" : "semana"}`}
+          titleTooltip={
+            granularity === "month"
+              ? FLUXO_SECTION_TOOLTIPS.throughputChartMensal
+              : FLUXO_SECTION_TOOLTIPS.throughputChartSemanal
+          }
           data={throughputChart}
         />
         <div className="flex flex-col gap-6">
           <LeadTimeChartCard
             title="Lead time"
             subtitle="Média, mediana e percentil 85 por período de conclusão"
+            titleTooltip={FLUXO_SECTION_TOOLTIPS.leadTimeChart}
             data={leadTimeChart}
           />
-          <FluxoLeadTimeDistribuicaoCard summary={leadTimeDistribution} />
+          <FluxoLeadTimeDistribuicaoCard
+            summary={leadTimeDistribution}
+            closedIssuesHref={
+              leadTimeDistribution && leadTimeDistribution.count > 0
+                ? buildFlowPeriodIssuesHref(filters, "closed")
+                : null
+            }
+          />
         </div>
       </div>
 
@@ -158,6 +177,7 @@ export async function FluxoResumoSection({ filters, granularity }: Readonly<Flux
         <BarChartCard
           title="WIP por etapa"
           subtitle="A Fazer, Desenvolvimento, Teste e Homologação"
+          titleTooltip={FLUXO_SECTION_TOOLTIPS.wipPorEtapa}
           data={wipChart}
           horizontal
           emptyMessage="Nenhuma issue em WIP no recorte."
@@ -175,6 +195,7 @@ export async function FluxoResumoSection({ filters, granularity }: Readonly<Flux
         <FluxoAgingChartCard
           title="Aging chart — Top 10"
           subtitle="Tempo no fluxo ativo (A Fazer / Desenvolvimento em diante)"
+          titleTooltip={FLUXO_SECTION_TOOLTIPS.agingChart}
           data={agingChart}
           leadTimeReferencia={leadTimeMediana}
         />

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
 import { getNavGroups, isNavItemActive, buildNavHref } from "@/lib/navigation";
+import { useIsLocalhost } from "@/hooks/useIsLocalhost";
+import { NavItemLabel } from "@/components/layout/NavItemLabel";
 
 type SidebarProps = {
   isAdmin?: boolean;
@@ -14,7 +16,8 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
-  const groups = getNavGroups(isAdmin);
+  const isLocalhost = useIsLocalhost();
+  const groups = getNavGroups(isAdmin, isLocalhost);
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)]">
@@ -49,7 +52,9 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
                         aria-hidden
                       />
                       <span className="flex-1">
-                        <span className="block font-medium">{item.label}</span>
+                        <span className="block font-medium">
+                          <NavItemLabel item={item} />
+                        </span>
                         {item.description ? (
                           <span className="block text-xs text-slate-400 group-hover:text-slate-500">
                             {item.description}

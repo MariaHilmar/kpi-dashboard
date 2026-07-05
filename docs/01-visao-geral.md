@@ -4,7 +4,7 @@
 
 O **MGI KPI Dashboard** é a interface web oficial para acompanhar indicadores de issues, alertas de qualidade e métricas operacionais dos repositórios GitLab do MGI (principalmente **Contratos v2** e repositórios relacionados).
 
-O sistema é **somente leitura**: não altera issues no GitLab nem no Supabase. Toda escrita de dados é responsabilidade do pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
+O sistema é **predominantemente somente leitura** em relação ao GitLab: o pipeline Python sincroniza issues; o dashboard consulta RPCs/views. Exceções controladas no próprio dashboard: **administração de usuários** e **importação Planning Poker** (campos de relatório em `issues`/`milestone_issues`).
 
 ## Problema que resolve
 
@@ -61,9 +61,11 @@ Filtros adicionais na web (não presentes no Excel original): módulo, área, ti
 ## Público-alvo
 
 - **Gestão / executivo:** visão consolidada de KPIs e evolução mensal (`/`).
-- **Coordenação de sprint:** foco por sprint (`/sprint`).
+- **Coordenação de sprint:** foco por sprint (`/sprint`) e importação de story points (`/importar-dados`).
 - **Qualidade de dados:** conformidade de preenchimento e backlog sem tipo (`/qualidade`).
 - **Operação:** alertas de issues sem épico/parceria, faixa de idade, lead times (`/alertas`).
+- **Fluxo Kanban:** CFD, throughput, lead time, WIP e gargalos (`/fluxo`).
+- **Parcerias:** relatório mensal de demandas com label `Parceria::` (`/parcerias`).
 - **Analistas:** detalhamento por dimensão, busca paginada de issues (`/detalhamento`, `/issues`).
 
 ## Próximas evoluções (roadmap)
@@ -72,14 +74,18 @@ Itens registrados na documentação do workspace e no código:
 
 | Item | Status |
 |------|--------|
-| Supabase Auth (restringir leitura) | planejado |
+| Supabase Auth (restringir leitura) | **implementado** — ver [08-autenticacao.md](./08-autenticacao.md) |
+| Relatório de fluxo Kanban (`/fluxo`) | **implementado** — ver [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) |
+| Relatório de parcerias (`/parcerias`) | **implementado** |
+| Importação Planning Poker (`/importar-dados`) | **implementado** — ver [12-importar-dados.md](./12-importar-dados.md) |
 | Integrar sync ao agendador automático (Vercel Cron ou Task Scheduler) | parcial — pipeline já orquestra sync |
 | Tabela de issues com paginação | **implementado** (`/issues`) |
+| Export Excel (Issues, Parcerias, Analistas) | **implementado** |
 | Power BI / dashboards ad-hoc | roadmap Fase 3 (`ROADMAP_EXPANSÃO_PIPELINE.md`) |
 
 ## Restrições e premissas
 
 1. **Dados atualizados pelo pipeline:** o header exibe a data da última sync bem-sucedida (`sync_runs`).
-2. **Chave anon no frontend:** apenas `NEXT_PUBLIC_SUPABASE_ANON_KEY`; `service_role` fica no pipeline Python.
+2. **Chave anon no frontend:** apenas `NEXT_PUBLIC_SUPABASE_ANON_KEY`; `service_role` fica no pipeline Python e no servidor Next.js (admin/importação), nunca no browser.
 3. **Filtro sentinela `Todos`:** valor padrão que desativa o recorte na RPC `_issues_filtered`.
 4. **Renderização dinâmica:** páginas usam `searchParams` e/ou auth com cookies — HTML gerado no servidor a cada request. Cache de **dados** (não de página) via `unstable_cache` (tag `kpis`, TTL 24 h), invalidado pelo pipeline após sync. Streaming com `Suspense` no layout e na página Executivo; skeletons via `loading.tsx` na navegação.
