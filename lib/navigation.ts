@@ -10,13 +10,10 @@ import {
   faDiagramProject,
   faHandshake,
   faAward,
-  faBell,
-  faChartLine,
   faChartPie,
   faClipboardList,
   faFileArrowUp,
   faFileLines,
-  faMagnifyingGlass,
   faFlagCheckered,
   faRocket,
   faUser,
@@ -58,37 +55,12 @@ export const NAV_GROUPS: NavGroup[] = [
     title: "Análise",
     items: [
       {
-        href: "/temporal",
-        label: "Análise Temporal",
-        shortLabel: "Temporal",
-        icon: faChartLine,
-      },
-      {
         href: "/fluxo",
         label: "Fluxo Kanban",
         shortLabel: "Fluxo",
         icon: faDiagramProject,
         description: "Métricas de fluxo Kanban",
       },
-      {
-        href: "/detalhamento",
-        label: "Detalhamento",
-        shortLabel: "Detalhe",
-        icon: faMagnifyingGlass,
-      },
-      { href: "/qualidade", label: "Qualidade", icon: faAward },
-      {
-        href: "/alertas",
-        label: "Alertas",
-        icon: faBell,
-        description: "Sem épico/parceria + idade",
-      },
-    ],
-  },
-  {
-    title: "Operação",
-    items: [
-      { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: faRocket },
       {
         href: "/milestone",
         label: "Relatório Milestone",
@@ -97,6 +69,12 @@ export const NAV_GROUPS: NavGroup[] = [
         description: "Throughput intra-sprint por IID GitLab",
         beta: true,
       },
+    ],
+  },
+  {
+    title: "Operação",
+    items: [
+      { href: "/sprint", label: "Sprint Atual", shortLabel: "Sprint", icon: faRocket },
       {
         href: "/milestone/roadmap",
         label: "Roadmap PMO",
@@ -136,6 +114,7 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: faFileArrowUp,
         description: "Planning Poker — Excel/CSV",
       },
+      { href: "/qualidade", label: "Qualidade Dados", icon: faAward },
     ],
   },
 ];
