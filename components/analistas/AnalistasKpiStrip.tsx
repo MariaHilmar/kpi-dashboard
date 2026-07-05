@@ -11,7 +11,7 @@ const ITEMS = [
   { key: "fechadas", label: "Fechadas" },
   { key: "canceladas", label: "Canceladas" },
   { key: "entregues", label: "Entregues" },
-  { key: "doing", label: "Doing" },
+  { key: "doing", label: "Em execução" },
 ] as const;
 
 export function AnalistasKpiStrip({ kpis }: Props) {

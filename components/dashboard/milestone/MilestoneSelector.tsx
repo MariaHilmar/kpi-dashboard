@@ -3,7 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-import type { MilestoneOption } from "@/lib/dashboard/milestones";
+import type { MilestoneOption } from "@/lib/dashboard/milestone-options";
 
 type MilestoneSelectorProps = {
   milestones: MilestoneOption[];

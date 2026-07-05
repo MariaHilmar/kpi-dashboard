@@ -10,6 +10,8 @@ import {
   pickStageWithMaxMedianDwell,
   pivotCfdRows,
   extractStageDwellMeta,
+  formatFlowWeekPeriodLabel,
+  leadTimeAggToChartPoints,
   stageDwellToChartPoints,
   summarizeFlowDataQuality,
   summarizeLeadTimeDistribution,
@@ -100,11 +102,46 @@ describe("buildKpiTrend", () => {
   });
 });
 
+describe("formatFlowWeekPeriodLabel", () => {
+  it("converte semana ISO para rótulo legível", () => {
+    expect(formatFlowWeekPeriodLabel("2026-W22")).toBe("2026 - 22ª semana");
+    expect(formatFlowWeekPeriodLabel("2026-W1")).toBe("2026 - 1ª semana");
+    expect(formatFlowWeekPeriodLabel("2026-W01")).toBe("2026 - 1ª semana");
+  });
+
+  it("mantém períodos mensais inalterados", () => {
+    expect(formatFlowWeekPeriodLabel("2026-06")).toBe("2026-06");
+  });
+});
+
+describe("leadTimeAggToChartPoints", () => {
+  it("formata rótulo de semana no gráfico de lead time", () => {
+    expect(
+      leadTimeAggToChartPoints([
+        {
+          periodo: "2026-W22",
+          lead_time_medio: 163.5,
+          lead_time_mediana: 35,
+          percentil_85: 560.4,
+          quantidade: 3,
+        },
+      ]),
+    ).toEqual([
+      {
+        periodo: "2026 - 22ª semana",
+        media: 163.5,
+        mediana: 35,
+        p85: 560.4,
+      },
+    ]);
+  });
+});
+
 describe("throughputToChartPoints", () => {
   it("mapeia para série do gráfico", () => {
     expect(
       throughputToChartPoints([{ periodo: "2026-W23", quantidade_concluida: 4 }]),
-    ).toEqual([{ periodo: "2026-W23", concluidas: 4 }]);
+    ).toEqual([{ periodo: "2026 - 23ª semana", concluidas: 4 }]);
   });
 });
 

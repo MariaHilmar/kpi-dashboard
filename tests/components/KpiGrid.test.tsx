@@ -58,11 +58,12 @@ describe("KpiGrid", () => {
       />,
     );
 
-    const abertas = screen.getByRole("link", { name: "Ver issues: Abertas" });
+    const abertas = screen.getByRole("link", { name: "Ver issues — Abertas" });
     expect(abertas).toHaveAttribute("href", expect.stringContaining("modulo=PNCP"));
     expect(abertas).toHaveAttribute("href", expect.stringContaining("estado=open"));
+    expect(abertas).toHaveAttribute("target", "_blank");
 
-    const total = screen.getByRole("link", { name: "Ver issues: Total filtrado" });
+    const total = screen.getByRole("link", { name: "Ver issues — Total filtrado" });
     expect(total).toHaveAttribute("href", "/issues?modulo=PNCP");
   });
 

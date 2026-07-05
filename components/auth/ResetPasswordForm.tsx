@@ -27,7 +27,9 @@ export function ResetPasswordForm({ afterRecovery = true }: ResetPasswordFormPro
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (!isSupabaseConfigured()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCheckingSession(false);
       return;
     }
@@ -37,6 +39,7 @@ export function ResetPasswordForm({ afterRecovery = true }: ResetPasswordFormPro
       setHasSession(Boolean(user));
       setCheckingSession(false);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit(event: FormEvent) {

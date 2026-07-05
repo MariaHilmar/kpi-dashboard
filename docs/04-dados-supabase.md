@@ -1,6 +1,6 @@
 # Dados e Supabase
 
-O schema Postgres versionado está em `supabase/migrations/` neste repositório. O dashboard **não** escreve no banco — apenas consulta tabelas, views e RPCs.
+O schema Postgres versionado está em `supabase/migrations/` neste repositório. O dashboard consulta tabelas, views e RPCs; escrita controlada ocorre via **admin de usuários** e **importação Planning Poker** (service role no servidor).
 
 ## Migrations
 
@@ -19,7 +19,29 @@ O schema Postgres versionado está em `supabase/migrations/` neste repositório.
 | `011_analista_relatorio_por_autor.sql` | Filtro Analistas por autor; `profiles.autor_issues` |
 | `012_gitlab_identities.sql` | `gitlab_users`, `issue_participants`, IDs GitLab em `issues` e `profiles` |
 
-Migrations **013–020** (analistas, alertas globais, faixa de idade, `search_issues`) estão na mesma pasta — consulte os arquivos para o detalhe de cada uma.
+Migrations **013–020** (analistas, alertas globais, faixa de idade, `search_issues`) estão na mesma pasta.
+
+| Arquivo | Conteúdo |
+|---------|----------|
+| `021_search_issues_fechado_dates.sql` | Filtros de data de fechamento em `search_issues` |
+| `022_search_issues_exige_parceria.sql` | Filtro exige parceria |
+| `023_issues_entrega_prevista.sql` | Coluna `entrega_prevista` |
+| `024_search_issues_status_order.sql` | Ordenação por status |
+| `025_search_issues_entrega_order.sql` | Ordenação por entrega prevista |
+| `026_flow_reports.sql` | Tabelas e RPCs base do relatório Kanban |
+| `027_issue_status_events_pipeline.sql` | Tabela `issue_status_events` |
+| `028_issue_status_events_upsert_constraint.sql` | Constraint upsert eventos |
+| `029_flow_events_analytics.sql` | RPCs consumindo eventos de status |
+| `030_flow_reports_security_definer.sql` | Hardening security definer |
+| `031_flow_cfd_performance.sql` | Otimização CFD |
+| `032_report_flow_stage_dwell.sql` | Tempo médio/mediano por etapa Kanban |
+| `033_report_flow_data_quality.sql` | Cobertura eventos/snapshot/proxy |
+| `034_milestone_report_schema.sql` | `milestones`, `milestone_issues`, campos Planning Poker em `issues` |
+| `035_milestone_iid.sql` | `milestones.gitlab_milestone_iid` (número da URL GitLab) |
+
+Schema consolidado gerado em `supabase/schema.sql` (script `supabase/generate_schema.ps1`).
+
+---
 
 ## Tabelas principais
 
@@ -38,6 +60,7 @@ Espelho processado das issues GitLab (equivalente à aba **Dados** do Excel lega
 | Git / Dev | `dev_tem_branch`, `dev_commits`, `dev_mergeado`, `gitlab_mrs` |
 | Qualidade | `modulo_ok`, `area_ok`, `padrao_titulo`, `padrao_completo` |
 | Colunas manuais (Excel) | `situacao_analise`, `desenvolvedor_futuro`, `observacao_geral`, `chamado`, `priorizar` |
+| Relatório / Planning Poker | `story_points`, `aceita`, `justificada`, `historico`, `recorrente`, `horas_estimada`, `horas_prevista`, `homologado`, `ultimo_comentario`, `report_fields_synced_at` |
 | Metadados | `synced_at`, `created_at`, `updated_at` |
 
 **Chave única:** `issue_key` (composta pelo pipeline — ver `issue_keys.py`).
@@ -84,6 +107,14 @@ Contas do dashboard (Auth + metadados): `full_name`, `gitlab_user_id`, `role`, `
 
 Rascunhos/publicações de “outras atividades” na página Analistas.
 
+### `milestones` / `milestone_issues` / `milestone_import_runs`
+
+Catálogo de milestones GitLab, snapshot histórico issue × milestone e auditoria de importações. Ver [12-importar-dados.md](./12-importar-dados.md).
+
+### `issue_status_events` / `issue_status_snapshots`
+
+Histórico de transições de label `status::` e snapshots diários — base do relatório Kanban. Ver [11-relatorio-fluxo.md](./11-relatorio-fluxo.md).
+
 ## Views
 
 | View | Uso no dashboard |
@@ -110,6 +141,19 @@ Mapeamento `lib/dashboard/fetchers.ts` → Postgres:
 | `dashboard_faixa_idade` | `fetchFaixaIdade` | Distribuição por faixa de idade |
 | `search_issues` | `searchIssues` | Busca paginada de issues |
 | `analista_relatorio_snapshot` | `fetchAnalistaRelatorioSnapshot` | KPIs/issues Analistas (`p_gitlab_user_id` ou `p_autor`) |
+| `report_flow_cfd` | `flow-report.ts` | CFD diário |
+| `report_flow_throughput` | idem | Throughput por período |
+| `report_flow_lead_time_detail` / `_agg` | idem | Lead time e cycle time |
+| `report_flow_work_item_age` | idem | Idade de work items abertos |
+| `report_flow_wip` | idem | WIP por etapa |
+| `report_flow_bottlenecks` | idem | Gargalos heurísticos |
+| `report_flow_stage_dwell` | idem | Tempo por etapa Kanban |
+| `report_flow_data_quality` | idem | Cobertura histórico real vs proxy |
+| `report_milestone_commitment` | `milestone-report.ts` | Comprometido vs entregue por sprint |
+| `report_milestone_issues` | idem | Tabela operacional milestone (filtros committed/delivered/not_delivered/wip) |
+
+Detalhes das RPCs de fluxo: [11-relatorio-fluxo.md](./11-relatorio-fluxo.md).  
+Relatório milestone: [13-relatorio-milestone.md](./13-relatorio-milestone.md).
 
 ### Dimensões de `dashboard_aggregate_v2`
 
@@ -197,7 +241,7 @@ Ver `mgi-kpi-pipeline/README.md` para detalhes de processamento.
 ## Aplicar schema no Supabase
 
 1. Criar projeto em [supabase.com](https://supabase.com).
-2. Executar migrations **em ordem** (001 → 012) no SQL Editor ou via Supabase CLI.
+2. Executar migrations **em ordem** (001 → 035) no SQL Editor ou via Supabase CLI.
 3. Copiar URL, anon key e service role key.
 4. Atualizar issues do GitLab e sincronizar:
 

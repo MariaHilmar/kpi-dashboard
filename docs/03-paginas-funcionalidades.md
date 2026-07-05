@@ -7,13 +7,19 @@ A navegação é definida em `lib/navigation.ts` e reutilizada pela `Sidebar` (d
 | Grupo | Rota | Label | Descrição |
 |-------|------|-------|-----------|
 | Visão geral | `/` | Executivo | KPIs e visão consolidada |
-| Visão geral | `/alertas` | Alertas | Sem épico/parceria + idade |
 | Análise | `/temporal` | Análise Temporal | Criados × fechados × backlog |
+| Análise | `/fluxo` | Fluxo Kanban | CFD, throughput, lead time, WIP |
 | Análise | `/detalhamento` | Detalhamento | Parceria, área, lead time, KPI por tipo |
 | Análise | `/qualidade` | Qualidade | Conformidade de preenchimento |
+| Análise | `/alertas` | Alertas | Sem épico/parceria + idade |
 | Operação | `/sprint` | Sprint Atual | Visão focada no sprint selecionado |
+| Operação | `/parcerias` | Parcerias | Relatório mensal por parceiro |
 | Operação | `/equipes` | Equipes & Devs | Volume, devs, merge em master |
+| Operação | `/analistas` | Analistas | Relatório mensal de atividades |
 | Dados | `/issues` | Issues | Busca livre + tabela paginada |
+| Dados | `/importar-dados` | Importar Dados | Planning Poker — Excel/CSV |
+
+Rotas **sem filtros globais:** `/parcerias` e `/importar-dados` (`ConditionalGlobalFilters`).
 
 ---
 
@@ -48,6 +54,49 @@ A página usa **streaming por seção**: cada bloco é um Server Component async
 | Sem tipo | `sem_tipo` |
 | % Bugs no backlog | `pct_bugs_backlog` |
 | Taxa fech. Bug | `taxa_fech_bug` |
+
+Títulos de seção exibem **tooltips** explicativos (`EXECUTIVO_SECTION_TOOLTIPS` em `lib/dashboard/executivo-section-tooltips.ts`).
+
+---
+
+## `/fluxo` — Fluxo Kanban
+
+**Arquivo:** `app/(dashboard)/fluxo/page.tsx`
+
+Relatório gerencial de fluxo: resumo executivo, CFD, throughput, lead time, WIP, gargalos, tempo por etapa e rodapé de qualidade do histórico.
+
+- Filtros locais de período, assignee e granularidade (`FluxoFilters`) — combinados com filtros globais da URL.
+- Streaming por seção (`FluxoResumoSection`, `FluxoCfdSection`, `FluxoDataQualityFooterSection`).
+- **Não usa story points.**
+
+Documentação completa: [11-relatorio-fluxo.md](./11-relatorio-fluxo.md).
+
+---
+
+## `/parcerias` — Relatório de Parcerias
+
+**Arquivo:** `app/(dashboard)/parcerias/page.tsx`
+
+Demandas com label `Parceria::` no GitLab, filtradas por **data de fechamento** (padrão: mês calendário anterior).
+
+| Recurso | Detalhe |
+|---------|---------|
+| Filtro parceiro | Select `parceiro` — `Todos` ou valor de `Parceria::` |
+| Período | `fechadoDe` / `fechadoAte` (não usa filtros globais) |
+| Ordenação | Colunas sortáveis (`ParceriasSortableTh`) |
+| Export | `GET /api/parcerias/export` → Excel |
+
+Componentes: `ParceriasToolbar`, `ParceriasTable`. Lógica em `lib/dashboard/parcerias-config.ts`, `parcerias.ts`.
+
+---
+
+## `/importar-dados` — Importação Planning Poker
+
+**Arquivo:** `app/(dashboard)/importar-dados/page.tsx`
+
+Upload de planilha Excel/CSV para atualizar story points e campos de relatório de sprint em issues existentes.
+
+Documentação completa: [12-importar-dados.md](./12-importar-dados.md).
 
 ---
 
@@ -184,6 +233,8 @@ Somente **admin**. CRUD de contas, inclusive **ID GitLab** e nome de exibição.
 - Ordenação configurável (`order`, padrão `criado_em_desc`).
 - Paginação: **50 issues por página** (`ISSUES_PAGE_SIZE`).
 - Respeita **todos os filtros globais** da URL.
+- **Export Excel:** `GET /api/issues/export` (mesmos filtros da listagem).
+- Badges de estado/status: `IssueEstadoBadge`, `IssueStatusBadge`.
 
 ### RPC
 
@@ -222,7 +273,7 @@ Opções de select carregadas de `v_filter_options_full` e pares módulo×área 
 
 ## Drill-down (KPI → Issues)
 
-O componente `KpiGrid` (client) permite clicar em KPIs para ir a `/issues` **preservando os filtros globais** da URL e adicionando:
+O componente `KpiGrid` (client) e `IssueCountLink` permitem clicar em KPIs e contagens para ir a `/issues` **em nova aba**, preservando os filtros globais da URL e adicionando:
 
 | KPI clicado | Parâmetro extra |
 |-------------|-----------------|
@@ -230,7 +281,21 @@ O componente `KpiGrid` (client) permite clicar em KPIs para ir a `/issues` **pre
 | Fechadas | `estado=closed` |
 | Abertas / Bugs / Melhorias | `estado=open` |
 
-O parâmetro `page` é removido ao navegar para evitar página inválida.
+URLs montadas por `lib/dashboard/issuesLinks.ts`. O parâmetro `page` é removido ao navegar para evitar página inválida.
+
+---
+
+## Tooltips contextuais
+
+Ícones ℹ️ ao lado de títulos de página e seções explicam métricas e regras de cálculo.
+
+| Componente | Uso |
+|------------|-----|
+| `InfoTooltip` | Tooltip acessível (hover/focus) |
+| `CardSectionHeader` | Título de card com tooltip opcional |
+| `PageHeader` | Prop `titleTooltip` no cabeçalho da página |
+
+Textos centralizados por página em `lib/dashboard/*-section-tooltips.ts` (executivo, fluxo, alertas, qualidade, temporal, detalhamento, equipes).
 
 ---
 
@@ -258,7 +323,7 @@ Cada parte está em `<Suspense>` com fallback próprio. O slot `{children}` (con
 
 Cada rota principal possui `loading.tsx` que renderiza `DashboardPageLoading` (skeleton). Durante navegação client-side entre páginas, o skeleton aparece imediatamente enquanto o Server Component da nova rota carrega.
 
-Rotas com `loading.tsx`: `/`, `/alertas`, `/temporal`, `/detalhamento`, `/qualidade`, `/sprint`, `/equipes`, `/issues`, `/analistas`.
+Rotas com `loading.tsx`: `/`, `/alertas`, `/temporal`, `/detalhamento`, `/qualidade`, `/sprint`, `/equipes`, `/issues`, `/analistas`, `/fluxo`, `/parcerias`.
 
 ---
 
@@ -266,12 +331,17 @@ Rotas com `loading.tsx`: `/`, `/alertas`, `/temporal`, `/detalhamento`, `/qualid
 
 | Componente | Uso |
 |------------|-----|
-| `KpiCard` / `KpiGrid` | Cards numéricos com accent color |
+| `KpiCard` / `KpiGrid` | Cards numéricos com accent color e drill-down |
 | `BarChartCard` | Barras verticais ou horizontais (Recharts) |
 | `DonutChartCard` | Distribuição circular |
 | `FluxoMensalCard` | Série temporal criados/fechados/backlog |
-| `TabelaCard` | Wrapper para tabelas |
+| `TabelaCard` | Wrapper para tabelas com tooltip opcional |
+| `CardSectionHeader` | Cabeçalho de seção com tooltip |
+| `IssueCountLink` | Contagem clicável → `/issues` |
+| `IssueDrilldownLink` | Link de drill-down em nova aba |
 | `AlertasResumo` | Cards de resumo de alertas |
+| `InfoTooltip` | Ícone ℹ️ com texto explicativo |
 | `SetupBanner` | Aviso de configuração Supabase ausente |
+| `components/dashboard/fluxo/*` | Visualizações do relatório Kanban |
 
 Formatação pt-BR centralizada em `lib/format.ts` (números, percentuais, datas).

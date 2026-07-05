@@ -1,10 +1,11 @@
+import {
+  sortMilestoneOptionsDesc,
+  type MilestoneOption,
+} from "@/lib/dashboard/milestone-options";
 import { createServerSupabase } from "@/lib/supabase/server";
 
-export type MilestoneOption = {
-  id: string;
-  gitlab_milestone_iid: number | null;
-  titulo: string;
-};
+export type { MilestoneOption } from "@/lib/dashboard/milestone-options";
+export { milestoneIidsDesc, resolveLatestMilestoneIid, sortMilestoneOptionsDesc } from "@/lib/dashboard/milestone-options";
 
 export async function listMilestoneOptions(limit = 60): Promise<MilestoneOption[]> {
   const supabase = await createServerSupabase();
@@ -22,5 +23,5 @@ export async function listMilestoneOptions(limit = 60): Promise<MilestoneOption[
     return [];
   }
 
-  return (data ?? []) as MilestoneOption[];
+  return sortMilestoneOptionsDesc((data ?? []) as MilestoneOption[]);
 }

@@ -13,7 +13,8 @@
 | Backend de dados | Supabase (Postgres + RPCs) | `@supabase/supabase-js` 2.108.x |
 | Testes | Vitest + Testing Library | ~87% cobertura |
 | CI | GitHub Actions | Node 20 |
-| Deploy | Vercel | detecta Next.js automaticamente |
+| Deploy | Vercel | detecta Next.js; produção apenas na branch `main` |
+| Qualidade de código | SonarCloud | análise automática (`.sonarcloud.properties`) |
 
 ## Diagrama de camadas
 
@@ -27,14 +28,16 @@ flowchart TB
   subgraph next [Next.js App Router]
     Pages[Server Components - app/dashboard]
     Fetchers[lib/dashboard/fetchers.ts]
+    FlowReport[lib/dashboard/flow-report.ts]
     IssuesLib[lib/dashboard/issues.ts]
+    ImportLib[lib/dashboard/planning-poker-import.ts]
     SupaClient[lib/supabase/server.ts]
   end
 
   subgraph supabase [Supabase Postgres]
-    RPC[RPCs dashboard_* / search_issues]
+    RPC[RPCs dashboard_* / search_issues / report_flow_*]
     Views[Views v_filter_options_full etc]
-    Tables[issues / releases / sync_runs]
+    Tables[issues / releases / sync_runs / milestones]
   end
 
   subgraph pipeline [mgi-kpi-pipeline Python]
@@ -60,10 +63,23 @@ flowchart TB
 mgi-kpi-dashboard/
 ├── app/
 │   ├── layout.tsx                 # Layout raiz (fontes, metadados)
+│   ├── api/
+│   │   ├── revalidate/            # POST — invalidação cache (tag kpis)
+│   │   ├── reports/flow/          # GET — APIs REST relatório Kanban
+│   │   ├── import/planning-poker/ # POST/GET — importação Excel/CSV
+│   │   ├── issues/export/         # GET — export Excel de issues
+│   │   ├── parcerias/export/      # GET — export Excel de parcerias
+│   │   ├── analistas/export/      # GET — export Excel/Word analistas
+│   │   └── admin/users/           # CRUD usuários (service role)
 │   └── (dashboard)/               # Route group — URLs sem prefixo
 │       ├── layout.tsx             # Shell GovBR (Suspense + streaming)
 │       ├── loading.tsx            # Skeleton compartilhado entre rotas
 │       ├── page.tsx               # / Executivo (streaming por seção)
+│       ├── fluxo/
+│       │   └── loading.tsx
+│       ├── parcerias/
+│       │   └── loading.tsx
+│       ├── importar-dados/
 │       ├── alertas/
 │       │   └── loading.tsx
 │       ├── temporal/
@@ -81,11 +97,15 @@ mgi-kpi-dashboard/
 │       └── analistas/
 │           └── loading.tsx
 ├── components/
-│   ├── dashboard/                 # KPIs, gráficos, tabelas de alerta
+│   ├── dashboard/                 # KPIs, gráficos, tabelas, fluxo/
 │   │   └── executivo/             # Seções async da página Executivo
-│   ├── issues/                    # Toolbar, tabela, paginação
+│   ├── dados/                     # ImportarDadosPanel
+│   ├── issues/                    # Toolbar, tabela, paginação, badges
+│   ├── parcerias/                 # Toolbar e tabela de parcerias
+│   ├── ui/                        # InfoTooltip, Button, SortableTh
 │   └── layout/                    # GovBR header/footer, sidebar, filtros
 │       ├── DashboardLayoutParts.tsx  # Wrappers async do layout
+│       ├── ConditionalGlobalFilters.tsx  # Oculta filtros em /parcerias e /importar-dados
 │       └── DashboardPageLoading.tsx  # Skeleton de navegação
 ├── lib/
 │   ├── dashboard/
@@ -93,14 +113,20 @@ mgi-kpi-dashboard/
 │   │   ├── constants.ts           # TODOS, TOP_LIMIT, dimensões RPC
 │   │   ├── fetchers.ts            # Chamadas Supabase (RPCs/views)
 │   │   ├── filters.ts             # parseFilters, commonArgs, dateArgs
+│   │   ├── flow-report.ts         # RPCs relatório Kanban
+│   │   ├── flow-stages.ts         # Mapeamento etapas Kanban
+│   │   ├── planning-poker-import.ts  # Parser e upsert Excel/CSV
+│   │   ├── parcerias.ts           # fetchParceriasIssues
 │   │   ├── issues.ts              # searchIssues → RPC search_issues
+│   │   ├── issuesLinks.ts         # URLs drill-down para /issues
 │   │   └── page.ts                # getDashboardContext (boilerplate)
 │   ├── format.ts                  # Formatação pt-BR
 │   ├── navigation.ts              # NAV_GROUPS (sidebar + mobile)
 │   └── supabase/server.ts         # Cliente server-only
+├── assets/chart-fonts/            # DejaVu Sans TTF (exports Word/Excel)
 ├── types/database.ts              # Tipos TypeScript do domínio
 ├── tests/                         # Vitest
-├── supabase/migrations/           # (no workspace pai) schema versionado
+├── supabase/migrations/           # Schema versionado (001–035)
 └── docs/                          # Esta documentação
 ```
 
@@ -114,6 +140,8 @@ Exceções client-side (`"use client"`):
 
 - `KpiGrid` — drill-down preservando query string;
 - `GlobalFilters` — interação com filtros na URL;
+- `InfoTooltip` / `CardSectionHeader` — tooltips contextuais em títulos de seção;
+- `IssueCountLink` — contagens clicáveis com drill-down para `/issues`;
 - componentes de gráfico que dependem de Recharts no browser.
 
 ### Renderização e performance
@@ -203,13 +231,26 @@ Fetchers registram erros no console (`console.error`) e retornam arrays vazios o
 | Registro de execução | tabela `sync_runs` |
 | Leitura | este dashboard (RPCs) |
 
-Migrations SQL ficam em `supabase/migrations/` neste repositório (001–020). Devem ser aplicadas no projeto Supabase antes do primeiro sync.
+Migrations SQL ficam em `supabase/migrations/` neste repositório (001–035). Devem ser aplicadas no projeto Supabase antes do primeiro sync.
+
+## APIs REST internas
+
+Além das RPCs Supabase, o dashboard expõe rotas Next.js autenticadas:
+
+| Prefixo | Uso |
+|---------|-----|
+| `/api/reports/flow/*` | Relatório Kanban (CFD, throughput, lead time, etc.) — ver [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) |
+| `/api/import/planning-poker` | Importação Planning Poker — ver [12-importar-dados.md](./12-importar-dados.md) |
+| `/api/issues/export` | Export Excel da listagem `/issues` |
+| `/api/parcerias/export` | Export Excel do relatório `/parcerias` |
+| `/api/analistas/export` | Export Excel/Word do relatório analistas |
+| `/api/revalidate` | Invalidação de cache pós-sync (Bearer `REVALIDATE_SECRET`) |
 
 ## Segurança
 
 - Frontend usa apenas **anon key** com políticas RLS/grants definidas nas migrations `002`, `006`, `007`.
-- Nenhum secret de `service_role` no código ou env público do Next.js.
-- Dashboard não expõe endpoints de escrita — somente SELECT/RPC de leitura.
+- `SUPABASE_SERVICE_ROLE_KEY` no servidor (Vercel) — somente para admin de usuários e importação Planning Poker; nunca exposta ao browser.
+- Endpoints de leitura não expõem escrita arbitrária; importação valida sessão e usa upsert controlado.
 
 ## CI/CD
 
@@ -219,4 +260,4 @@ Migrations SQL ficam em `supabase/migrations/` neste repositório (001–020). D
 2. `npx tsc --noEmit`
 3. `npm run test`
 
-**Vercel:** `vercel.json` define framework Next.js, região `gru1` (São Paulo, alinhada ao Supabase `sa-east-1`) e env vars no painel Vercel.
+**Vercel:** `vercel.json` define framework Next.js, região `gru1` (São Paulo, alinhada ao Supabase `sa-east-1`) e `ignoreCommand` que limita deploy de produção à branch `main`. Env vars no painel Vercel.

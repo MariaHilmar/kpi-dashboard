@@ -13,6 +13,7 @@ import {
 import type { TooltipContentProps } from "recharts";
 
 import type { CfdChartPoint } from "@/lib/dashboard/flow-charts";
+import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
 import {
   FLOW_CFD_ETAPAS,
   getFlowCfdFillOpacity,
@@ -26,6 +27,7 @@ import { formatDate } from "@/lib/format";
 type CfdChartCardProps = {
   title: string;
   subtitle?: string;
+  titleTooltip?: string;
   data: CfdChartPoint[];
 };
 
@@ -85,7 +87,7 @@ function CfdLegendContent({ displayEtapas }: { displayEtapas: FlowEtapa[] }) {
   );
 }
 
-export function CfdChartCard({ title, subtitle, data }: CfdChartCardProps) {
+export function CfdChartCard({ title, subtitle, titleTooltip, data }: CfdChartCardProps) {
   const visibleEtapas = FLOW_CFD_ETAPAS.filter((etapa) =>
     data.some((point) => Number(point[etapa] ?? 0) > 0),
   );
@@ -95,11 +97,8 @@ export function CfdChartCard({ title, subtitle, data }: CfdChartCardProps) {
   const displayEtapas = orderCfdEtapasForDisplay(stackEtapas);
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
-      </div>
+    <section className="overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <CardSectionHeader title={title} subtitle={subtitle} tooltip={titleTooltip} />
 
       {data.length === 0 ? (
         <div className="flex h-64 items-center justify-center rounded-lg bg-slate-50 text-sm text-slate-500">

@@ -19,6 +19,7 @@ export const ISSUE_LIST_SORT_COLUMNS: SortColumn[] = [
   { key: "fechado", asc: "fechado_em_asc", desc: "fechado_em_desc" },
   { key: "lead", asc: "lead_time_asc", desc: "lead_time_desc" },
   { key: "idade", asc: "idade_asc", desc: "idade_desc" },
+  { key: "pontos", asc: "story_points_asc", desc: "story_points_desc" },
 ];
 
 export const DEFAULT_ISSUE_LIST_ORDER = "criado_em_desc";
