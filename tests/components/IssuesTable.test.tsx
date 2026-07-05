@@ -68,6 +68,22 @@ const sampleRow: IssueRow = {
 
   sla_mais_90_dias: true,
 
+  story_points: 5,
+
+  aceita: "Sim",
+
+  justificada: null,
+
+  historico: null,
+
+  recorrente: "Não",
+
+  horas_estimada: 8,
+
+  horas_prevista: 6,
+
+  homologado: "Sim",
+
 };
 
 
@@ -203,6 +219,40 @@ describe("IssuesTable", () => {
     expect(screen.getByText("Aberta")).toBeInTheDocument();
 
     expect(screen.queryByText("Fechada")).not.toBeInTheDocument();
+
+  });
+
+  it("exibe colunas Planning Poker quando habilitadas", () => {
+
+    render(<IssuesTable rows={[sampleRow]} visibleColumns={["story_points", "aceita"]} />);
+
+    expect(screen.getByText("Pontos")).toBeInTheDocument();
+
+    expect(screen.getByText("Aceita")).toBeInTheDocument();
+
+    expect(screen.queryByText("Sem ponto")).not.toBeInTheDocument();
+
+    const simLabels = screen.getAllByText("Sim");
+
+    expect(simLabels.length).toBeGreaterThanOrEqual(1);
+
+  });
+
+  it("mostra badge Sem ponto quando story_points ausente", () => {
+
+    render(
+
+      <IssuesTable
+
+        rows={[{ ...sampleRow, story_points: null }]}
+
+        visibleColumns={["story_points"]}
+
+      />,
+
+    );
+
+    expect(screen.getByText("Sem ponto")).toBeInTheDocument();
 
   });
 

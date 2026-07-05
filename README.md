@@ -28,14 +28,17 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 | Área | Rota | Descrição |
 |------|------|-----------|
 | Executivo | `/` | KPIs consolidados, evolução mensal, distribuição por status/tipo/módulo |
-| Alertas | `/alertas` | Sem épico/parceria, faixa de idade, maiores lead times |
 | Análise temporal | `/temporal` | Criados × fechados × backlog líquido por mês |
+| Fluxo Kanban | `/fluxo` | CFD, throughput, lead time, WIP, gargalos e qualidade do histórico |
 | Detalhamento | `/detalhamento` | Parceria, área funcional, lead time por módulo, KPI por tipo |
 | Qualidade | `/qualidade` | Conformidade de preenchimento e backlog aberto |
+| Alertas | `/alertas` | Sem épico/parceria, faixa de idade, maiores lead times |
 | Sprint | `/sprint` | Visão focada no sprint selecionado nos filtros globais |
+| Parcerias | `/parcerias` | Relatório mensal de demandas com label `Parceria::` |
 | Equipes & Devs | `/equipes` | Volume por equipe, top desenvolvedores, merge em master |
-| Issues | `/issues` | Busca livre, paginação e filtros (estado, SLA) |
 | Analistas | `/analistas` | Relatório de atividades por analista (filtro por ID GitLab) |
+| Issues | `/issues` | Busca livre, paginação, filtros (estado, SLA) e export Excel |
+| Importar Dados | `/importar-dados` | Planning Poker — story points e campos de sprint (Excel/CSV) |
 | Minha conta | `/conta` | Nome de exibição e alteração de senha |
 | Admin usuários | `/admin/usuarios` | CRUD de contas (somente admin) |
 | Login | `/login` | Entrada com e-mail e senha (Supabase Auth) |
@@ -44,7 +47,9 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 
 **Autenticação:** rotas do dashboard exigem login. Papéis `admin` e `user`; área admin restrita. Issues são filtradas por analista via **`gitlab_user_id`** quando vinculado. Ver [docs/08-autenticacao.md](docs/08-autenticacao.md) e [docs/10-identidades-gitlab.md](docs/10-identidades-gitlab.md).
 
-**Drill-down:** KPIs clicáveis (Total, Abertas, Fechadas, etc.) levam para `/issues` preservando os filtros globais da URL.
+**Drill-down:** KPIs clicáveis (Total, Abertas, Fechadas, etc.) e contagens em gráficos/tabelas (`IssueCountLink`) levam para `/issues` em nova aba, preservando os filtros globais da URL.
+
+**Tooltips contextuais:** ícones ℹ️ em títulos de seções explicam métricas e regras de cálculo (`InfoTooltip`, `CardSectionHeader`).
 
 **Filtros globais:** módulo, área, tipo, prioridade, equipe, status, parceria, sprint, épico, repositório, ano e intervalos de datas — refletidos na query string e mantidos ao navegar entre páginas.
 
@@ -117,11 +122,19 @@ Se as variáveis não estiverem configuradas, o dashboard exibe um banner de set
 mgi-kpi-dashboard/
 ├── app/
 │   ├── layout.tsx              # Layout raiz (metadados, fontes)
-│   ├── api/revalidate/         # Invalidação de cache (POST, Bearer token)
+│   ├── api/
+│   │   ├── revalidate/         # Invalidação de cache (POST, Bearer token)
+│   │   ├── reports/flow/       # APIs REST do relatório Kanban
+│   │   ├── import/planning-poker/  # Importação Excel/CSV
+│   │   ├── issues/export/      # Export Excel da listagem
+│   │   └── parcerias/export/   # Export Excel de parcerias
 │   └── (dashboard)/            # Páginas do dashboard (route group)
 │       ├── layout.tsx          # Shell GovBR (Suspense, não bloqueante)
 │       ├── loading.tsx         # Skeleton compartilhado
 │       ├── page.tsx            # Executivo (streaming por seção)
+│       ├── fluxo/
+│       ├── parcerias/
+│       ├── importar-dados/
 │       ├── alertas/
 │       ├── temporal/
 │       ├── detalhamento/
@@ -131,12 +144,14 @@ mgi-kpi-dashboard/
 │       ├── issues/
 │       └── analistas/
 ├── components/
-│   ├── dashboard/              # KPIs, gráficos, tabelas
+│   ├── dashboard/              # KPIs, gráficos, tabelas, fluxo/
 │   │   └── executivo/          # Seções async da página Executivo
+│   ├── dados/                  # Painel de importação Planning Poker
 │   ├── issues/                 # Listagem e busca de issues
+│   ├── parcerias/              # Relatório de parcerias
 │   └── layout/                 # Header GovBR, sidebar, filtros, skeletons
 ├── lib/
-│   ├── dashboard/              # fetchers, cache, filters, page context
+│   ├── dashboard/              # fetchers, cache, filters, flow-report, import
 │   ├── format.ts               # Formatação pt-BR (número, data, %)
 │   ├── navigation.ts           # Menu desktop + mobile
 │   └── supabase/server.ts      # Cliente Supabase (server-only)
@@ -162,6 +177,7 @@ O projeto está preparado para deploy na [Vercel](https://vercel.com):
 2. Root Directory: raiz do repo (padrão)
 3. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`) no painel Vercel
 4. Framework detectado automaticamente: **Next.js** (região `gru1` via `vercel.json`)
+5. Deploy de **produção** apenas na branch `main` (`ignoreCommand` em `vercel.json`)
 
 Deploy manual (CLI):
 

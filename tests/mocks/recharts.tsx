@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 type MockProps = { children?: ReactNode; [key: string]: unknown };
 
 function passthrough(name: string) {
-  return ({ children, ...rest }: MockProps) => (
+  const Component = ({ children, ...rest }: MockProps) => (
     <div data-testid={name} {...rest}>
       {children}
     </div>
   );
+  Component.displayName = `Mock${name}`;
+  return Component;
 }
 
 export const rechartsMock = {

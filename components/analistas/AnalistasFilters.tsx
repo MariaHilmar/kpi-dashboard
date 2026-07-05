@@ -3,8 +3,9 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
-import { TODOS } from "@/lib/dashboard/constants";
 import { formatAnoMesLabel, listRecentAnoMesOptions } from "@/lib/dashboard/analistas-utils";
+import { TODOS } from "@/lib/dashboard/constants";
+import { sortSprintOptions } from "@/lib/dashboard/filters";
 
 type Props = {
   sprints: string[];
@@ -21,6 +22,7 @@ export function AnalistasFilters({ sprints, autores, defaultAutor }: Props) {
   const anoMes = searchParams.get("anoMes") ?? listRecentAnoMesOptions()[0];
   const sprint = searchParams.get("sprint") ?? TODOS;
   const autor = searchParams.get("autor") ?? defaultAutor;
+  const sprintOptions = sortSprintOptions(sprints).filter((item) => item !== TODOS);
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -93,9 +95,7 @@ export function AnalistasFilters({ sprints, autores, defaultAutor }: Props) {
           className="min-w-[12rem] rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
         >
           <option value={TODOS}>Todas as sprints</option>
-          {sprints
-            .filter((item) => item !== TODOS)
-            .map((item) => (
+          {sprintOptions.map((item) => (
               <option key={item} value={item}>
                 {item}
               </option>

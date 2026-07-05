@@ -123,7 +123,7 @@ Para dimensões novas, estender a RPC `dashboard_aggregate_v2` na migration Supa
 | Sentinela sem filtro | `TODOS = "Todos"` |
 | Valor ausente em agregação | `NAO_INFORMADO = "Não informado"` |
 | Imports | alias `@/` (tsconfig paths) |
-| Páginas dashboard | dinâmicas via `searchParams` e/ou auth com cookies (sem `force-dynamic` explícito) |
+| Páginas dashboard | dinâmicas via `searchParams` e/ou auth com cookies (`/parcerias` usa `force-dynamic`) |
 | Fetchers de KPI | `cachedFetch` + `createStaticSupabase()` |
 | Layout dashboard | síncrono; fetches em wrappers async com `Suspense` |
 | Novas rotas | incluir `loading.tsx` com `DashboardPageLoading` |
@@ -138,7 +138,11 @@ Testes em `tests/` com Vitest + jsdom + Testing Library.
 - `parseFilters`, `sortFilterOptions`, `sortSprintOptions`
 - formatação pt-BR
 - navegação (`isNavItemActive`)
-- componentes KPI e filtros
+- componentes KPI, filtros e tooltips
+- relatório de fluxo (`flow-stages`, `flow-report`, `flow-charts`)
+- importação Planning Poker (`planning-poker-import`)
+- parcerias (`parcerias`, `parcerias-export`)
+- issues export e drill-down links
 
 Executar antes de PR:
 
@@ -160,6 +164,18 @@ Dispara em push/PR para `main`:
 
 Badge no README aponta para este workflow.
 
+**SonarCloud:** análise automática configurada em `.sonarcloud.properties` e `sonar-project.properties`.
+
+## Tooltips de seção
+
+Para adicionar explicações em títulos de gráficos/KPIs:
+
+1. Adicione o texto em `lib/dashboard/<pagina>-section-tooltips.ts`.
+2. Passe `tooltip={...}` para `CardSectionHeader`, `KpiCard`, `BarChartCard`, etc.
+3. Use `PageHeader` com `titleTooltip` no cabeçalho da página.
+
+Componente base: `components/ui/InfoTooltip.tsx`.
+
 ## Estrutura de tipos
 
 Tipos de domínio centralizados em `types/database.ts`:
@@ -176,8 +192,12 @@ Evite duplicar shapes inline nos componentes — importe de `types/database.ts`.
 |-------|------------------|
 | `components/dashboard/` | Visualizações de dados |
 | `components/dashboard/executivo/` | Seções async com streaming (página Executivo) |
+| `components/dashboard/fluxo/` | Relatório Kanban |
+| `components/dados/` | Importação Planning Poker |
 | `components/issues/` | Listagem paginada |
+| `components/parcerias/` | Relatório de parcerias |
 | `components/layout/` | Shell GovBR, navegação, filtros, skeletons |
+| `components/ui/` | InfoTooltip, Button, SortableTh |
 
 Gráficos usam **Recharts** encapsulados em `BarChartCard`, `DonutChartCard`, `FluxoMensalCard`.
 

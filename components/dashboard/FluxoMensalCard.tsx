@@ -12,21 +12,20 @@ import {
   YAxis,
 } from "recharts";
 
+import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
 import type { FluxoMensal } from "@/types/database";
 
 type FluxoMensalCardProps = {
   title: string;
   subtitle?: string;
+  titleTooltip?: string;
   data: FluxoMensal[];
 };
 
-export function FluxoMensalCard({ title, subtitle, data }: FluxoMensalCardProps) {
+export function FluxoMensalCard({ title, subtitle, titleTooltip, data }: FluxoMensalCardProps) {
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-slate-900">{title}</h2>
-        {subtitle ? <p className="text-sm text-slate-500">{subtitle}</p> : null}
-      </div>
+    <section className="overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <CardSectionHeader title={title} subtitle={subtitle} tooltip={titleTooltip} />
 
       {data.length === 0 ? (
         <div className="flex h-64 items-center justify-center rounded-lg bg-slate-50 text-sm text-slate-500">

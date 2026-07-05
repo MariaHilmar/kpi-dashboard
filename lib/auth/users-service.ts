@@ -33,7 +33,6 @@ async function ensureGitlabUser(
 
 export async function createManagedUser(
   input: CreateUserInput,
-  actorId: string,
 ): Promise<{ profile: UserProfile } | { error: string }> {
   const admin = createAdminSupabase();
   if (!admin) {

@@ -3,7 +3,9 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTransition } from "react";
 
+import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
 import { flowPeriodPresets } from "@/lib/dashboard/flow-charts";
+import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 
 type FluxoFiltersProps = {
   startDate: string;
@@ -46,12 +48,17 @@ export function FluxoFilters({
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 className="text-sm font-semibold text-slate-900">Filtros do fluxo</h2>
-          <p className="text-xs text-slate-500">
-            Período, responsável e granularidade. Demais filtros usam a barra global acima.
-          </p>
-        </div>
+        <CardSectionHeader
+          title="Filtros do fluxo"
+          titleClassName="text-sm font-semibold text-slate-900"
+          className="mb-0"
+          subtitle={
+            <p className="text-xs text-slate-500">
+              Período, responsável e granularidade. Demais filtros usam a barra global acima.
+            </p>
+          }
+          tooltip={FLUXO_SECTION_TOOLTIPS.filtros}
+        />
         {isPending ? <span className="text-xs text-slate-400">Atualizando…</span> : null}
       </div>
 
@@ -61,7 +68,7 @@ export function FluxoFilters({
             key={preset.id}
             type="button"
             onClick={() => applyPreset(preset.startDate, preset.endDate)}
-            className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+            className={`rounded-button border px-3 py-1 text-xs font-medium transition ${
               activePreset === preset.id
                 ? "border-govbr-blue bg-govbr-blue text-white"
                 : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
