@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 
+import { DetalhamentoSection } from "@/components/dashboard/executivo/DetalhamentoSection";
 import { DistribuicaoSection } from "@/components/dashboard/executivo/DistribuicaoSection";
 import {
   ChartCardSkeleton,
@@ -8,7 +9,6 @@ import {
 } from "@/components/dashboard/executivo/ExecutivoSkeletons";
 import { FluxoMensalSection } from "@/components/dashboard/executivo/FluxoMensalSection";
 import { KpiSection } from "@/components/dashboard/executivo/KpiSection";
-import { VolumeSection } from "@/components/dashboard/executivo/VolumeSection";
 import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
@@ -26,7 +26,7 @@ export default async function ExecutivoPage({ searchParams }: DashboardPageProps
     <div className="flex flex-col gap-6">
       <PageHeader
         title="Dashboard Executivo"
-        subtitle="Visão consolidada de KPIs, evolução mensal e distribuição por status, tipo e prioridade."
+        subtitle="Visão consolidada de KPIs, evolução mensal, distribuição e detalhamento."
         titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.page}
       />
 
@@ -55,10 +55,12 @@ export default async function ExecutivoPage({ searchParams }: DashboardPageProps
           <div className="grid gap-6 xl:grid-cols-2">
             <ChartCardSkeleton />
             <ChartCardSkeleton />
+            <ChartCardSkeleton />
+            <ChartCardSkeleton />
           </div>
         }
       >
-        <VolumeSection filters={filters} />
+        <DetalhamentoSection filters={filters} />
       </Suspense>
     </div>
   );
