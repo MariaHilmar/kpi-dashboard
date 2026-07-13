@@ -19,9 +19,9 @@
 # =============================================================================
 
 $ErrorActionPreference = "Stop"
-$RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$RepoRoot = Split-Path -Parent $PSScriptRoot
 if (-not (Test-Path (Join-Path $RepoRoot ".git"))) {
-    $RepoRoot = Split-Path -Parent $PSScriptRoot
+    throw "Execute este script a partir do clone do repositório mgi-kpi-dashboard."
 }
 
 Set-Location $RepoRoot
