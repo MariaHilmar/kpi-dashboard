@@ -2,7 +2,14 @@
 
 Dashboard web para acompanhamento de KPIs, alertas e issues dos projetos MGI. Consome dados sincronizados do GitLab via [Supabase](https://supabase.com) (Postgres + RPCs) e faz parte do ecossistema MGI junto com o pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
 
-![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MariaHilmar_mgi-kpi-dashboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MariaHilmar_mgi-kpi-dashboard)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+
+**Demo:** [web-mgi-delog.vercel.app](https://web-mgi-delog.vercel.app) (acesso autenticado)
+
+![Tela de login — GovBR Design System](docs/screenshots/login.png)
 
 ## Visão geral
 
@@ -60,7 +67,7 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 - **Tailwind CSS 4** + [GovBR Design System](https://www.gov.br/ds/)
 - **Recharts** — gráficos
 - **Supabase** — backend de dados
-- **Vitest** + Testing Library — testes unitários (~87% cobertura)
+- **Vitest** + Testing Library — testes unitários em `lib/` e `components/` (cobertura no CI)
 
 ## Pré-requisitos
 
@@ -158,7 +165,7 @@ mgi-kpi-dashboard/
 ├── types/database.ts           # Tipos das RPCs e views
 ├── tests/                      # Vitest + Testing Library
 ├── vercel.json                 # Deploy Vercel (região gru1)
-└── .github/workflows/ci.yml    # CI: tsc + testes
+└── .github/workflows/ci.yml    # CI: lint, types, testes, audit
 ```
 
 ## CI/CD
@@ -166,8 +173,16 @@ mgi-kpi-dashboard/
 A cada push ou pull request na branch `main`, o GitHub Actions executa:
 
 1. `npm ci`
-2. `npx tsc --noEmit`
-3. `npm run test`
+2. `npm run lint`
+3. `npx tsc --noEmit`
+4. `npm run test:coverage` (artefato `coverage-report` por 14 dias)
+5. `npm audit --audit-level=high`
+
+**SonarCloud:** análise automática ([projeto](https://sonarcloud.io/project/overview?id=MariaHilmar_mgi-kpi-dashboard)) via `.sonarcloud.properties`.
+
+**Dependabot:** atualizações semanais de dependências npm e GitHub Actions.
+
+Contribuições: veja [CONTRIBUTING.md](CONTRIBUTING.md). Segurança: [SECURITY.md](SECURITY.md). Limpeza de histórico: [docs/security-sanitize-git-history.md](docs/security-sanitize-git-history.md).
 
 ## Deploy (Vercel)
 

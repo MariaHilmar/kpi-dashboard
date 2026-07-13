@@ -18,29 +18,24 @@ type ResetPasswordFormProps = {
 
 export function ResetPasswordForm({ afterRecovery = true }: ResetPasswordFormProps) {
   const router = useRouter();
+  const configured = isSupabaseConfigured();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
+  const [checkingSession, setCheckingSession] = useState(configured);
   const [hasSession, setHasSession] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!isSupabaseConfigured()) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCheckingSession(false);
-      return;
-    }
+    if (!configured) return;
 
     const supabase = createBrowserSupabase();
     supabase.auth.getUser().then(({ data: { user } }) => {
       setHasSession(Boolean(user));
       setCheckingSession(false);
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [configured]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
