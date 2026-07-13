@@ -1,64 +1,144 @@
-# Limpeza de dados sensíveis no repositório
+# Limpeza de histórico Git (portfólio público)
 
-## Estado atual (limpeza no HEAD — sem reescrita de histórico)
+O **código atual** em `main` já foi sanitizado (PR #52). Porém commits antigos no GitHub ainda expõem conteúdo que não deveria estar num repositório público de portfólio.
 
-O merge em `main` remove do **último commit** (working tree público):
+## Auditoria do histórico (2026-07-13)
 
-| Removido | Motivo |
-|----------|--------|
-| `docs/analise/` | Documentos internos de diagnóstico — não pertencem ao portfólio público |
-| `tmp-*` (37 arquivos) | Artefatos locais de debug (imagens, scripts, `.docx`) |
-| E-mails e URLs reais em migrations | Já tratados em PRs anteriores de sanitização |
+| Categoria | No histórico? | Risco | Ação |
+|-----------|---------------|-------|------|
+| `.env.local` / JWT / chaves reais | Não encontrado | — | Nenhuma |
+| URL Supabase real | Não (só `xxx.supabase.co`) | — | Nenhuma |
+| E-mails reais em migrations | Não (só placeholders) | — | Nenhuma |
+| `docs/analise/` (5 arquivos) | **Sim** — desde `fee057b` | Médio | **Remover do histórico** |
+| `tmp-*` (37 arquivos de debug) | **Sim** — desde `79f69c9` | Baixo | **Remover do histórico** |
+| `seu-workspace` em docs | **Sim** — commits antigos | Baixo | Substituir por placeholder |
+| Caminhos WSL (`\\wsl.localhost\...`) | **Sim** — em `docs/analise/` | Médio | Removidos com a pasta |
+| `Co-authored-by: Cursor` em commits | **Sim** — alguns commits | Baixo | Remover dos metadados |
 
-O `.gitignore` passa a ignorar `tmp-*`, `coverage/` e `*.tsbuildinfo` para evitar commits acidentais.
+`contratos_v2` e `gitlab.com/comprasnet/...` permanecem no código por serem parte da lógica do app (não são vazamento acidental de credenciais).
 
-**Importante:** commits antigos no GitHub ainda podem conter `docs/analise/` e `tmp-*` acessíveis via histórico (`git log`, browse de commit). O repositório fica **limpo para quem clona `main` hoje**, mas não apaga o passado.
+## Pré-requisitos
 
-## Próximo passo (planejado — após fechar o portfólio)
+1. **Merge/commit** das limpezas do HEAD em `main` (remoção de `docs/analise/`, `tmp-*`, `.gitignore`, etc.).
+2. **Backup espelho** do repositório remoto:
 
-Reescrita de histórico com `git-filter-repo` + **force push** único, documentado em `scripts/sanitize-git-history.ps1`. Executar somente quando:
+```powershell
+git clone --mirror https://github.com/MariaHilmar/mgi-kpi-dashboard.git seu-workspace\mgi-kpi-dashboard-backup.git
+```
 
-1. Todas as entregas de portfólio estiverem mergeadas em `main`;
-2. Colaboradores forem avisados (re-clone obrigatório);
-3. Backup espelho existir (`git clone --mirror`).
+3. Python 3 com `git-filter-repo`:
+
+```powershell
+python -m pip install --user git-filter-repo
+```
+
+4. Avisar colaboradores (se houver): após force push, todos devem **re-clonar**.
+
+## Passo a passo (recomendado)
+
+### 1. Simular
 
 ```powershell
 cd seu-workspace\mgi-kpi-dashboard
+git checkout main
+git pull origin main
 
-# Backup espelho (recomendado)
-git clone --mirror https://github.com/MariaHilmar/mgi-kpi-dashboard.git ..\mgi-kpi-dashboard-backup.git
-
-# Modo interativo ou -Execute após revisar
-.\scripts\sanitize-git-history.ps1
+pwsh scripts/sanitize-git-history.ps1
 ```
 
-O script pode remover paths (`docs/analise/`, `tmp-*`) de **todos** os commits e substituir literais sensíveis via `replacements.txt`.
+Mostra paths removidos, substituições e comandos sem alterar nada.
 
-## Substituição de literais (e-mails, URLs)
+### 2. Executar reescrita local
 
-| Dado | Onde estava |
-|------|-------------|
-| `seu-email@org.gov.br`, `outro-email@org.gov.br` | migrations 008/014, `schema.sql` |
-| `YOUR_PROJECT_REF` / URL Supabase real | `.env.local.example` |
+```powershell
+pwsh scripts/sanitize-git-history.ps1 -Execute -Force
+```
 
-## Após force push (futuro)
+O script:
+
+- remove `docs/analise/` e `tmp-*` de **todos** os commits;
+- substitui `seu-workspace` e caminhos WSL em arquivos restantes;
+- remove `Co-authored-by: Cursor` dos metadados de commit;
+- verifica se o histórico local ficou limpo.
+
+### 3. Verificar manualmente
+
+```powershell
+git log --oneline -10
+git log --all --oneline -- docs/analise/          # deve estar vazio
+git log --all --oneline -- tmp-after-fix.png      # deve estar vazio
+git log -p --all -S "wsl.localhost" -- docs/      # deve estar vazio
+git log -p --all -S "seu-workspace"            # deve estar vazio
+```
+
+### 4. Force push
+
+```powershell
+pwsh scripts/sanitize-git-history.ps1 -Execute -Push -Force
+```
+
+Ou manualmente:
+
+```powershell
+git push origin --force --all
+git push origin --force --tags
+```
+
+### 5. Pós-push
+
+Em cada clone local:
 
 ```powershell
 git fetch origin
 git checkout main
 git reset --hard origin/main
+git remote prune origin
 ```
 
 Branches locais antigas ficam inválidas — recriar a partir de `origin/main`.
 
-## Rotação de chaves (opcional)
+### 6. Rotação de chaves (opcional)
 
-Se URLs ou chaves já foram públicas:
+Não foram encontradas chaves reais no histórico. Rotacionar a **anon key** no Supabase continua sendo boa prática ao tornar o repo público:
 
-1. Supabase → **Settings → API** → regenerar **anon key** (e service_role se necessário).
-2. Atualizar variáveis na Vercel e em `.env.local`.
-3. Redeploy do dashboard.
+1. Supabase → **Settings → API** → regenerar anon key (e service_role se necessário).
+2. Atualizar Vercel e `.env.local`.
+3. Redeploy.
+
+## Execução manual (alternativa)
+
+```powershell
+cd seu-workspace\mgi-kpi-dashboard
+git checkout main
+git pull origin main
+
+# replacements.txt (UTF-8)
+# literal:seu-workspace==>seu-workspace
+# literal:seu-workspace==>seu-workspace
+# literal:\\wsl.localhost\Ubuntu\root\MGI\==>seu-caminho-wsl-removido\
+
+git filter-repo --force `
+  --invert-paths `
+  --path docs/analise/ `
+  --path-glob "tmp-*" `
+  --replace-text replacements.txt `
+  --commit-callback "$(Get-Content scripts/git-filter-commit-callback.py -Raw)"
+
+git remote add origin https://github.com/MariaHilmar/mgi-kpi-dashboard.git
+git push origin --force --all
+git push origin --force --tags
+```
+
+## O que o PR #52 já corrigiu (HEAD atual)
+
+| Dado | Onde estava |
+|------|-------------|
+| Referência `seu-workspace\.env` | `.env.local.example` |
+| `UPDATE` com e-mails em migrations | `008_profiles_admin.sql`, `014_seed_admin_users.sql` |
+| Instruções de promoção manual de admin | `docs/08-autenticacao.md` |
+
+Isso **não** apaga commits antigos — apenas o estado atual.
 
 ## Repositório mgi-kpi-pipeline
 
-Repositório separado (Python). O **mgi-kpi-dashboard** não depende de Linux/WSL no desenvolvimento local (Windows + PowerShell).
+Auditoria separada: sem tokens nem e-mails reais nas migrations. Reescrita de histórico não necessária para credenciais.
