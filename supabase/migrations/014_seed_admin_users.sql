@@ -1,10 +1,13 @@
 -- =============================================================================
 -- Migration 014 — Administradores iniciais
 -- =============================================================================
-
-update public.profiles
-set role = 'admin', active = true, updated_at = now()
-where lower(email) in (
-  lower('mariahilmar@gmail.com'),
-  lower('anne.knoll@gestao.gov.br')
-);
+-- Não inclua e-mails reais neste repositório público.
+-- Após criar usuários no Supabase Auth, promova admins no SQL Editor:
+--
+--   update public.profiles
+--   set role = 'admin', active = true, updated_at = now()
+--   where lower(email) in (
+--     lower('seu-email@org.gov.br')
+--   );
+--
+-- Ver também docs/08-autenticacao.md (seção "Primeiro administrador").

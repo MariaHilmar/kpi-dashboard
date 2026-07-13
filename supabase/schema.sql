@@ -1580,10 +1580,8 @@ on conflict (id) do update
   set email = excluded.email,
       updated_at = now();
 
--- Admin inicial (ajuste o e-mail se necessário)
-update public.profiles
-set role = 'admin', active = true, updated_at = now()
-where lower(email) = lower('mariahilmar@gmail.com');
+-- Primeiro admin: promova manualmente no SQL Editor após criar o usuário no Auth.
+-- Ver docs/08-autenticacao.md — não commitar e-mails reais neste repositório.
 
 -- -----------------------------------------------------------------------------
 -- Helpers de autorização
@@ -2710,12 +2708,8 @@ alter function public.analista_relatorio_snapshot(text, text, text, text, bigint
 -- Migration 014 — Administradores iniciais
 -- =============================================================================
 
-update public.profiles
-set role = 'admin', active = true, updated_at = now()
-where lower(email) in (
-  lower('mariahilmar@gmail.com'),
-  lower('anne.knoll@gestao.gov.br')
-);
+-- Não inclua e-mails reais neste repositório público.
+-- Promova admins manualmente no SQL Editor (ver docs/08-autenticacao.md).
 
 
 -- -----------------------------------------------------------------------------
