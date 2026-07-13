@@ -66,6 +66,18 @@ Contas do dashboard ligam-se às issues pelo **`profiles.gitlab_user_id`** (ID g
 | `NEXT_PUBLIC_ALLOW_SIGNUP` | `false` | `true` habilita cadastro público em `/cadastro` |
 | `SUPABASE_SERVICE_ROLE_KEY` | — | Server-only; obrigatória para CRUD admin |
 
+## Primeiro administrador
+
+Após aplicar as migrations e criar o primeiro usuário em **Authentication → Users** (ou `/cadastro` em dev), promova-o a admin no **SQL Editor** do Supabase:
+
+```sql
+update public.profiles
+set role = 'admin', active = true, updated_at = now()
+where lower(email) = lower('seu-email@org.gov.br');
+```
+
+Não commite e-mails reais nas migrations — configure apenas no ambiente.
+
 ## RBAC (admin)
 
 Gerenciamento de usuários em **`/admin/usuarios`** — ver [09-admin-usuarios.md](./09-admin-usuarios.md).

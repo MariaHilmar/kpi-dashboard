@@ -30,10 +30,8 @@ on conflict (id) do update
   set email = excluded.email,
       updated_at = now();
 
--- Admin inicial (ajuste o e-mail se necessário)
-update public.profiles
-set role = 'admin', active = true, updated_at = now()
-where lower(email) = lower('seu-email@org.gov.br');
+-- Primeiro admin: promova manualmente no SQL Editor após criar o usuário no Auth.
+-- Ver docs/08-autenticacao.md — não commitar e-mails reais neste repositório.
 
 -- -----------------------------------------------------------------------------
 -- Helpers de autorização
