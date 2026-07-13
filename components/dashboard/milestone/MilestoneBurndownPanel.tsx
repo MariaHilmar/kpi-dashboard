@@ -1,7 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useMilestoneUrlParams } from "@/hooks/useMilestoneUrlParams";
 import {
   CartesianGrid,
   ComposedChart,
@@ -165,25 +164,10 @@ export function MilestoneBurndownPanel({
   compareSprints,
   hasStoryPoints,
 }: Readonly<MilestoneBurndownPanelProps>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const { pushParams } = useMilestoneUrlParams();
 
   const metricLabel = metric === "issues" ? "Issues" : "Story points";
   const hasIdeal = series.some((point) => point.ideal != null);
-
-  function pushParams(next: Record<string, string | null>) {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(next)) {
-      if (value == null || value === "") params.delete(key);
-      else params.set(key, value);
-    }
-    startTransition(() => {
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    });
-  }
 
   return (
     <section className="overflow-visible rounded-xl border border-slate-200 bg-white p-5 shadow-sm">

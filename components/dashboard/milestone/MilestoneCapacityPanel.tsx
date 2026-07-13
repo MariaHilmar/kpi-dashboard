@@ -1,7 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useMilestoneUrlParams } from "@/hooks/useMilestoneUrlParams";
 import {
   CartesianGrid,
   Legend,
@@ -152,24 +151,9 @@ export function MilestoneCapacityPanel({
   rows,
   hasStoryPoints,
 }: Readonly<MilestoneCapacityPanelProps>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const { pushParams } = useMilestoneUrlParams();
 
   const metricLabel = milestoneCapacityMetricLabel(metric);
-
-  function pushParams(next: Record<string, string | null>) {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(next)) {
-      if (value == null || value === "") params.delete(key);
-      else params.set(key, value);
-    }
-    startTransition(() => {
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    });
-  }
 
   const iidOptions = milestoneIidsDesc(milestones);
   const heatmap = milestoneCapacityToHeatmap(rows, metric, teamOptions);

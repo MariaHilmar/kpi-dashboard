@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 
+import { timingSafeEqualString } from "@/lib/auth/timing-safe";
 import { CACHE_TAG_KPIS } from "@/lib/dashboard/cache";
 
 /**
@@ -27,13 +28,11 @@ export async function POST(request: Request) {
   const auth = request.headers.get("authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
 
-  if (token !== secret) {
+  if (!timingSafeEqualString(token, secret)) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 
   revalidateTag(CACHE_TAG_KPIS, "max");
-
-  console.log(`[revalidate] tag="${CACHE_TAG_KPIS}" invalidada em ${new Date().toISOString()}`);
 
   return NextResponse.json({ revalidated: true, tag: CACHE_TAG_KPIS });
 }

@@ -1,4 +1,6 @@
 import { MilestoneRoadmapPanel } from "@/components/dashboard/milestone/MilestoneRoadmapPanel";
+import { MilestoneSectionNotice } from "@/components/dashboard/milestone/MilestoneSectionNotice";
+import { readSearchParam } from "@/lib/dashboard/search-params";
 import {
   milestoneRoadmapHasStoryPoints,
   milestoneRoadmapUniqueLabels,
@@ -21,12 +23,6 @@ type MilestoneRoadmapSectionProps = {
   labelRaw?: string | string[];
 };
 
-function readParam(value: string | string[] | undefined): string | null {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value[0] ?? null;
-  return null;
-}
-
 export async function MilestoneRoadmapSection({
   milestones,
   fromRaw,
@@ -38,25 +34,25 @@ export async function MilestoneRoadmapSection({
 }: Readonly<MilestoneRoadmapSectionProps>) {
   const range = resolveMilestoneRoadmapRange(
     milestones,
-    readParam(fromRaw),
-    readParam(toRaw),
+    readSearchParam(fromRaw),
+    readSearchParam(toRaw),
   );
 
   if (!range) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <MilestoneSectionNotice>
         Importe milestones do GitLab para visualizar o roadmap por sprint.
-      </div>
+      </MilestoneSectionNotice>
     );
   }
 
-  const groupBy = parseMilestoneRoadmapGroupBy(readParam(groupByRaw));
-  const metric = parseMilestoneRoadmapMetric(readParam(metricRaw));
-  const topN = parseMilestoneRoadmapTopN(readParam(topNRaw));
+  const groupBy = parseMilestoneRoadmapGroupBy(readSearchParam(groupByRaw));
+  const metric = parseMilestoneRoadmapMetric(readSearchParam(metricRaw));
+  const topN = parseMilestoneRoadmapTopN(readSearchParam(topNRaw));
 
   const rows = await fetchMilestoneRoadmap(range.fromIid, range.toIid, groupBy, topN);
   const labels = milestoneRoadmapUniqueLabels(rows);
-  const selectedLabel = parseMilestoneRoadmapLabel(readParam(labelRaw), labels);
+  const selectedLabel = parseMilestoneRoadmapLabel(readSearchParam(labelRaw), labels);
   const hasStoryPoints = milestoneRoadmapHasStoryPoints(rows);
 
   return (

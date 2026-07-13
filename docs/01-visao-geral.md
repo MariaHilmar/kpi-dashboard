@@ -20,7 +20,7 @@ O dashboard web replica e expande as visualizações do **Dashboard Executivo** 
 ## Fluxo de dados (vigente)
 
 ```
-GitLab API + repos Git (WSL)
+GitLab API + repos Git (mgi-kpi-pipeline)
         │
         ▼
 mgi-kpi-pipeline
@@ -39,6 +39,8 @@ mgi-kpi-pipeline
 ```
 
 O Excel **não faz mais parte do fluxo principal** de sincronização (confirmado no README do `mgi-kpi-pipeline`). Planilhas Excel e scripts legados permanecem no workspace histórico, mas o dashboard web depende exclusivamente do Supabase.
+
+> **Ambiente:** o **mgi-kpi-dashboard** roda em **Windows** (Node.js + PowerShell) em desenvolvimento e na **Vercel** em produção. WSL/Linux faz parte do setup do repositório [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline), não deste projeto web.
 
 ## Paridade Excel ↔ Web
 

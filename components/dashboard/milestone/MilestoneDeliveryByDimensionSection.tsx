@@ -1,4 +1,5 @@
 import { MilestoneDeliveryDimensionPanel } from "@/components/dashboard/milestone/MilestoneDeliveryDimensionPanel";
+import { readSearchParam } from "@/lib/dashboard/search-params";
 import {
   DEFAULT_MILESTONE_DELIVERY_ORDER,
   MILESTONE_DELIVERY_SORT_COLUMNS,
@@ -19,22 +20,16 @@ type MilestoneDeliveryByDimensionSectionProps = {
   deliveryOrder?: string | string[];
 };
 
-function readParam(value: string | string[] | undefined): string | null {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value[0] ?? null;
-  return null;
-}
-
 export async function MilestoneDeliveryByDimensionSection({
   milestone,
   deliveryDim,
   deliveryLimit,
   deliveryOrder,
 }: Readonly<MilestoneDeliveryByDimensionSectionProps>) {
-  const dimension = parseMilestoneDeliveryDimension(readParam(deliveryDim));
-  const limit = parseMilestoneDeliveryLimit(readParam(deliveryLimit));
+  const dimension = parseMilestoneDeliveryDimension(readSearchParam(deliveryDim));
+  const limit = parseMilestoneDeliveryLimit(readSearchParam(deliveryLimit));
   const order = resolveSortOrder(
-    readParam(deliveryOrder),
+    readSearchParam(deliveryOrder),
     MILESTONE_DELIVERY_SORT_COLUMNS,
     DEFAULT_MILESTONE_DELIVERY_ORDER,
   );
