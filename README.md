@@ -1,8 +1,28 @@
 # MGI KPI Dashboard
 
-Dashboard web para acompanhamento de KPIs, alertas e issues dos projetos MGI. Consome dados sincronizados do GitLab via [Supabase](https://supabase.com) (Postgres + RPCs) e faz parte do ecossistema MGI junto com o pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
+Dashboard web para acompanhamento de KPIs, alertas e issues — modelo inspirado no ecossistema de entregas do **MGI** (GitLab, sprints, módulos, Planning Poker). Consome dados sincronizados via [Supabase](https://supabase.com) (Postgres + RPCs), em conjunto com o pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
 
-![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)
+[![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MariaHilmar_mgi-kpi-dashboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MariaHilmar_mgi-kpi-dashboard)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](package.json)
+
+**Demo:** [web-mgi-delog.vercel.app](https://web-mgi-delog.vercel.app) (acesso autenticado)
+
+![Tela de login — GovBR Design System](docs/screenshots/login.png)
+
+## Sobre este repositório (portfólio)
+
+Este é um **projeto de portfólio pessoal** de [Maria Hilmar](https://github.com/MariaHilmar). Foi construído com base em **dados, fluxos e necessidades reais** do contexto de KPIs e entregas em que atuei no MGI.
+
+| | |
+|---|---|
+| **O que é** | Demonstração pública de arquitetura full-stack (Next.js, Supabase, GitLab, GovBR DS), testes e boas práticas de engenharia. |
+| **O que não é** | Repositório oficial do MGI, produto institucional ou canal de suporte governamental. |
+| **Dados** | Métricas e issues vêm de um Supabase alimentado pelo pipeline; não há dados sensíveis commitados no estado atual do repositório. |
+| **Licença** | [MIT](LICENSE) — código aberto para estudo e referência técnica. |
+
+Se você chegou aqui pelo contexto MGI: o dashboard reflete um sistema que desenvolvi e evoluí nesse ambiente; esta versão está no GitHub para **portfólio e entrevistas técnicas**, com documentação e testes.
 
 ## Visão geral
 
@@ -19,7 +39,7 @@ mgi-kpi-pipeline  ──►  processamento em memória  ──►  sync_supabase
                                                     mgi-kpi-dashboard (este repo)
 ```
 
-O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
+O dashboard é **somente leitura** em relação ao GitLab: não altera issues na origem. Ele consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
 
 **Renderização:** Server Components no Next.js 16 — HTML gerado no servidor com streaming (`Suspense`) e cache de dados (`unstable_cache`, TTL 24 h). Skeletons durante navegação entre páginas.
 
@@ -60,13 +80,16 @@ O dashboard é **somente leitura**: não altera issues no GitLab. Ele consulta v
 - **Tailwind CSS 4** + [GovBR Design System](https://www.gov.br/ds/)
 - **Recharts** — gráficos
 - **Supabase** — backend de dados
-- **Vitest** + Testing Library — testes unitários (~87% cobertura)
+- **Vitest** + Testing Library — 350+ testes unitários e de componente
 
 ## Pré-requisitos
 
+- **Windows 10/11** + PowerShell (ambiente de desenvolvimento)
 - Node.js 20+
 - Projeto Supabase configurado (schema + RPCs — ver `supabase/migrations/` neste repositório)
-- Dados sincronizados pelo pipeline Python (`sync_supabase.py`)
+- Dados sincronizados pelo [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) (`sync_supabase.py`)
+
+> O CI usa `ubuntu-latest` (padrão GitHub Actions para Node.js). A produção roda na Vercel (Linux serverless). Nenhum WSL/Linux é necessário para desenvolver este dashboard no Windows.
 
 ## Configuração local
 
@@ -129,55 +152,29 @@ mgi-kpi-dashboard/
 │   │   ├── issues/export/      # Export Excel da listagem
 │   │   └── parcerias/export/   # Export Excel de parcerias
 │   └── (dashboard)/            # Páginas do dashboard (route group)
-│       ├── layout.tsx          # Shell GovBR (Suspense, não bloqueante)
-│       ├── loading.tsx         # Skeleton compartilhado
-│       ├── page.tsx            # Executivo (streaming por seção)
-│       ├── fluxo/
-│       ├── parcerias/
-│       ├── importar-dados/
-│       ├── alertas/
-│       ├── temporal/
-│       ├── detalhamento/
-│       ├── qualidade/
-│       ├── sprint/
-│       ├── equipes/
-│       ├── issues/
-│       └── analistas/
 ├── components/
-│   ├── dashboard/              # KPIs, gráficos, tabelas, fluxo/
-│   │   └── executivo/          # Seções async da página Executivo
+│   ├── dashboard/              # KPIs, gráficos, tabelas, milestone/
 │   ├── dados/                  # Painel de importação Planning Poker
 │   ├── issues/                 # Listagem e busca de issues
-│   ├── parcerias/              # Relatório de parcerias
-│   └── layout/                 # Header GovBR, sidebar, filtros, skeletons
-├── lib/
-│   ├── dashboard/              # fetchers, cache, filters, flow-report, import
-│   ├── format.ts               # Formatação pt-BR (número, data, %)
-│   ├── navigation.ts           # Menu desktop + mobile
-│   └── supabase/server.ts      # Cliente Supabase (server-only)
-├── types/database.ts           # Tipos das RPCs e views
+│   └── layout/                 # Header GovBR, sidebar, filtros
+├── lib/dashboard/              # fetchers, cache, filters, import
 ├── tests/                      # Vitest + Testing Library
-├── vercel.json                 # Deploy Vercel (região gru1)
-└── .github/workflows/ci.yml    # CI: tsc + testes
+├── supabase/migrations/        # Schema Postgres e RPCs
+└── .github/workflows/ci.yml    # CI: lint, tsc, testes, cobertura
 ```
+
+Documentação detalhada: [docs/README.md](docs/README.md).
 
 ## CI/CD
 
-A cada push ou pull request na branch `main`, o GitHub Actions executa:
-
-1. `npm ci`
-2. `npx tsc --noEmit`
-3. `npm run test`
+A cada push ou pull request na branch `main`, o GitHub Actions executa lint, checagem de tipos e testes (com artefato de cobertura). Ver [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Deploy (Vercel)
 
-O projeto está preparado para deploy na [Vercel](https://vercel.com):
-
 1. Conecte o repositório GitHub `MariaHilmar/mgi-kpi-dashboard`
-2. Root Directory: raiz do repo (padrão)
-3. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`) no painel Vercel
-4. Framework detectado automaticamente: **Next.js** (região `gru1` via `vercel.json`)
-5. Deploy de **produção** apenas na branch `main` (`ignoreCommand` em `vercel.json`)
+2. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`) no painel Vercel
+3. Framework: **Next.js** (região `gru1` via `vercel.json`)
+4. Deploy de **produção** apenas na branch `main`
 
 Deploy manual (CLI):
 
@@ -190,6 +187,8 @@ npx vercel deploy --prod
 | Repositório | Papel |
 |-------------|-------|
 | [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, processamento em memória, sync Supabase |
-| **mgi-kpi-dashboard** (este) | Visualização web dos KPIs |
+| **mgi-kpi-dashboard** (este) | Visualização web dos KPIs — **portfólio** |
 
+## Segurança e histórico Git
 
+O estado atual (`main`) não inclui arquivos temporários de desenvolvimento (`tmp-*`) nem documentos internos de análise. Commits antigos ainda podem expor esses paths até uma reescrita de histórico planejada — ver [docs/security-sanitize-git-history.md](docs/security-sanitize-git-history.md) e [SECURITY.md](SECURITY.md).

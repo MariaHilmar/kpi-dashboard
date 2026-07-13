@@ -12,7 +12,7 @@ Guia para contribuir e estender o **mgi-kpi-dashboard**.
 | `npm run lint` | ESLint (config Next.js 16) |
 | `npm run test` | Vitest — execução única |
 | `npm run test:watch` | Vitest em modo watch |
-| `npm run test:coverage` | Relatório de cobertura (~87%) |
+| `npm run test:coverage` | Relatório de cobertura (`lib/` e `components/`) |
 | `npx tsc --noEmit` | Checagem de tipos (roda no CI) |
 
 ## Adicionar uma nova página
@@ -159,12 +159,16 @@ Arquivo: `.github/workflows/ci.yml`
 Dispara em push/PR para `main`:
 
 1. Node 20 + `npm ci`
-2. Type check
-3. Unit tests
+2. ESLint (`npm run lint`)
+3. Type check (`npx tsc --noEmit`)
+4. Unit tests com cobertura (`npm run test:coverage`) — artefato `coverage-report`
+5. Auditoria de dependências (`npm audit --audit-level=high`)
 
-Badge no README aponta para este workflow.
+Badge no README aponta para este workflow. Guia de contribuição: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-**SonarCloud:** análise automática configurada em `.sonarcloud.properties` e `sonar-project.properties`.
+**SonarCloud:** análise automática em [sonarcloud.io](https://sonarcloud.io/project/overview?id=MariaHilmar_mgi-kpi-dashboard) (`.sonarcloud.properties`).
+
+**Dependabot:** `.github/dependabot.yml` — atualizações semanais de npm e GitHub Actions.
 
 ## Tooltips de seção
 

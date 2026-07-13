@@ -1,19 +1,26 @@
-# Limpeza de dados sensíveis no histórico Git
+# Limpeza de dados sensíveis no repositório
 
-O PR `fix/sanitize-sensitive-public-data` remove e-mails e referências reais do **código atual**. Os commits antigos no GitHub ainda podem conter esses dados até uma reescrita de histórico.
+## Estado atual (limpeza no HEAD — sem reescrita de histórico)
 
-## O que foi removido do código
+O merge em `main` remove do **último commit** (working tree público):
 
-| Dado | Onde estava |
-|------|-------------|
-| `seu-email@org.gov.br`, `outro-email@org.gov.br` | migrations 008/014, `schema.sql` |
-| `YOUR_PROJECT_REF` / URL Supabase real | `.env.local.example` |
+| Removido | Motivo |
+|----------|--------|
+| `docs/analise/` | Documentos internos de diagnóstico — não pertencem ao portfólio público |
+| `tmp-*` (37 arquivos) | Artefatos locais de debug (imagens, scripts, `.docx`) |
+| E-mails e URLs reais em migrations | Já tratados em PRs anteriores de sanitização |
 
-## Passo 1 — Merge do PR de sanitização
+O `.gitignore` passa a ignorar `tmp-*`, `coverage/` e `*.tsbuildinfo` para evitar commits acidentais.
 
-Merge o PR para `main` antes de reescrever o histórico, para que o estado atual fique alinhado com as substituições.
+**Importante:** commits antigos no GitHub ainda podem conter `docs/analise/` e `tmp-*` acessíveis via histórico (`git log`, browse de commit). O repositório fica **limpo para quem clona `main` hoje**, mas não apaga o passado.
 
-## Passo 2 — Reescrever histórico (git-filter-repo)
+## Próximo passo (planejado — após fechar o portfólio)
+
+Reescrita de histórico com `git-filter-repo` + **force push** único, documentado em `scripts/sanitize-git-history.ps1`. Executar somente quando:
+
+1. Todas as entregas de portfólio estiverem mergeadas em `main`;
+2. Colaboradores forem avisados (re-clone obrigatório);
+3. Backup espelho existir (`git clone --mirror`).
 
 ```powershell
 cd seu-workspace\mgi-kpi-dashboard
@@ -21,34 +28,20 @@ cd seu-workspace\mgi-kpi-dashboard
 # Backup espelho (recomendado)
 git clone --mirror https://github.com/MariaHilmar/mgi-kpi-dashboard.git ..\mgi-kpi-dashboard-backup.git
 
-# Script interativo (gera arquivo de substituições e mostra os comandos)
+# Modo interativo ou -Execute após revisar
 .\scripts\sanitize-git-history.ps1
 ```
 
-Ou manualmente:
+O script pode remover paths (`docs/analise/`, `tmp-*`) de **todos** os commits e substituir literais sensíveis via `replacements.txt`.
 
-```powershell
-python -m pip install --user git-filter-repo
+## Substituição de literais (e-mails, URLs)
 
-# Criar replacements.txt (UTF-8):
-# literal:seu-email@org.gov.br==>seu-email@org.gov.br
-# literal:outro-email@org.gov.br==>outro-email@org.gov.br
-# literal:https://xxx.supabase.co==>https://xxx.supabase.co
-# literal:YOUR_PROJECT_REF==>YOUR_PROJECT_REF
+| Dado | Onde estava |
+|------|-------------|
+| `seu-email@org.gov.br`, `outro-email@org.gov.br` | migrations 008/014, `schema.sql` |
+| `YOUR_PROJECT_REF` / URL Supabase real | `.env.local.example` |
 
-git checkout main
-git pull origin main
-
-git filter-repo --force --replace-text replacements.txt
-
-git remote add origin https://github.com/MariaHilmar/mgi-kpi-dashboard.git
-git push origin --force --all
-git push origin --force --tags
-```
-
-## Passo 3 — Colaboradores
-
-Após o force push, todos devem **re-clonar** ou:
+## Após force push (futuro)
 
 ```powershell
 git fetch origin
@@ -58,9 +51,9 @@ git reset --hard origin/main
 
 Branches locais antigas ficam inválidas — recriar a partir de `origin/main`.
 
-## Passo 4 — Rotação de chaves (opcional, recomendado)
+## Rotação de chaves (opcional)
 
-A URL do projeto Supabase já foi pública. Se quiser endurecer:
+Se URLs ou chaves já foram públicas:
 
 1. Supabase → **Settings → API** → regenerar **anon key** (e service_role se necessário).
 2. Atualizar variáveis na Vercel e em `.env.local`.
@@ -68,4 +61,4 @@ A URL do projeto Supabase já foi pública. Se quiser endurecer:
 
 ## Repositório mgi-kpi-pipeline
 
-Não continha tokens nem e-mails nas migrations. Nenhuma reescrita de histórico necessária para credenciais; caminhos WSL locais são metadados de dev de baixo risco.
+Repositório separado (Python). O **mgi-kpi-dashboard** não depende de Linux/WSL no desenvolvimento local (Windows + PowerShell).

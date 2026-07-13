@@ -1,4 +1,6 @@
 import { MilestoneCapacityPanel } from "@/components/dashboard/milestone/MilestoneCapacityPanel";
+import { MilestoneSectionNotice } from "@/components/dashboard/milestone/MilestoneSectionNotice";
+import { readSearchParam } from "@/lib/dashboard/search-params";
 import {
   milestoneCapacityHasStoryPoints,
   milestoneCapacityTeamOptions,
@@ -20,12 +22,6 @@ type MilestoneCapacitySectionProps = {
   teamRaw?: string | string[];
 };
 
-function readParam(value: string | string[] | undefined): string | null {
-  if (typeof value === "string") return value;
-  if (Array.isArray(value)) return value[0] ?? null;
-  return null;
-}
-
 export async function MilestoneCapacitySection({
   milestones,
   anchorIid,
@@ -36,27 +32,27 @@ export async function MilestoneCapacitySection({
 }: Readonly<MilestoneCapacitySectionProps>) {
   const range = resolveMilestoneCapacityRange(
     milestones,
-    readParam(fromRaw),
-    readParam(toRaw),
+    readSearchParam(fromRaw),
+    readSearchParam(toRaw),
     anchorIid,
   );
 
   if (!range) {
     return (
-      <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <MilestoneSectionNotice>
         Importe milestones do GitLab para visualizar capacidade por equipe.
-      </div>
+      </MilestoneSectionNotice>
     );
   }
 
-  const metric = parseMilestoneCapacityMetric(readParam(metricRaw));
+  const metric = parseMilestoneCapacityMetric(readSearchParam(metricRaw));
   const [rows, filterOptions] = await Promise.all([
     fetchMilestoneCapacityByTeam(range.fromIid, range.toIid),
     fetchFilterOptions(),
   ]);
   const dataTeams = milestoneCapacityUniqueTeams(rows);
   const teamOptions = milestoneCapacityTeamOptions(filterOptions.equipes, dataTeams);
-  const selectedTeam = parseMilestoneCapacityTeam(readParam(teamRaw), teamOptions);
+  const selectedTeam = parseMilestoneCapacityTeam(readSearchParam(teamRaw), teamOptions);
   const hasStoryPoints = milestoneCapacityHasStoryPoints(rows);
 
   return (

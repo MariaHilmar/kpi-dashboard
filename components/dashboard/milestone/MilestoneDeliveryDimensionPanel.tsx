@@ -1,7 +1,6 @@
 "use client";
 
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useTransition } from "react";
+import { useMilestoneUrlParams } from "@/hooks/useMilestoneUrlParams";
 import {
   Bar,
   BarChart,
@@ -80,10 +79,7 @@ export function MilestoneDeliveryDimensionPanel({
   rows,
   hasStoryPoints,
 }: Readonly<MilestoneDeliveryDimensionPanelProps>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const { pushParams } = useMilestoneUrlParams();
 
   const sortedRows = sortMilestoneDeliveryRows(rows, order);
   const chartData = milestoneDeliveryToComparisonBars(sortedRows);
@@ -93,18 +89,6 @@ export function MilestoneDeliveryDimensionPanel({
     MILESTONE_DELIVERY_SORT_COLUMNS,
     DEFAULT_MILESTONE_DELIVERY_ORDER,
   );
-
-  function pushParams(next: Record<string, string | null>) {
-    const params = new URLSearchParams(searchParams.toString());
-    for (const [key, value] of Object.entries(next)) {
-      if (value == null || value === "") params.delete(key);
-      else params.set(key, value);
-    }
-    startTransition(() => {
-      const query = params.toString();
-      router.push(query ? `${pathname}?${query}` : pathname);
-    });
-  }
 
   function handleSort(columnKey: string) {
     const nextOrder = toggleColumnOrder(

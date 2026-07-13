@@ -1,5 +1,6 @@
 import { MilestoneCommitmentPanel } from "@/components/dashboard/milestone/MilestoneCommitmentPanel";
 import { MilestoneIssuesTable } from "@/components/dashboard/milestone/MilestoneIssuesTable";
+import { MilestoneSectionNotice } from "@/components/dashboard/milestone/MilestoneSectionNotice";
 import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
 import { IssueCountLink } from "@/components/dashboard/IssueCountLink";
 import {
@@ -33,9 +34,9 @@ export async function MilestoneCommitmentSection({
 
   if (!commitment) {
     return (
-      <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+      <MilestoneSectionNotice>
         Dados de comprometimento indisponíveis para esta milestone.
-      </section>
+      </MilestoneSectionNotice>
     );
   }
 
