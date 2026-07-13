@@ -4,6 +4,7 @@
 
 | Camada | Tecnologia | Versão (package.json) |
 |--------|------------|-------------------------|
+| SO dev | Windows + PowerShell | — |
 | Framework | Next.js (App Router) | 16.2.9 |
 | UI | React | 19.2.4 |
 | Linguagem | TypeScript | 5.x |
@@ -12,9 +13,19 @@
 | Gráficos | Recharts | 3.9.x |
 | Backend de dados | Supabase (Postgres + RPCs) | `@supabase/supabase-js` 2.108.x |
 | Testes | Vitest + Testing Library | ~87% cobertura |
-| CI | GitHub Actions | Node 20 |
-| Deploy | Vercel | detecta Next.js; produção apenas na branch `main` |
+| CI | GitHub Actions (`ubuntu-latest`) | Node 20 — runner Linux só no CI; dev local em Windows |
+| Deploy | Vercel (`gru1`, Linux serverless) | detecta Next.js; produção apenas na branch `main` |
 | Qualidade de código | SonarCloud | análise automática (`.sonarcloud.properties`) |
+
+### Plataformas
+
+| Ambiente | SO | Observação |
+|----------|-----|------------|
+| Desenvolvimento local | **Windows** + PowerShell | Node.js 20+; não exige WSL/Linux |
+| CI (GitHub Actions) | Linux (`ubuntu-latest`) | Runner padrão para projetos Node — não substitui o SO de dev |
+| Produção (Vercel) | Linux serverless | Região `gru1`; por isso `optionalDependencies` inclui `@resvg/resvg-js-linux-x64-gnu` (gráficos PNG no servidor) |
+
+O repositório [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) (Python, coleta GitLab) é **separado** e pode rodar em WSL/Linux; isso não faz parte do setup deste dashboard web.
 
 ## Diagrama de camadas
 
@@ -221,6 +232,8 @@ Se as variáveis `NEXT_PUBLIC_SUPABASE_*` não estiverem definidas, o dashboard 
 Fetchers registram erros no console (`console.error`) e retornam arrays vazios ou `null` — a UI degrada graciosamente (cards vazios, mensagem de KPIs indisponíveis).
 
 ## Integração com o pipeline
+
+O pipeline Python vive no repositório **mgi-kpi-pipeline** (ambiente próprio; pode usar WSL/Linux). Este dashboard apenas **lê** o Supabase após o sync.
 
 | Responsabilidade | Componente |
 |------------------|------------|

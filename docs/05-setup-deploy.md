@@ -4,10 +4,11 @@
 
 | Item | Versão / detalhe |
 |------|------------------|
+| SO (desenvolvimento) | **Windows 10/11** + PowerShell |
 | Node.js | 20+ |
 | npm | incluído com Node |
 | Projeto Supabase | schema aplicado (`supabase/migrations/`) |
-| Dados sincronizados | pipeline Python executado ao menos uma vez |
+| Dados sincronizados | [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) executado ao menos uma vez |
 
 ## 1. Configurar Supabase
 
@@ -123,7 +124,7 @@ Se **Deployment Protection** estiver ativa na Vercel, use bypass secret para ace
 
 ### Opção A — Pipeline manual (recomendado hoje)
 
-Execute periodicamente no ambiente com acesso GitLab/WSL:
+Execute periodicamente no repositório **mgi-kpi-pipeline** (Python; ambiente separado deste dashboard):
 
 ```powershell
 cd D:\mgi-workspace\mgi-kpi-pipeline

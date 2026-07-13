@@ -28,7 +28,7 @@ Material de contexto em `D:\mgi-workspace\docs`:
 | [SETUP_DASHBOARD_WEB.md](../../docs/SETUP_DASHBOARD_WEB.md) | Setup inicial web (parcialmente desatualizado — ver nota abaixo) |
 | [README_PIPELINE.md](../../docs/README_PIPELINE.md) | Pipeline Excel legado (GitLab → Excel) |
 | [README_QUICK_START.md](../../docs/README_QUICK_START.md) | Execução manual/agendada do pipeline Excel |
-| [SETUP_AMBIENTE.md](../../docs/SETUP_AMBIENTE.md) | Pré-requisitos WSL, Git, Python |
+| [SETUP_AMBIENTE.md](../../docs/SETUP_AMBIENTE.md) | Pré-requisitos do **pipeline** (WSL/Linux) — não se aplica ao dashboard web |
 | [ROADMAP_EXPANSÃO_PIPELINE.md](../../docs/ROADMAP_EXPANSÃO_PIPELINE.md) | Roadmap de dashboards avançados (Fase 3) |
 | [DIAGNÓSTICO_MÓDULOS_REPOSITÓRIO.md](../../docs/DIAGNÓSTICO_MÓDULOS_REPOSITÓRIO.md) | Estrutura do Excel e módulos MGI |
 

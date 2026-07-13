@@ -66,4 +66,28 @@ describe("GlobalFilters", () => {
     expect(url).toContain("area=Minuta");
     expect(url).not.toContain("modulo=");
   });
+
+  it("remove area incompatible ao selecionar modulo", async () => {
+    pushMock.mockClear();
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    await user.selectOptions(screen.getByLabelText("Área funcional"), "Minuta de Empenho");
+    await user.selectOptions(screen.getByLabelText("Módulo"), "PNCP");
+
+    expect(pushMock).toHaveBeenCalledTimes(2);
+    const url = pushMock.mock.calls[1][0] as string;
+    expect(url).toContain("modulo=PNCP");
+    expect(url).not.toContain("area=");
+  });
+
+  it("atualiza URL ao selecionar sprint", async () => {
+    pushMock.mockClear();
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    await user.selectOptions(screen.getByLabelText("Sprint"), "Sprint 10");
+
+    expect(pushMock).toHaveBeenCalledWith(expect.stringContaining("sprint=Sprint"));
+  });
 });

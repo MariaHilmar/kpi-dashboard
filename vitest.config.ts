@@ -12,6 +12,7 @@ export default defineConfig({
       provider: "v8",
       include: ["lib/**/*.{ts,tsx}", "components/**/*.{ts,tsx}"],
       exclude: ["**/*.d.ts", "**/node_modules/**"],
+      reporter: ["text", "text-summary", "lcov"],
     },
   },
   resolve: {

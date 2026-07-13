@@ -392,11 +392,16 @@ export async function fetchMilestoneIssues(
   const total = rows[0]?.total_count != null ? Number(rows[0].total_count) : 0;
 
   return {
-    rows: rows.map(({ total_count: _unused, ...row }) => ({
-      ...row,
-      gitlab_iid: Number(row.gitlab_iid),
-      story_points: row.story_points == null ? null : Number(row.story_points),
-    })),
+    rows: rows.map((row) => {
+      const { total_count, ...rest } = row;
+      void total_count;
+
+      return {
+        ...rest,
+        gitlab_iid: Number(rest.gitlab_iid),
+        story_points: rest.story_points == null ? null : Number(rest.story_points),
+      };
+    }),
     total,
     page,
     pageSize,

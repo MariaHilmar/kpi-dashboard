@@ -1,4 +1,5 @@
 import { MilestoneBurndownPanel } from "@/components/dashboard/milestone/MilestoneBurndownPanel";
+import { readSearchParam } from "@/lib/dashboard/search-params";
 import {
   buildBurndownSprintCompare,
   computeLastMinuteDeliveryKpi,
@@ -21,20 +22,14 @@ type MilestoneBurndownSectionProps = {
   burndownGranularity?: string | string[];
 };
 
-function readParam(raw: string | string[] | undefined): string | null {
-  if (typeof raw === "string") return raw;
-  if (Array.isArray(raw)) return raw[0] ?? null;
-  return null;
-}
-
 export async function MilestoneBurndownSection({
   milestone,
   availableIids,
   burndownMetric: burndownMetricRaw,
   burndownGranularity: burndownGranularityRaw,
 }: Readonly<MilestoneBurndownSectionProps>) {
-  const metric = parseMilestoneBurndownMetric(readParam(burndownMetricRaw));
-  const granularity = parseMilestoneBurndownGranularity(readParam(burndownGranularityRaw));
+  const metric = parseMilestoneBurndownMetric(readSearchParam(burndownMetricRaw));
+  const granularity = parseMilestoneBurndownGranularity(readSearchParam(burndownGranularityRaw));
 
   const compareIids = resolveBurndownCompareIids(milestone.gitlab_milestone_iid, availableIids);
   const compareTargets = [...new Set([milestone.gitlab_milestone_iid, ...compareIids])];

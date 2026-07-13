@@ -17,6 +17,7 @@ export const rechartsMock = {
     <div data-testid="responsive-container">{children}</div>
   ),
   BarChart: passthrough("bar-chart"),
+  LineChart: passthrough("line-chart"),
   PieChart: passthrough("pie-chart"),
   ComposedChart: passthrough("composed-chart"),
   Bar: passthrough("bar"),
