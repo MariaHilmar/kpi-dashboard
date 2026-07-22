@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@fontsource/dejavu-sans": "^5.2.5",
-    "@fortawesome/fontawesome-svg-core": "^7.3.0",
-    "@fortawesome/free-solid-svg-icons": "^7.3.0",
+    "@fortawesome/fontawesome-svg-core": "^7.3.1",
+    "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.4.0",
     "@govbr-ds/core": "^3.7.0",
     "@resvg/resvg-js": "^2.6.2",
@@ -50,5 +50,18 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "js-yaml": "^4.2.1",
+    "sharp": "^0.35.3",
+    "minimatch": {
+      "brace-expansion": "^2.1.2"
+    },
+    "readdir-glob": {
+      "brace-expansion": "^2.1.2"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "brace-expansion": "^2.1.2"
+    }
   }
 }
