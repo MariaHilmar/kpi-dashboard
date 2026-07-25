@@ -18,6 +18,7 @@ import {
 import { listMilestoneOptions } from "@/lib/dashboard/milestones";
 import { fetchStoryPointsKpis } from "@/lib/dashboard/story-points-kpis";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { assertDashboardPageVisible } from "@/lib/dashboard/page-visibility";
 
 function MilestoneSectionSkeleton() {
   return (
@@ -42,6 +43,8 @@ function buildSprintSearchParams(
 }
 
 export default async function SprintPage({ searchParams }: DashboardPageProps) {
+  assertDashboardPageVisible("/sprint");
+
   const rawParams = await searchParams;
 
   const { configured, filters } = await getDashboardContext(searchParams);

@@ -34,13 +34,14 @@ describe("isLocalhostOrigin", () => {
 });
 
 describe("filterNavGroups", () => {
-  it("oculta páginas desativadas (fluxo, milestone, roadmap, equipes)", () => {
+  it("oculta páginas desativadas (fluxo, milestone, roadmap, equipes, sprint)", () => {
     const filtered = filterNavGroups(NAV_GROUPS, true);
     const hrefs = filtered.flatMap((group) => group.items.map((item) => item.href));
     expect(hrefs).not.toContain("/fluxo");
     expect(hrefs).not.toContain("/milestone");
     expect(hrefs).not.toContain("/milestone/roadmap");
     expect(hrefs).not.toContain("/equipes");
+    expect(hrefs).not.toContain("/sprint");
   });
 
   it("oculta itens localhostOnly fora de localhost", () => {
