@@ -6,6 +6,7 @@ export const HIDDEN_DASHBOARD_PAGE_HREFS = new Set([
   "/milestone",
   "/milestone/roadmap",
   "/equipes",
+  "/sprint",
 ]);
 
 export function isHiddenDashboardPageHref(href: string): boolean {
