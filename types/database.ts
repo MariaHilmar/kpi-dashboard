@@ -1,3 +1,5 @@
+import type { PeriodoTipo } from "@/lib/dashboard/constants";
+
 export type ChartPoint = {
   label: string;
   quantidade: number;
@@ -22,6 +24,7 @@ export type FluxoMensal = {
   criados: number;
   fechados: number;
   backlog_liquido: number;
+  mergeadas: number;
 };
 
 export type LeadTimePorModulo = {
@@ -39,6 +42,25 @@ export type KpiPorTipo = {
   taxa_fechamento: number;
   lead_medio: number | null;
   lead_mediano: number | null;
+};
+
+export type MergeadaPorPeriodo = {
+  periodo: string;
+  ano: number | null;
+  mes: number | null;
+  total: number;
+};
+
+export type MergeadaPorEpico = {
+  epico: string;
+  total: number;
+};
+
+/** Linha longa do pivô de mergeadas (linha = módulo ou épico, por período). */
+export type MergeadaPivotRow = {
+  linha: string;
+  periodo: string;
+  total: number;
 };
 
 export type TopLeadTime = {
@@ -85,11 +107,17 @@ export type DashboardFilters = {
   epico: string;
   repositorio: string;
   situacao: string;
+  /** @deprecated URLs legadas (?ano=); derivado em periodoDe/periodoAte. */
   ano: number | null;
+  periodoTipo: PeriodoTipo;
+  periodoDe: string | null;
+  periodoAte: string | null;
   criadoDe: string | null;
   criadoAte: string | null;
   fechadoDe: string | null;
   fechadoAte: string | null;
+  mergeadoDe: string | null;
+  mergeadoAte: string | null;
 };
 
 export type ModuloAreaPair = {

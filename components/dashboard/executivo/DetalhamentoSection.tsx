@@ -2,6 +2,7 @@ import { BarChartCard } from "@/components/dashboard/BarChartCard";
 import { KpisPorTipoTabela } from "@/components/dashboard/tables/KpisPorTipoTabela";
 import { TOP_LIMIT } from "@/lib/dashboard/constants";
 import { DETALHAMENTO_SECTION_TOOLTIPS } from "@/lib/dashboard/detalhamento-section-tooltips";
+import { issuesVolumeSubtitle } from "@/lib/dashboard/executivo-chart-labels";
 import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
 import {
   fetchAggregate,
@@ -30,35 +31,35 @@ export async function DetalhamentoSection({ filters }: DetalhamentoSectionProps)
       <div className="grid gap-6 xl:grid-cols-2">
         <BarChartCard
           title="Parcerias"
-          subtitle="Volume por parceria"
+          subtitle={issuesVolumeSubtitle("parceria")}
           titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.parcerias}
           data={parceria}
           issuesDrilldown={{ filters, dimension: "parceria" }}
         />
         <BarChartCard
           title="Equipes"
-          subtitle="Volume por equipe (top 14)"
+          subtitle={issuesVolumeSubtitle("equipe", "top 14")}
           titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.equipes}
           data={equipes}
           issuesDrilldown={{ filters, dimension: "equipe" }}
         />
         <BarChartCard
           title="Equipes"
-          subtitle="Volume por equipe (top 14)"
+          subtitle={issuesVolumeSubtitle("equipe", "top 14")}
           titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.equipes}
           data={equipes}
           issuesDrilldown={{ filters, dimension: "equipe" }}
         />
         <BarChartCard
           title="Área Funcional"
-          subtitle="Top 14 áreas"
+          subtitle={issuesVolumeSubtitle("área funcional", "top 14")}
           titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.areaFuncional}
           data={areaFuncional}
           issuesDrilldown={{ filters, dimension: "area_funcional" }}
         />
         <BarChartCard
           title="Módulos"
-          subtitle="Volume por módulo (top 14)"
+          subtitle={issuesVolumeSubtitle("módulo", "top 14")}
           titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.modulos}
           data={modulos}
           horizontal
@@ -66,7 +67,7 @@ export async function DetalhamentoSection({ filters }: DetalhamentoSectionProps)
         />
         <BarChartCard
           title="Lead time médio por módulo"
-          subtitle="Top 15 módulos"
+          subtitle="Lead time médio das issues fechadas por módulo (top 15)"
           titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.leadTimePorModulo}
           data={leadTimePorModulo.map<ChartPoint>((row) => ({
             label: row.modulo,

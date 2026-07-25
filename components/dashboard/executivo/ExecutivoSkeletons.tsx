@@ -21,5 +21,5 @@ export function ChartCardSkeleton({ className }: { className?: string }) {
 }
 
 export function FluxoMensalSkeleton() {
-  return <ChartCardSkeleton className="h-64" />;
+  return <ChartCardSkeleton className="h-80" />;
 }

@@ -229,8 +229,42 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
             onClick={clearDateRange}
             className="rounded-button px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
           >
-            Limpar datas
+            Limpar datas de criação
           </button>
+        )}
+
+        {(searchParams.get("fechadoDe") ||
+          searchParams.get("fechadoAte") ||
+          searchParams.get("mergeadoDe") ||
+          searchParams.get("mergeadoAte")) && (
+          <div className="flex w-full flex-wrap items-center gap-2 border-t border-slate-100 pt-2 text-xs text-slate-600">
+            {searchParams.get("fechadoDe") || searchParams.get("fechadoAte") ? (
+              <span className="rounded-full bg-blue-50 px-2 py-1 text-blue-800">
+                Fechamento: {searchParams.get("fechadoDe") ?? "…"} →{" "}
+                {searchParams.get("fechadoAte") ?? "…"}
+              </span>
+            ) : null}
+            {searchParams.get("mergeadoDe") || searchParams.get("mergeadoAte") ? (
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-emerald-800">
+                Merge: {searchParams.get("mergeadoDe") ?? "…"} →{" "}
+                {searchParams.get("mergeadoAte") ?? "…"}
+              </span>
+            ) : null}
+            <button
+              type="button"
+              onClick={() =>
+                pushParams((params) => {
+                  params.delete("fechadoDe");
+                  params.delete("fechadoAte");
+                  params.delete("mergeadoDe");
+                  params.delete("mergeadoAte");
+                })
+              }
+              className="rounded-button px-2 py-1 font-medium text-slate-500 hover:text-slate-700"
+            >
+              Limpar fechamento/merge
+            </button>
+          </div>
         )}
 
         {isPending ? <span className="self-center text-xs text-slate-400">Buscando…</span> : null}

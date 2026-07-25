@@ -4,9 +4,12 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { TOP_LIMIT } from "@/lib/dashboard/constants";
 import { EQUIPES_SECTION_TOOLTIPS } from "@/lib/dashboard/equipes-section-tooltips";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { assertDashboardPageVisible } from "@/lib/dashboard/page-visibility";
 import { fetchAggregate } from "@/lib/dashboard/fetchers";
 
 export default async function EquipesPage({ searchParams }: DashboardPageProps) {
+  assertDashboardPageVisible("/equipes");
+
   const { configured, filters } = await getDashboardContext(searchParams);
   if (!configured) {
     return <SetupBanner />;
@@ -42,6 +45,7 @@ export default async function EquipesPage({ searchParams }: DashboardPageProps) 
           titleTooltip={EQUIPES_SECTION_TOOLTIPS.topDesenvolvedores}
           data={desenvolvedor}
           horizontal
+          issuesDrilldown={{ filters, dimension: "desenvolvedor" }}
         />
         <BarChartCard
           title="Merge em master"

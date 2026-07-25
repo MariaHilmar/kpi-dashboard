@@ -47,6 +47,20 @@ export const AGGREGATE_DIMENSIONS = [
 
 export type AggregateDimension = (typeof AGGREGATE_DIMENSIONS)[number];
 
+export const MERGEADAS_AGGREGATE_DIMENSIONS = ["parceria", "tipo", "prioridade"] as const;
+export type MergeadasAggregateDimension = (typeof MERGEADAS_AGGREGATE_DIMENSIONS)[number];
+
+export const PERIODO_TIPOS = ["criacao", "fechamento", "merge"] as const;
+export type PeriodoTipo = (typeof PERIODO_TIPOS)[number];
+
+export const DEFAULT_PERIODO_TIPO: PeriodoTipo = "fechamento";
+
+export const PERIODO_TIPO_LABELS: Record<PeriodoTipo, string> = {
+  criacao: "Criação",
+  fechamento: "Fechamento",
+  merge: "Merge",
+};
+
 /** Dimensões usadas pela RPC `dashboard_alertas_por_modulo`. */
 export type AlertaDimensao = "sem_epico" | "sem_parceria";
 

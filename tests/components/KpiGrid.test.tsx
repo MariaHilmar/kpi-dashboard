@@ -32,11 +32,11 @@ describe("KpiGrid", () => {
       />,
     );
 
-    expect(screen.getByText("Total filtrado")).toBeInTheDocument();
+    expect(screen.getByText("Total de issues")).toBeInTheDocument();
     expect(screen.getByText("1.000")).toBeInTheDocument();
     expect(screen.getByText("60,0%")).toBeInTheDocument();
     expect(screen.getByText("12,5")).toBeInTheDocument();
-    expect(screen.getByText("dias")).toBeInTheDocument();
+    expect(screen.getByText("dias (issues fechadas)")).toBeInTheDocument();
   });
 
   it("gera drill-down preservando filtros globais", () => {
@@ -58,12 +58,12 @@ describe("KpiGrid", () => {
       />,
     );
 
-    const abertas = screen.getByRole("link", { name: "Ver issues — Abertas" });
+    const abertas = screen.getByRole("link", { name: "Ver issues — Issues abertas" });
     expect(abertas).toHaveAttribute("href", expect.stringContaining("modulo=PNCP"));
     expect(abertas).toHaveAttribute("href", expect.stringContaining("estado=open"));
     expect(abertas).toHaveAttribute("target", "_blank");
 
-    const total = screen.getByRole("link", { name: "Ver issues — Total filtrado" });
+    const total = screen.getByRole("link", { name: "Ver issues — Total de issues" });
     expect(total).toHaveAttribute("href", "/issues?modulo=PNCP");
   });
 

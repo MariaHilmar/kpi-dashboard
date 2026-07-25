@@ -19,6 +19,7 @@ import { fetchMilestoneDetail } from "@/lib/dashboard/milestone-report";
 import { milestoneIidsDesc, resolveLatestMilestoneIid } from "@/lib/dashboard/milestone-options";
 import { listMilestoneOptions } from "@/lib/dashboard/milestones";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { assertDashboardPageVisible } from "@/lib/dashboard/page-visibility";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 function parseMilestoneIid(raw: string | string[] | undefined): number | null {
@@ -51,6 +52,8 @@ function MilestoneSectionSkeleton() {
 }
 
 export default async function MilestonePage({ searchParams }: DashboardPageProps) {
+  assertDashboardPageVisible("/milestone");
+
   if (!isSupabaseConfigured()) {
     return <SetupBanner />;
   }

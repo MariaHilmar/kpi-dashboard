@@ -1,10 +1,3 @@
-/**
- * Fonte única de verdade da navegação do dashboard.
- *
- * Tanto a `Sidebar` (desktop) quanto o `MobileNav` derivam destes dados,
- * evitando listas de rotas duplicadas e divergentes.
- */
-
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faDiagramProject,
@@ -20,6 +13,15 @@ import {
   faUsers,
   faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
+
+import { isHiddenDashboardPageHref } from "@/lib/dashboard/page-visibility";
+
+/**
+ * Fonte única de verdade da navegação do dashboard.
+ *
+ * Tanto a `Sidebar` (desktop) quanto o `MobileNav` derivam destes dados,
+ * evitando listas de rotas duplicadas e divergentes.
+ */
 
 export type NavItem = {
   href: string;
@@ -146,6 +148,7 @@ export function isLocalhostOrigin(hostname: string): boolean {
 }
 
 export function shouldShowNavItem(item: NavItem, isLocalhost: boolean): boolean {
+  if (isHiddenDashboardPageHref(item.href)) return false;
   if (item.localhostOnly && !isLocalhost) return false;
   return true;
 }

@@ -154,7 +154,7 @@ describe("fetchers", () => {
 
     const { fetchFluxoMensal } = await import("@/lib/dashboard/fetchers");
     expect(await fetchFluxoMensal(DEFAULT_FILTERS)).toEqual([
-      { mes: "2024-06", criados: 10, fechados: 8, backlog_liquido: 2 },
+      { mes: "2024-06", criados: 10, fechados: 8, backlog_liquido: 2, mergeadas: 0 },
     ]);
   });
 

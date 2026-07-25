@@ -24,6 +24,10 @@ export async function GET(request: Request) {
     autor: list.autor,
     criadoDe: list.criadoDe,
     criadoAte: list.criadoAte,
+    fechadoDe: list.fechadoDe,
+    fechadoAte: list.fechadoAte,
+    mergeadoDe: list.mergeadoDe,
+    mergeadoAte: list.mergeadoAte,
     order: list.order,
   });
 

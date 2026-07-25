@@ -14,8 +14,11 @@ import {
 } from "@/lib/dashboard/flow-report-params";
 import { FLUXO_SECTION_TOOLTIPS } from "@/lib/dashboard/fluxo-section-tooltips";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { assertDashboardPageVisible } from "@/lib/dashboard/page-visibility";
 
 export default async function FluxoPage({ searchParams }: DashboardPageProps) {
+  assertDashboardPageVisible("/fluxo");
+
   const { configured } = await getDashboardContext(searchParams);
   if (!configured) {
     return <SetupBanner />;

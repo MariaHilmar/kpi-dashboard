@@ -34,15 +34,18 @@ describe("isLocalhostOrigin", () => {
 });
 
 describe("filterNavGroups", () => {
+  it("oculta páginas desativadas (fluxo, milestone, roadmap, equipes)", () => {
+    const filtered = filterNavGroups(NAV_GROUPS, true);
+    const hrefs = filtered.flatMap((group) => group.items.map((item) => item.href));
+    expect(hrefs).not.toContain("/fluxo");
+    expect(hrefs).not.toContain("/milestone");
+    expect(hrefs).not.toContain("/milestone/roadmap");
+    expect(hrefs).not.toContain("/equipes");
+  });
+
   it("oculta itens localhostOnly fora de localhost", () => {
     const filtered = filterNavGroups(NAV_GROUPS, false);
     const hrefs = filtered.flatMap((group) => group.items.map((item) => item.href));
     expect(hrefs).not.toContain("/milestone/roadmap");
-  });
-
-  it("mantém Roadmap PMO em localhost", () => {
-    const filtered = filterNavGroups(NAV_GROUPS, true);
-    const hrefs = filtered.flatMap((group) => group.items.map((item) => item.href));
-    expect(hrefs).toContain("/milestone/roadmap");
   });
 });
