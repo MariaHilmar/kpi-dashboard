@@ -54,14 +54,8 @@
   "overrides": {
     "js-yaml": "^4.2.1",
     "sharp": "^0.35.3",
-    "minimatch": {
-      "brace-expansion": "^2.1.2"
-    },
-    "readdir-glob": {
-      "brace-expansion": "^2.1.2"
-    },
-    "@typescript-eslint/typescript-estree": {
-      "brace-expansion": "^2.1.2"
-    }
+    "postcss": "^8.5.18",
+    "minimatch": "10.2.5",
+    "glob": "11.1.0"
   }
 }

@@ -46,6 +46,8 @@ export type IssuesSearchParams = {
   criadoAte: string | null;
   fechadoDe?: string | null;
   fechadoAte?: string | null;
+  mergeadoDe?: string | null;
+  mergeadoAte?: string | null;
   exigeParceria?: boolean;
   order: string;
   page: number;
@@ -112,6 +114,8 @@ export async function searchIssues(
     p_criado_ate: params.criadoAte ?? filters.criadoAte,
     p_fechado_de: params.fechadoDe ?? filters.fechadoDe,
     p_fechado_ate: params.fechadoAte ?? filters.fechadoAte,
+    p_mergeado_de: params.mergeadoDe ?? filters.mergeadoDe,
+    p_mergeado_ate: params.mergeadoAte ?? filters.mergeadoAte,
     p_order: params.order,
     p_limit: params.pageSize,
     p_offset: offset,

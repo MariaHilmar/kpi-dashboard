@@ -10,8 +10,11 @@ import {
   buildIssuesHref,
   buildKpiIssuesHref,
   buildFlowPeriodIssuesHref,
+  buildMergeadasPivotIssuesHref,
   buildMilestoneDeliveryIssuesHref,
   buildMilestoneRoadmapIssuesHref,
+  mergeadasSixMonthWindow,
+  periodKeyToMergeRange,
 } from "@/lib/dashboard/issuesLinks";
 
 describe("issuesLinks", () => {
@@ -165,5 +168,38 @@ describe("issuesLinks", () => {
     expect(params.get("estado")).toBe("open");
     expect(params.get("q")).toBe("Maria Silva");
     expect(params.get("sprint")).toBe("Sprint 90");
+  });
+
+  it("buildAggregateIssuesHref usa busca livre para desenvolvedor", () => {
+    const href = buildAggregateIssuesHref(filters, "desenvolvedor", "João Git");
+    expect(href).not.toBeNull();
+    expect(new URL(href!, "http://localhost").searchParams.get("q")).toBe("João Git");
+  });
+
+  it("periodKeyToMergeRange converte YYYY/MM em intervalo de merge", () => {
+    expect(periodKeyToMergeRange("2026/03")).toEqual({
+      mergeadoDe: "2026-03-01",
+      mergeadoAte: "2026-03-31",
+    });
+  });
+
+  it("buildMergeadasPivotIssuesHref inclui mergeadoDe/Ate e módulo", () => {
+    const href = buildMergeadasPivotIssuesHref(filters, {
+      linha: "PNCP",
+      periodo: "2026/02",
+      porModulo: true,
+    });
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
+    expect(params.get("modulo")).toBe("PNCP");
+    expect(params.get("mergeadoDe")).toBe("2026-02-01");
+    expect(params.get("mergeadoAte")).toBe("2026-02-28");
+    expect(params.get("sprint")).toBeNull();
+  });
+
+  it("mergeadasSixMonthWindow cobre 6 meses incluindo o atual", () => {
+    const window = mergeadasSixMonthWindow(new Date(2026, 6, 15));
+    expect(window.mergeadoDe).toBe("2026-02-01");
+    expect(window.mergeadoAte).toBe("2026-07-31");
   });
 });

@@ -1,6 +1,7 @@
 import { FluxoMensalCard } from "@/components/dashboard/FluxoMensalCard";
-import { fetchFluxoMensal } from "@/lib/dashboard/fetchers";
+import { FLUXO_MENSAL_ISSUES_SUBTITLE } from "@/lib/dashboard/executivo-chart-labels";
 import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
+import { fetchFluxoMensal } from "@/lib/dashboard/fetchers";
 import type { DashboardFilters } from "@/types/database";
 
 type FluxoMensalSectionProps = {
@@ -9,10 +10,11 @@ type FluxoMensalSectionProps = {
 
 export async function FluxoMensalSection({ filters }: FluxoMensalSectionProps) {
   const fluxoMensal = await fetchFluxoMensal(filters);
+
   return (
     <FluxoMensalCard
       title="Evolução mensal"
-      subtitle="Criados × Fechados × Backlog líquido"
+      subtitle={FLUXO_MENSAL_ISSUES_SUBTITLE}
       titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.evolucaoMensal}
       data={fluxoMensal}
     />

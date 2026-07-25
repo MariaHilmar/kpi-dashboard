@@ -1,4 +1,5 @@
-import { NAO_INFORMADO, TODOS } from "@/lib/dashboard/constants";
+import { NAO_INFORMADO, DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
+import { resolvePeriodDates } from "@/lib/dashboard/period-filter";
 import type { DashboardFilters } from "@/types/database";
 
 export const DEFAULT_FILTERS: DashboardFilters = {
@@ -13,11 +14,17 @@ export const DEFAULT_FILTERS: DashboardFilters = {
   epico: TODOS,
   repositorio: TODOS,
   situacao: TODOS,
+  /** @deprecated Preferir periodoDe/periodoAte; mantido para URLs legadas (?ano=). */
   ano: null,
+  periodoTipo: DEFAULT_PERIODO_TIPO,
+  periodoDe: null,
+  periodoAte: null,
   criadoDe: null,
   criadoAte: null,
   fechadoDe: null,
   fechadoAte: null,
+  mergeadoDe: null,
+  mergeadoAte: null,
 };
 
 function strOr(value: string | string[] | undefined, fallback: string = TODOS): string {
@@ -30,13 +37,24 @@ function dateOr(value: string | string[] | undefined): string | null {
   return value;
 }
 
+function periodoTipoOr(value: string | string[] | undefined): PeriodoTipo {
+  if (typeof value === "string" && (PERIODO_TIPOS as readonly string[]).includes(value)) {
+    return value as PeriodoTipo;
+  }
+  return DEFAULT_PERIODO_TIPO;
+}
+
 export function parseFilters(
   searchParams: Record<string, string | string[] | undefined>,
 ): DashboardFilters {
   const anoRaw = typeof searchParams.ano === "string" ? searchParams.ano : "";
   const ano = anoRaw && anoRaw !== TODOS ? Number(anoRaw) : null;
 
-  return {
+  const periodoDe = dateOr(searchParams.periodoDe);
+  const periodoAte = dateOr(searchParams.periodoAte);
+  const periodoTipo = periodoTipoOr(searchParams.periodoTipo);
+
+  const filters: DashboardFilters = {
     modulo: strOr(searchParams.modulo),
     area: strOr(searchParams.area),
     tipo: strOr(searchParams.tipo),
@@ -49,10 +67,27 @@ export function parseFilters(
     repositorio: strOr(searchParams.repositorio),
     situacao: strOr(searchParams.situacao),
     ano: Number.isFinite(ano) ? ano : null,
-    criadoDe: dateOr(searchParams.criadoDe),
-    criadoAte: dateOr(searchParams.criadoAte),
-    fechadoDe: dateOr(searchParams.fechadoDe),
-    fechadoAte: dateOr(searchParams.fechadoAte),
+    periodoTipo,
+    periodoDe,
+    periodoAte,
+    criadoDe: null,
+    criadoAte: null,
+    fechadoDe: null,
+    fechadoAte: null,
+    mergeadoDe: null,
+    mergeadoAte: null,
+  };
+
+  const resolved = resolvePeriodDates(filters);
+  return {
+    ...filters,
+    criadoDe: resolved.criadoDe,
+    criadoAte: resolved.criadoAte,
+    fechadoDe: resolved.fechadoDe,
+    fechadoAte: resolved.fechadoAte,
+    mergeadoDe: resolved.mergeadoDe,
+    mergeadoAte: resolved.mergeadoAte,
+    ano: resolved.criadoDe || resolved.fechadoDe || resolved.mergeadoDe ? null : filters.ano,
   };
 }
 
@@ -79,6 +114,39 @@ export function dateArgs(filters: DashboardFilters) {
     p_criado_ate: filters.criadoAte,
     p_fechado_de: filters.fechadoDe,
     p_fechado_ate: filters.fechadoAte,
+    p_mergeado_de: filters.mergeadoDe,
+    p_mergeado_ate: filters.mergeadoAte,
+  };
+}
+
+/** Pivô de mergeadas ignora filtro de período (sempre últimos 6 meses do merge). */
+export function dateArgsIgnored() {
+  return {
+    p_criado_de: null,
+    p_criado_ate: null,
+    p_fechado_de: null,
+    p_fechado_ate: null,
+    p_mergeado_de: null,
+    p_mergeado_ate: null,
+    p_ano: null,
+  };
+}
+
+/**
+ * Evolução mensal e pivô de mergeadas ignoram Sprint e Período globais.
+ * Demais filtros (módulo, área, tipo, etc.) continuam valendo.
+ */
+export function rpcFilterArgsIgnoringSprintAndPeriod(filters: DashboardFilters) {
+  return {
+    ...commonArgs({ ...filters, sprint: TODOS, ano: null }),
+    ...dateArgsIgnored(),
+  };
+}
+
+export function rpcFilterArgs(filters: DashboardFilters) {
+  return {
+    ...commonArgs(filters),
+    ...dateArgs(filters),
   };
 }
 
@@ -87,8 +155,23 @@ export function filtersToSearchParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
   if (!filters) return params;
+
+  const skip = new Set([
+    "criadoDe",
+    "criadoAte",
+    "fechadoDe",
+    "fechadoAte",
+    "mergeadoDe",
+    "mergeadoAte",
+    "ano",
+  ]);
+
   for (const [key, value] of Object.entries(filters)) {
+    if (skip.has(key)) continue;
     if (value === null || value === undefined || value === "" || value === TODOS) continue;
+    if (key === "periodoTipo" && value === DEFAULT_PERIODO_TIPO && !filters.periodoDe && !filters.periodoAte) {
+      continue;
+    }
     params.set(key, String(value));
   }
   return params;

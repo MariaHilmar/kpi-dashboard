@@ -5,6 +5,7 @@ import { SetupBanner } from "@/components/dashboard/SetupBanner";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { listMilestoneOptions } from "@/lib/dashboard/milestones";
 import { type DashboardPageProps, getDashboardContext } from "@/lib/dashboard/page";
+import { assertDashboardPageVisible } from "@/lib/dashboard/page-visibility";
 import { isSupabaseConfigured } from "@/lib/supabase/server";
 
 function MilestoneSectionSkeleton() {
@@ -17,6 +18,8 @@ function MilestoneSectionSkeleton() {
 }
 
 export default async function MilestoneRoadmapPage({ searchParams }: DashboardPageProps) {
+  assertDashboardPageVisible("/milestone/roadmap");
+
   if (!isSupabaseConfigured()) {
     return <SetupBanner />;
   }

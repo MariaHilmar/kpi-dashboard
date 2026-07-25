@@ -26,7 +26,7 @@ import { getIssueStatusChartHex } from "@/lib/dashboard/issue-status";
 
 import type { IssuesDrilldownConfig } from "@/components/dashboard/BarChartCard";
 
-import { buildAggregateIssuesHref } from "@/lib/dashboard/issuesLinks";
+import { buildAggregateIssuesHref, stripSprintAndPeriodFilters } from "@/lib/dashboard/issuesLinks";
 
 import type { ChartPoint } from "@/types/database";
 
@@ -100,15 +100,25 @@ function openIssuesDrilldown(
 
   if (quantidade <= 0) return;
 
+  const base = config.ignoreSprintAndPeriod
+    ? stripSprintAndPeriodFilters(config.filters)
+    : config.filters;
+
   const href = buildAggregateIssuesHref(
 
-    config.filters,
+    base,
 
     config.dimension,
 
     label,
 
-    config.estado ? { estado: config.estado } : undefined,
+    {
+
+      ...config.extra,
+
+      ...(config.estado ? { estado: config.estado } : undefined),
+
+    },
 
   );
 

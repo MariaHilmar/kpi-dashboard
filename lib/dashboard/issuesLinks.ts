@@ -10,6 +10,8 @@ import { filtersToSearchParams } from "@/lib/dashboard/filters";
 import {
   type AggregateDimension,
   type AlertaDimensao,
+  DEFAULT_PERIODO_TIPO,
+  type MergeadasAggregateDimension,
   NAO_INFORMADO,
   OUTROS,
   TODOS,
@@ -131,12 +133,116 @@ export function buildAggregateIssuesHref(
   label: string,
   extra?: Record<string, string | null | undefined>,
 ): string | null {
+  if (dimension === "desenvolvedor") {
+    const q = aggregateLabelToFilterValue(label);
+    if (q === NAO_INFORMADO) return null;
+    return buildIssuesHref(base, { ...extra, q });
+  }
+
   const filterKey = AGGREGATE_TO_FILTER[dimension];
   if (!filterKey) return null;
   return buildIssuesHref(base, {
     ...extra,
     [filterKey]: aggregateLabelToFilterValue(label, dimension),
   });
+}
+
+function formatIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+/** Remove sprint e período globais (mesma regra das RPCs de mergeadas). */
+export function stripSprintAndPeriodFilters(filters: DashboardFilters): DashboardFilters {
+  return {
+    ...filters,
+    sprint: TODOS,
+    ano: null,
+    periodoTipo: DEFAULT_PERIODO_TIPO,
+    periodoDe: null,
+    periodoAte: null,
+    criadoDe: null,
+    criadoAte: null,
+    fechadoDe: null,
+    fechadoAte: null,
+    mergeadoDe: null,
+    mergeadoAte: null,
+  };
+}
+
+/** Janela dos últimos 6 meses calendário (inclui o mês atual), alinhada ao pivô de mergeadas. */
+export function mergeadasSixMonthWindow(reference: Date = new Date()): {
+  mergeadoDe: string;
+  mergeadoAte: string;
+} {
+  const mergeadoDe = formatIsoDate(
+    new Date(reference.getFullYear(), reference.getMonth() - 5, 1),
+  );
+  const mergeadoAte = formatIsoDate(
+    new Date(reference.getFullYear(), reference.getMonth() + 1, 0),
+  );
+  return { mergeadoDe, mergeadoAte };
+}
+
+/** Converte chave "YYYY/MM" do pivô em intervalo de datas de merge. */
+export function periodKeyToMergeRange(periodo: string): {
+  mergeadoDe: string;
+  mergeadoAte: string;
+} | null {
+  const match = /^(\d{4})[/-](\d{2})$/.exec(periodo.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    mergeadoDe: `${match[1]}-${match[2]}-01`,
+    mergeadoAte: `${match[1]}-${match[2]}-${String(lastDay).padStart(2, "0")}`,
+  };
+}
+
+/** Drill-down: célula ou total do pivô de mergeadas. */
+export function buildMergeadasPivotIssuesHref(
+  filters: DashboardFilters,
+  opts: {
+    linha?: string;
+    periodo?: string;
+    porModulo: boolean;
+  },
+): string | null {
+  const base = stripSprintAndPeriodFilters(filters);
+  const range = opts.periodo
+    ? periodKeyToMergeRange(opts.periodo)
+    : mergeadasSixMonthWindow();
+  if (!range) return null;
+
+  const extra: Record<string, string> = {
+    mergeadoDe: range.mergeadoDe,
+    mergeadoAte: range.mergeadoAte,
+  };
+
+  if (opts.linha) {
+    if (opts.porModulo) {
+      extra.modulo = aggregateLabelToFilterValue(opts.linha);
+    } else {
+      extra.epico = aggregateLabelToFilterValue(opts.linha);
+    }
+  }
+
+  return buildIssuesHref(base, extra);
+}
+
+/** Drill-down: donut de mergeadas (parceria/tipo/prioridade, últimos 6 meses). */
+export function buildMergeadasAggregateIssuesHref(
+  filters: DashboardFilters,
+  dimension: MergeadasAggregateDimension,
+  label: string,
+): string | null {
+  const base = stripSprintAndPeriodFilters(filters);
+  const window = mergeadasSixMonthWindow();
+  return buildAggregateIssuesHref(base, dimension, label, window);
 }
 
 /** Drill-down: KPIs numéricos padronizados (Executivo, Qualidade, Sprint). */

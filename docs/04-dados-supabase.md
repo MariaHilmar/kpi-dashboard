@@ -234,7 +234,8 @@ O pipeline Python deriva campos antes do upsert:
 | dev_mergeado, dev_commits | `enriquecer_dev_git.py` |
 | gitlab_author_id, gitlab_* , issue_participants | `gitlab_identities.py` + `sync_supabase.py` |
 | modulo_ok, padrao_* | regras de qualidade em `taxonomy.py` |
-| parceria, sprint, epico | labels/campos GitLab |
+| parceria, sprint | labels / milestone GitLab |
+| epico | vinculo GitLab (`issue.epic`), label `Épico::`/`Epico::`, ou catalogo `gitlab_epics` (filtro) |
 
 Ver `mgi-kpi-pipeline/README.md` para detalhes de processamento.
 

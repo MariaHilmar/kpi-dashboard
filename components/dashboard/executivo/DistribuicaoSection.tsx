@@ -1,5 +1,6 @@
 import { DonutChartCard } from "@/components/dashboard/DonutChartCard";
 
+import { issuesVolumeSubtitle } from "@/lib/dashboard/executivo-chart-labels";
 import { fetchAggregate } from "@/lib/dashboard/fetchers";
 
 import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
@@ -38,7 +39,7 @@ export async function DistribuicaoSection({ filters }: DistribuicaoSectionProps)
 
         title="Status"
 
-        subtitle="Distribuição por status"
+        subtitle={issuesVolumeSubtitle("status")}
 
         titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.status}
 
@@ -54,7 +55,7 @@ export async function DistribuicaoSection({ filters }: DistribuicaoSectionProps)
 
         title="Tipo"
 
-        subtitle="Distribuição por tipo"
+        subtitle={issuesVolumeSubtitle("tipo")}
 
         titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.tipo}
 
@@ -68,7 +69,7 @@ export async function DistribuicaoSection({ filters }: DistribuicaoSectionProps)
 
         title="Prioridade"
 
-        subtitle="Distribuição por prioridade"
+        subtitle={issuesVolumeSubtitle("prioridade")}
 
         titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.prioridade}
 
@@ -83,4 +84,3 @@ export async function DistribuicaoSection({ filters }: DistribuicaoSectionProps)
   );
 
 }
-

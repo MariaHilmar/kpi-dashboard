@@ -3,12 +3,16 @@ import { unstable_noStore as noStore } from "next/cache";
 import {
   commonArgs,
   dateArgs,
+  dateArgsIgnored,
+  rpcFilterArgs,
+  rpcFilterArgsIgnoringSprintAndPeriod,
   sortFilterOptions,
   sortSprintOptions,
 } from "@/lib/dashboard/filters";
 import {
   type AggregateDimension,
   type AlertaDimensao,
+  type MergeadasAggregateDimension,
   GITLAB_SYNC_SOURCES,
   NAO_INFORMADO,
   OUTROS,
@@ -30,6 +34,9 @@ import type {
   FluxoMensal,
   KpiPorTipo,
   LeadTimePorModulo,
+  MergeadaPivotRow,
+  MergeadaPorEpico,
+  MergeadaPorPeriodo,
   TopLeadTime,
 } from "@/types/database";
 
@@ -156,30 +163,31 @@ export const fetchKpis = cachedFetch(
   },
 );
 
-export const fetchFluxoMensal = cachedFetch(
-  "fetchFluxoMensal",
-  async (filters: DashboardFilters): Promise<FluxoMensal[]> => {
-    const rows = await selectRows("dashboard_fluxo_mensal", (client) =>
-      client.rpc("dashboard_fluxo_mensal", commonArgs(filters)),
-    );
+async function fetchFluxoMensalInner(filters: DashboardFilters): Promise<FluxoMensal[]> {
+  const rows = await selectRows("dashboard_fluxo_mensal", (client) =>
+    client.rpc("dashboard_fluxo_mensal", rpcFilterArgsIgnoringSprintAndPeriod(filters)),
+  );
 
-    return rows.map((row) => ({
-      mes: str(row.mes),
-      criados: num(row.criados),
-      fechados: num(row.fechados),
-      backlog_liquido: num(row.backlog_liquido),
-    }));
-  },
-);
+  return rows.map((row) => ({
+    mes: str(row.mes),
+    criados: num(row.criados),
+    fechados: num(row.fechados),
+    backlog_liquido: num(row.backlog_liquido),
+    mergeadas: num(row.mergeadas),
+  }));
+}
+
+/** Sem Data Cache: mergeadas usa mergeado_em (atualizado no backfill/sync). */
+export async function fetchFluxoMensal(filters: DashboardFilters): Promise<FluxoMensal[]> {
+  return fetchFluxoMensalInner(filters);
+}
 
 export const fetchLeadTimePorModulo = cachedFetch(
   "fetchLeadTimePorModulo",
   async (filters: DashboardFilters): Promise<LeadTimePorModulo[]> => {
     const rows = await selectRows("dashboard_lead_time_por_modulo", (client) =>
       client.rpc("dashboard_lead_time_por_modulo", {
-        p_ano: filters.ano,
-        p_parceria: filters.parceria,
-        p_sprint: filters.sprint,
+        ...rpcFilterArgs(filters),
         p_limit: TOP_LIMIT.leadTimePorModulo,
       }),
     );
@@ -197,11 +205,7 @@ export const fetchKpisPorTipo = cachedFetch(
   "fetchKpisPorTipo",
   async (filters: DashboardFilters): Promise<KpiPorTipo[]> => {
     const rows = await selectRows("dashboard_kpis_por_tipo", (client) =>
-      client.rpc("dashboard_kpis_por_tipo", {
-        p_ano: filters.ano,
-        p_parceria: filters.parceria,
-        p_sprint: filters.sprint,
-      }),
+      client.rpc("dashboard_kpis_por_tipo", rpcFilterArgs(filters)),
     );
 
     return rows.map((row) => ({
@@ -215,6 +219,93 @@ export const fetchKpisPorTipo = cachedFetch(
     }));
   },
 );
+
+export const fetchMergeadasPorPeriodo = cachedFetch(
+  "fetchMergeadasPorPeriodo",
+  async (filters: DashboardFilters): Promise<MergeadaPorPeriodo[]> => {
+    const rows = await selectRows("dashboard_mergeadas_por_periodo", (client) =>
+      client.rpc("dashboard_mergeadas_por_periodo", {
+        ...commonArgs(filters),
+        ...dateArgs(filters),
+      }),
+    );
+
+    return rows.map((row) => ({
+      periodo: str(row.periodo, NAO_INFORMADO),
+      ano: numOrNull(row.ano),
+      mes: numOrNull(row.mes),
+      total: num(row.total),
+    }));
+  },
+);
+
+export const fetchMergeadasPorEpico = cachedFetch(
+  "fetchMergeadasPorEpico",
+  async (
+    filters: DashboardFilters,
+    options: { limit?: number } = {},
+  ): Promise<MergeadaPorEpico[]> => {
+    const rows = await selectRows("dashboard_mergeadas_por_epico", (client) =>
+      client.rpc("dashboard_mergeadas_por_epico", {
+        ...commonArgs(filters),
+        ...dateArgs(filters),
+        p_limit: options.limit ?? null,
+      }),
+    );
+
+    return rows.map((row) => ({
+      epico: str(row.epico, NAO_INFORMADO),
+      total: num(row.total),
+    }));
+  },
+);
+
+async function fetchMergeadasPivotInner(
+  filters: DashboardFilters,
+): Promise<MergeadaPivotRow[]> {
+  const rows = await selectRows("dashboard_mergeadas_pivot", (client) =>
+    client.rpc("dashboard_mergeadas_pivot", rpcFilterArgsIgnoringSprintAndPeriod(filters)),
+  );
+
+  return rows.map((row) => ({
+    linha: str(row.linha, NAO_INFORMADO),
+    periodo: str(row.periodo),
+    total: num(row.total),
+  }));
+}
+
+/** Sem Data Cache: pivô de mergeadas depende de mergeado_em atualizado. */
+export async function fetchMergeadasPivot(
+  filters: DashboardFilters,
+): Promise<MergeadaPivotRow[]> {
+  return fetchMergeadasPivotInner(filters);
+}
+
+async function fetchMergeadasAggregateInner(
+  dimension: MergeadasAggregateDimension,
+  filters: DashboardFilters,
+): Promise<ChartPoint[]> {
+  const rows = await selectRows(`dashboard_mergeadas_aggregate(${dimension})`, (client) =>
+    client.rpc("dashboard_mergeadas_aggregate", {
+      p_dimension: dimension,
+      ...commonArgs(filters),
+      ...dateArgs(filters),
+    }),
+  );
+
+  return rows.map((row) => ({
+    label: str(row.label, NAO_INFORMADO),
+    quantidade: num(row.quantidade),
+  }));
+}
+
+/** Distribuição de mergeadas (últimos 6 meses) por parceria, tipo ou prioridade. */
+export async function fetchMergeadasAggregate(
+  dimension: MergeadasAggregateDimension,
+  filters: DashboardFilters,
+): Promise<ChartPoint[]> {
+  return fetchMergeadasAggregateInner(dimension, filters);
+}
 
 export async function fetchTopLeadTimes(filters: DashboardFilters): Promise<TopLeadTime[]> {
   const rows = await selectRows("dashboard_top_lead_times", (client) =>

@@ -26,7 +26,7 @@ import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
 
 import type { AggregateDimension } from "@/lib/dashboard/constants";
 
-import { buildAggregateIssuesHref } from "@/lib/dashboard/issuesLinks";
+import { buildAggregateIssuesHref, stripSprintAndPeriodFilters } from "@/lib/dashboard/issuesLinks";
 
 import type { ChartPoint, DashboardFilters } from "@/types/database";
 
@@ -39,6 +39,14 @@ export type IssuesDrilldownConfig = {
   dimension: AggregateDimension;
 
   estado?: "open" | "closed";
+
+  /** Parâmetros extras na URL (ex.: janela de merge). */
+
+  extra?: Record<string, string | null | undefined>;
+
+  /** Ignora sprint e período globais (ex.: seção de mergeadas). */
+
+  ignoreSprintAndPeriod?: boolean;
 
 };
 
@@ -78,15 +86,25 @@ function openIssuesDrilldown(
 
   if (quantidade <= 0) return;
 
+  const base = config.ignoreSprintAndPeriod
+    ? stripSprintAndPeriodFilters(config.filters)
+    : config.filters;
+
   const href = buildAggregateIssuesHref(
 
-    config.filters,
+    base,
 
     config.dimension,
 
     label,
 
-    config.estado ? { estado: config.estado } : undefined,
+    {
+
+      ...config.extra,
+
+      ...(config.estado ? { estado: config.estado } : undefined),
+
+    },
 
   );
 

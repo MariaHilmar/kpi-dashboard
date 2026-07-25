@@ -3,6 +3,7 @@
 import { IssueCountLink } from "@/components/dashboard/IssueCountLink";
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
 import { DETALHAMENTO_SECTION_TOOLTIPS } from "@/lib/dashboard/detalhamento-section-tooltips";
+import { KPI_POR_TIPO_ISSUES_SUBTITLE } from "@/lib/dashboard/executivo-chart-labels";
 import { buildAggregateIssuesHref } from "@/lib/dashboard/issuesLinks";
 import { formatDecimal, formatNumber, formatPercentFixed } from "@/lib/format";
 import type { DashboardFilters, KpiPorTipo } from "@/types/database";
@@ -16,7 +17,7 @@ export function KpisPorTipoTabela({ filters, rows }: Props) {
   return (
     <TabelaCard<KpiPorTipo>
       title="KPI por tipo de issue"
-      subtitle="Volume, eficiência e lead time"
+      subtitle={KPI_POR_TIPO_ISSUES_SUBTITLE}
       titleTooltip={DETALHAMENTO_SECTION_TOOLTIPS.kpisPorTipo}
       columns={[
         { key: "tipo", header: "Tipo" },

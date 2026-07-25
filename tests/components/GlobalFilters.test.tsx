@@ -1,13 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const pushMock = vi.fn();
+let currentParams = "";
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: pushMock }),
   usePathname: () => "/",
-  useSearchParams: () => new URLSearchParams(""),
+  useSearchParams: () => new URLSearchParams(currentParams),
 }));
 
 import { GlobalFilters } from "@/components/layout/GlobalFilters";
@@ -16,13 +17,18 @@ import type { FilterOptions } from "@/types/database";
 const options: FilterOptions = {
   modulos: ["Todos", "PNCP", "Empenho", "Fiscalização"],
   areas: ["Todos", "PNCP", "Minuta de Empenho"],
-  tipos: ["Todos", "Bug"],
+  tipos: ["Todos", "Não informado", "Bug", "Melhoria", "Performance"],
   prioridades: ["Todos", "high"],
   equipes: ["Todos", "Alpha"],
   statuses: ["Todos", "Em andamento"],
   parcerias: ["Todos", "Não informado", "Beta"],
   sprints: ["Todos", "Sprint 10"],
-  epicos: ["Todos", "Não informado", "Epico 1"],
+  epicos: [
+    "Todos",
+    "Não informado",
+    "[Fiscalização] Checklist do contrato",
+    "[Gestão Contratual] Conta-Depósito",
+  ],
   repositorios: ["Todos", "contratos_v2"],
   autores: ["Todos", "Maria Silva"],
   anos: [2024, 2025],
@@ -33,6 +39,10 @@ const options: FilterOptions = {
 };
 
 describe("GlobalFilters", () => {
+  beforeEach(() => {
+    currentParams = "";
+  });
+
   it("renderiza filtros com defaults", () => {
     render(<GlobalFilters options={options} />);
     expect(screen.getByText("Filtros globais")).toBeInTheDocument();
@@ -81,6 +91,58 @@ describe("GlobalFilters", () => {
     expect(url).not.toContain("area=");
   });
 
+  it("filtra épicos pelo módulo selecionado (prefixo [Módulo])", () => {
+    currentParams = "modulo=Fiscalização";
+    render(<GlobalFilters options={options} />);
+
+    const epicoSelect = screen.getByLabelText("Épico");
+    const labels = Array.from(
+      epicoSelect.querySelectorAll("option"),
+      (o) => o.textContent,
+    );
+
+    expect(labels).toContain("Todos");
+    expect(labels).toContain("[Fiscalização] Checklist do contrato");
+    expect(labels).not.toContain("[Gestão Contratual] Conta-Depósito");
+  });
+
+  it("remove épico incompatível ao trocar de módulo", async () => {
+    pushMock.mockClear();
+    currentParams = "epico=%5BGest%C3%A3o+Contratual%5D+Conta-Dep%C3%B3sito";
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    await user.selectOptions(screen.getByLabelText("Módulo"), "Fiscalização");
+
+    const url = pushMock.mock.calls[0][0] as string;
+    expect(url).toContain("modulo=Fiscaliza");
+    expect(url).not.toContain("epico=");
+  });
+
+  it("adiciona um tipo à seleção existente (CSV na URL)", async () => {
+    pushMock.mockClear();
+    currentParams = "tipo=Bug";
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    await user.click(screen.getByRole("button", { name: "Tipo" }));
+    await user.click(screen.getByRole("checkbox", { name: "Melhoria" }));
+
+    const url = pushMock.mock.calls.at(-1)?.[0] as string;
+    // vírgula pode vir codificada como %2C na query string
+    expect(decodeURIComponent(url)).toContain("tipo=Bug,Melhoria");
+  });
+
+  it("marca Bug como selecionado quando presente na URL", async () => {
+    currentParams = "tipo=Bug";
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    await user.click(screen.getByRole("button", { name: "Tipo" }));
+    expect(screen.getByRole("checkbox", { name: "Bug" })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "Melhoria" })).not.toBeChecked();
+  });
+
   it("atualiza URL ao selecionar sprint", async () => {
     pushMock.mockClear();
     const user = userEvent.setup();
@@ -89,5 +151,15 @@ describe("GlobalFilters", () => {
     await user.selectOptions(screen.getByLabelText("Sprint"), "Sprint 10");
 
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining("sprint=Sprint"));
+  });
+
+  it("exibe resumo do período selecionado na tela", () => {
+    currentParams =
+      "periodoTipo=fechamento&periodoDe=2026-06-01&periodoAte=2026-06-30";
+    render(<GlobalFilters options={options} />);
+
+    expect(
+      screen.getByText("Dados por data de fechamento de 01/06/2026 a 30/06/2026"),
+    ).toBeInTheDocument();
   });
 });
