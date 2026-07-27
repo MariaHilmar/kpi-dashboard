@@ -26,7 +26,7 @@
     "@vintproykt/dejavu-fonts-ttf": "^2.37.0",
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
-    "next": "16.2.11",
+    "next": "16.2.12",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "recharts": "^3.9.2"
@@ -45,7 +45,7 @@
     "@vitejs/plugin-react": "^6.0.3",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9",
-    "eslint-config-next": "16.2.11",
+    "eslint-config-next": "16.2.12",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
