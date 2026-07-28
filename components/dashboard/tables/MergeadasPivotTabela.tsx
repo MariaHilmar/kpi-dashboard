@@ -7,7 +7,9 @@ import { MergeadasPivotDimensaoToggle } from "@/components/dashboard/executivo/M
 import { IssueCountLink } from "@/components/dashboard/IssueCountLink";
 import { buildMergeadasPivotIssuesHref } from "@/lib/dashboard/issuesLinks";
 import {
+  buildPivotLinhas,
   mergeadasPivotDimensaoLabel,
+  pivotPeriodTotals,
   type MergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
@@ -51,26 +53,8 @@ export function MergeadasPivotTabela({
     subtitleBase === "global"
       ? `Contagem por ${linhaHeader.toLowerCase()} e mês do merge no período global`
       : `Contagem por ${linhaHeader.toLowerCase()} e mês do merge (últimos 6 meses)`;
-  const rows = rowsByDimensao[dimensao];
-  const periodoSet = new Set(periodos);
-
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of rows) {
-    if (!periodoSet.has(row.periodo)) continue;
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-
-  const linhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort(comparePivotLinhas);
-
-  const totaisPorPeriodo = periodos.map((p) =>
-    linhas.reduce((acc, l) => acc + (l.cols.get(p) ?? 0), 0),
-  );
+  const linhas = buildPivotLinhas(rowsByDimensao[dimensao], periodos, comparePivotLinhas);
+  const totaisPorPeriodo = pivotPeriodTotals(linhas, periodos);
   const totalGeral = totaisPorPeriodo.reduce((acc, v) => acc + v, 0);
 
   function pivotHref(opts: { linha?: string; periodo?: string }) {

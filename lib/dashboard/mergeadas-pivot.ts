@@ -1,7 +1,7 @@
 import { mergeadasSixMonthWindow, periodKeyToMergeRange } from "@/lib/dashboard/issuesLinks";
 import { lastMonthsKeys } from "@/lib/dashboard/mergeadas-format";
 import { hasActiveGlobalPeriodFilter, resolvePeriodDates } from "@/lib/dashboard/period-filter";
-import type { DashboardFilters } from "@/types/database";
+import type { DashboardFilters, MergeadaPivotRow } from "@/types/database";
 
 export const MERGEADAS_PIVOT_DIMENSAO_PARAM = "mergeadasPor";
 
@@ -33,6 +33,43 @@ export function isMergeadasPivotPorModulo(dimensao: MergeadasPivotDimensao): boo
 /** Rótulo da coluna/linha para a dimensão selecionada (Módulo, Épico ou Parceria). */
 export function mergeadasPivotDimensaoLabel(dimensao: MergeadasPivotDimensao): string {
   return MERGEADAS_PIVOT_DIMENSAO_LABELS[dimensao];
+}
+
+/** Linha do pivô: rótulo + valores por período (mês) + total do período. */
+export type MergeadaPivotLinha = { linha: string; cols: Map<string, number>; total: number };
+
+/** Ordena por total desc e, no empate, alfabético pt-BR. */
+export function comparePivotLinhasPorTotal(a: MergeadaPivotLinha, b: MergeadaPivotLinha): number {
+  return b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR");
+}
+
+/**
+ * Monta as linhas do pivô a partir das linhas cruas (linha/periodo/total),
+ * somando o total dentro dos `periodos` informados. Reaproveitado por tela,
+ * Excel, Word e impressão para evitar duplicação da matriz.
+ */
+export function buildPivotLinhas(
+  pivot: MergeadaPivotRow[],
+  periodos: string[],
+  compare: (a: MergeadaPivotLinha, b: MergeadaPivotLinha) => number = comparePivotLinhasPorTotal,
+): MergeadaPivotLinha[] {
+  const matrix = new Map<string, Map<string, number>>();
+  for (const row of pivot) {
+    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
+    matrix.get(row.linha)!.set(row.periodo, row.total);
+  }
+  return Array.from(matrix.entries())
+    .map(([linha, cols]) => ({
+      linha,
+      cols,
+      total: periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0),
+    }))
+    .sort(compare);
+}
+
+/** Totais por período (coluna) somando todas as linhas. */
+export function pivotPeriodTotals(linhas: MergeadaPivotLinha[], periodos: string[]): number[] {
+  return periodos.map((p) => linhas.reduce((acc, l) => acc + (l.cols.get(p) ?? 0), 0));
 }
 
 function monthKeysFromIsoRange(de: string, ate: string): string[] {

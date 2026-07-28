@@ -2,6 +2,7 @@ import { AutoPrint } from "@/components/dashboard/executivo/AutoPrint";
 import { fetchExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
 import {
+  buildPivotLinhas,
   mergeadasPivotDimensaoLabel,
   parseMergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
@@ -77,18 +78,7 @@ export default async function ExecutivoImprimirPage({ searchParams }: DashboardP
   const periodos = dataset.mergeadas.periodos;
   const dimensao = parseMergeadasPivotDimensao(sp.mergeadasPor);
   const linhaHeader = mergeadasPivotDimensaoLabel(dimensao);
-
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of dataset.mergeadas.pivots[dimensao]) {
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-  const pivotLinhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
+  const pivotLinhas = buildPivotLinhas(dataset.mergeadas.pivots[dimensao], periodos);
 
   return (
     <main className="mx-auto max-w-[21cm] bg-white p-6 text-slate-900">

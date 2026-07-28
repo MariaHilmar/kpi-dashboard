@@ -2,7 +2,11 @@ import ExcelJS from "exceljs";
 
 import type { ExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
-import { mergeadasPivotDimensaoLabel } from "@/lib/dashboard/mergeadas-pivot";
+import {
+  buildPivotLinhas,
+  mergeadasPivotDimensaoLabel,
+  pivotPeriodTotals,
+} from "@/lib/dashboard/mergeadas-pivot";
 import { recorteResumo, recorteFilenameSlug } from "@/lib/dashboard/recorte";
 import type { ChartPoint, KpiPorTipo, MergeadaPivotRow } from "@/types/database";
 
@@ -136,31 +140,15 @@ function addPivotSheet(
     { name: "Total", width: 12, fmt: "#,##0" },
   ];
 
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of pivot) {
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-
-  const linhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
-
+  const linhas = buildPivotLinhas(pivot, periodos);
   const rows: (string | number)[][] = linhas.map((l) => [
     l.linha,
     ...periodos.map((p) => l.cols.get(p) ?? 0),
     l.total,
   ]);
 
-  const totais = periodos.map((p) => linhas.reduce((acc, l) => acc + (l.cols.get(p) ?? 0), 0));
-  const totalRow: (string | number)[] = [
-    "Total",
-    ...totais,
-    totais.reduce((a, b) => a + b, 0),
-  ];
+  const totais = pivotPeriodTotals(linhas, periodos);
+  const totalRow: (string | number)[] = ["Total", ...totais, totais.reduce((a, b) => a + b, 0)];
 
   addDataTable(workbook, sheetName, columns, rows, { totalsRow: totalRow });
 }

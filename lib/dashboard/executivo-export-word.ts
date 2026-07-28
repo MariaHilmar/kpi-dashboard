@@ -22,6 +22,7 @@ import {
 import type { ExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
 import {
+  buildPivotLinhas,
   mergeadasPivotDimensaoLabel,
   type MergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
@@ -40,17 +41,7 @@ function pivotSection(
   pivot: MergeadaPivotRow[],
 ): (Paragraph | Table)[] {
   const linhaHeader = mergeadasPivotDimensaoLabel(dimensao);
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of pivot) {
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-  const linhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
+  const linhas = buildPivotLinhas(pivot, periodos);
 
   const colPct = Math.floor(60 / Math.max(periodos.length, 1));
   const firstPct = 100 - colPct * periodos.length - 12;
