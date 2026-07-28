@@ -3,12 +3,15 @@
 import type { ReactNode } from "react";
 
 import { CardSectionHeader } from "@/components/dashboard/CardSectionHeader";
+import { InfoTooltip } from "@/components/ui/InfoTooltip";
 type Column<T> = {
   key: keyof T | string;
   header: string;
   align?: "left" | "right" | "center";
   className?: string;
   render?: (row: T) => ReactNode;
+  /** Tooltip informativo exibido ao lado do rótulo do cabeçalho. */
+  headerTooltip?: string;
 };
 
 type TabelaCardProps<T> = {
@@ -49,14 +52,30 @@ export function TabelaCard<T>({
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className={`bg-slate-50 ${isScrollable ? "sticky top-0 z-10" : ""}`}>
               <tr>
-                {columns.map((col) => (
-                  <th
-                    key={String(col.key)}
-                    className={`px-3 py-2 text-${col.align ?? "left"} font-semibold uppercase tracking-wide text-xs text-slate-500 ${col.className ?? ""}`}
-                  >
-                    {col.header}
-                  </th>
-                ))}
+                {columns.map((col) => {
+                  const align = col.align ?? "left";
+                  const justify =
+                    align === "right"
+                      ? "justify-end"
+                      : align === "center"
+                        ? "justify-center"
+                        : "justify-start";
+                  return (
+                    <th
+                      key={String(col.key)}
+                      className={`px-3 py-2 text-${align} font-semibold uppercase tracking-wide text-xs text-slate-500 ${col.className ?? ""}`}
+                    >
+                      {col.headerTooltip ? (
+                        <span className={`inline-flex items-center gap-1 ${justify}`}>
+                          {col.header}
+                          <InfoTooltip text={col.headerTooltip} />
+                        </span>
+                      ) : (
+                        col.header
+                      )}
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">

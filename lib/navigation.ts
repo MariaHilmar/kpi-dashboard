@@ -93,7 +93,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { href: "/equipes", label: "Equipes & Devs", shortLabel: "Equipes", icon: faUsers },
       {
         href: "/analistas",
-        label: "Analistas",
+        label: "Analista/Autor(a)",
         icon: faFileLines,
         description: "Relatório mensal de atividades",
       },

@@ -16,8 +16,52 @@ import {
   defaultPeriodRange,
   formatPeriodContextLabel,
   formatPeriodSummaryShort,
+  periodoExcluiAbertas,
   resolvePeriodDates,
 } from "@/lib/dashboard/period-filter";
+
+describe("periodoExcluiAbertas", () => {
+  it("é verdadeiro com janela por fechamento", () => {
+    expect(
+      periodoExcluiAbertas({
+        periodoTipo: "fechamento",
+        periodoDe: "2026-02-01",
+        periodoAte: "2026-07-28",
+        ano: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("é verdadeiro com janela por merge", () => {
+    expect(
+      periodoExcluiAbertas({
+        periodoTipo: "merge",
+        periodoDe: "2026-02-01",
+        periodoAte: "2026-07-28",
+        ano: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("é falso por criação ou sem período (não exclui abertas)", () => {
+    expect(
+      periodoExcluiAbertas({
+        periodoTipo: "criacao",
+        periodoDe: "2024-01-01",
+        periodoAte: "2026-07-28",
+        ano: null,
+      }),
+    ).toBe(false);
+    expect(
+      periodoExcluiAbertas({
+        periodoTipo: "fechamento",
+        periodoDe: null,
+        periodoAte: null,
+        ano: null,
+      }),
+    ).toBe(false);
+  });
+});
 
 describe("parseFilters", () => {
   it("aplica default de últimos 6 meses por fechamento quando searchParams vazio", () => {

@@ -35,6 +35,9 @@ export function parseIssuesListParams(searchParams: URLSearchParams): {
   const faixaIdadeRaw = searchParams.get("faixaIdade")?.trim() ?? "";
   const faixaIdade = faixaIdadeRaw || null;
 
+  const autorIdRaw = Number(searchParams.get("autorId"));
+  const gitlabAuthorId = Number.isFinite(autorIdRaw) && autorIdRaw > 0 ? autorIdRaw : null;
+
   return {
     page,
     list: {
@@ -43,6 +46,7 @@ export function parseIssuesListParams(searchParams: URLSearchParams): {
       sla,
       faixaIdade,
       autor: str(searchParams.get("autor"), TODOS),
+      gitlabAuthorId,
       criadoDe: dateOr(searchParams.get("criadoDe")),
       criadoAte: dateOr(searchParams.get("criadoAte")),
       fechadoDe: dateOr(searchParams.get("fechadoDe")),

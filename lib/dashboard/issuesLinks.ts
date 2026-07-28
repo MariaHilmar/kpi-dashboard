@@ -7,6 +7,7 @@
  */
 
 import { filtersToSearchParams } from "@/lib/dashboard/filters";
+import { PERIODO_TODOS } from "@/lib/dashboard/period-filter";
 import {
   type AggregateDimension,
   type AlertaDimensao,
@@ -323,6 +324,97 @@ export function buildMilestoneDeliveryIssuesHref(
   }
 
   return buildIssuesHref(new URLSearchParams(), extra);
+}
+
+/** Recorte do painel de Analistas (mês de criação + autor/sprint/módulo). */
+export type AnalistaIssuesContext = {
+  /** "YYYY/MM" ou "YYYY-MM" — mês de criação das issues. */
+  anoMes: string;
+  /** Sprint selecionada (TODOS = sem filtro). */
+  sprint: string;
+  /** Módulo global do painel (TODOS = sem filtro). */
+  modulo: string;
+  /** Autor(a) selecionado(a) (TODOS = todo o time). */
+  autor: string;
+  /**
+   * GitLab user id do autor, quando o snapshot filtra por identidade (preferencial).
+   * Usado no lugar do nome, que diverge do texto `issues.autor`.
+   */
+  gitlabAuthorId?: number | null;
+};
+
+/** Dimensão das tabelas de distribuição do painel de Analistas. */
+export type AnalistaDistribuicaoDimensao = "modulo" | "parceria";
+
+/** Converte "YYYY/MM" no intervalo de datas de criação (primeiro→último dia do mês). */
+export function anoMesToCriadoRange(
+  anoMes: string,
+): { criadoDe: string; criadoAte: string } | null {
+  const match = /^(\d{4})[/-](\d{2})$/.exec(anoMes.trim());
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return null;
+  const lastDay = new Date(year, month, 0).getDate();
+  return {
+    criadoDe: `${match[1]}-${match[2]}-01`,
+    criadoAte: `${match[1]}-${match[2]}-${String(lastDay).padStart(2, "0")}`,
+  };
+}
+
+/** Normaliza o rótulo de uma linha de distribuição no valor de filtro da listagem. */
+function analistaDistribuicaoFilterValue(
+  dimensao: AnalistaDistribuicaoDimensao,
+  label: string,
+): string {
+  // O snapshot rotula parceria vazia como "Sem Parceiro"; a listagem usa "Não informado".
+  if (dimensao === "parceria" && label === "Sem Parceiro") return NAO_INFORMADO;
+  return label;
+}
+
+/**
+ * Drill-down do painel de Analistas → /issues.
+ *
+ * Reproduz o recorte do snapshot: mês de criação (criadoDe/criadoAte), autor,
+ * sprint e módulo. Usa `periodo=todos` para desligar a janela padrão de fechamento.
+ */
+export function buildAnalistaIssuesHref(
+  ctx: AnalistaIssuesContext,
+  extra?: Record<string, string | null | undefined>,
+): string | null {
+  const range = anoMesToCriadoRange(ctx.anoMes);
+  if (!range) return null;
+
+  const params = new URLSearchParams();
+  params.set("periodo", PERIODO_TODOS);
+
+  // Preferir gitlab_user_id (identidade) ao nome textual, que pode divergir de
+  // `issues.autor`. Quando há id, o nome não entra na URL para não conflitar.
+  const hasGitlabId = ctx.gitlabAuthorId != null;
+
+  return buildIssuesHref(params, {
+    criadoDe: range.criadoDe,
+    criadoAte: range.criadoAte,
+    autorId: hasGitlabId ? String(ctx.gitlabAuthorId) : null,
+    autor: hasGitlabId ? null : ctx.autor,
+    sprint: ctx.sprint,
+    modulo: ctx.modulo,
+    ...extra,
+  });
+}
+
+/** Drill-down: linha/total de uma tabela de distribuição do painel de Analistas. */
+export function buildAnalistaDistribuicaoIssuesHref(
+  ctx: AnalistaIssuesContext,
+  dimensao: AnalistaDistribuicaoDimensao,
+  opts: { label?: string; estado?: "open" | "closed" },
+): string | null {
+  const extra: Record<string, string> = {};
+  if (opts.label !== undefined) {
+    extra[dimensao] = analistaDistribuicaoFilterValue(dimensao, opts.label);
+  }
+  if (opts.estado) extra.estado = opts.estado;
+  return buildAnalistaIssuesHref(ctx, extra);
 }
 
 /** Drill-down: issues concluídas ou abertas no recorte temporal do fluxo. */

@@ -3,7 +3,10 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_FILTERS } from "@/lib/dashboard/filters";
 import { NAO_INFORMADO } from "@/lib/dashboard/constants";
 import {
+  anoMesToCriadoRange,
   buildAggregateIssuesHref,
+  buildAnalistaDistribuicaoIssuesHref,
+  buildAnalistaIssuesHref,
   buildAlertasPorModuloIssuesHref,
   buildAlertasResumoIssuesHref,
   buildFaixaIdadeIssuesHref,
@@ -207,6 +210,58 @@ describe("issuesLinks", () => {
     const params = new URL(href!, "http://localhost").searchParams;
     expect(params.get("parceria")).toBe("SEBRAE");
     expect(params.get("mergeadoDe")).toBe("2026-02-01");
+  });
+
+  const analistaCtx = {
+    anoMes: "2026/07",
+    sprint: "Todos",
+    modulo: "Todos",
+    autor: "Maria",
+  };
+
+  it("anoMesToCriadoRange cobre o mês de criação inteiro", () => {
+    expect(anoMesToCriadoRange("2026/02")).toEqual({
+      criadoDe: "2026-02-01",
+      criadoAte: "2026-02-28",
+    });
+  });
+
+  it("buildAnalistaIssuesHref reproduz o recorte por criação e autor", () => {
+    const href = buildAnalistaIssuesHref(analistaCtx, { estado: "open" });
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
+    expect(params.get("periodo")).toBe("todos");
+    expect(params.get("criadoDe")).toBe("2026-07-01");
+    expect(params.get("criadoAte")).toBe("2026-07-31");
+    expect(params.get("autor")).toBe("Maria");
+    expect(params.get("estado")).toBe("open");
+    // Sprint/módulo "Todos" não viram filtro.
+    expect(params.get("sprint")).toBeNull();
+    expect(params.get("modulo")).toBeNull();
+  });
+
+  it("buildAnalistaIssuesHref usa autorId (gitlab) e omite o nome quando há id", () => {
+    const href = buildAnalistaIssuesHref(
+      { ...analistaCtx, gitlabAuthorId: 30737159 },
+      { parceria: "BCB" },
+    );
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
+    expect(params.get("autorId")).toBe("30737159");
+    expect(params.get("autor")).toBeNull();
+    expect(params.get("parceria")).toBe("BCB");
+  });
+
+  it("buildAnalistaDistribuicaoIssuesHref mapeia 'Sem Parceiro' para 'Não informado'", () => {
+    const href = buildAnalistaDistribuicaoIssuesHref(analistaCtx, "parceria", {
+      label: "Sem Parceiro",
+      estado: "closed",
+    });
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
+    expect(params.get("parceria")).toBe(NAO_INFORMADO);
+    expect(params.get("estado")).toBe("closed");
+    expect(params.get("criadoDe")).toBe("2026-07-01");
   });
 
   it("mergeadasSixMonthWindow cobre 6 meses incluindo o atual", () => {

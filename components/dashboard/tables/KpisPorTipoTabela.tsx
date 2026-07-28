@@ -2,7 +2,10 @@
 
 import { IssueCountLink } from "@/components/dashboard/IssueCountLink";
 import { TabelaCard } from "@/components/dashboard/TabelaCard";
-import { DETALHAMENTO_SECTION_TOOLTIPS } from "@/lib/dashboard/detalhamento-section-tooltips";
+import {
+  DETALHAMENTO_SECTION_TOOLTIPS,
+  KPI_POR_TIPO_COLUNA_TOOLTIPS,
+} from "@/lib/dashboard/detalhamento-section-tooltips";
 import { KPI_POR_TIPO_ISSUES_SUBTITLE } from "@/lib/dashboard/executivo-chart-labels";
 import { buildAggregateIssuesHref } from "@/lib/dashboard/issuesLinks";
 import { formatDecimal, formatNumber, formatPercentFixed } from "@/lib/format";
@@ -67,18 +70,21 @@ export function KpisPorTipoTabela({ filters, rows }: Props) {
           key: "taxa_fechamento",
           header: "Taxa fech.",
           align: "right",
+          headerTooltip: KPI_POR_TIPO_COLUNA_TOOLTIPS.taxaFechamento,
           render: (row) => formatPercentFixed(row.taxa_fechamento),
         },
         {
           key: "lead_medio",
           header: "Lead médio",
           align: "right",
+          headerTooltip: KPI_POR_TIPO_COLUNA_TOOLTIPS.leadMedio,
           render: (row) => formatDecimal(row.lead_medio),
         },
         {
           key: "lead_mediano",
           header: "Lead mediano",
           align: "right",
+          headerTooltip: KPI_POR_TIPO_COLUNA_TOOLTIPS.leadMediano,
           render: (row) => formatDecimal(row.lead_mediano),
         },
       ]}

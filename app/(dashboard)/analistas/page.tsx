@@ -92,6 +92,14 @@ export default async function AnalistasPage({ searchParams }: DashboardPageProps
       : Promise.resolve(null),
   ]);
 
+  const issuesContext = {
+    anoMes,
+    sprint: sprintParam,
+    modulo,
+    autor: autorParam,
+    gitlabAuthorId: issueFilter.gitlabUserId,
+  };
+
   const exportParams = new URLSearchParams({ anoMes });
   if (sprintParam !== TODOS) exportParams.set("sprint", sprintParam);
   if (modulo !== TODOS) exportParams.set("modulo", modulo);
@@ -143,11 +151,21 @@ export default async function AnalistasPage({ searchParams }: DashboardPageProps
         </div>
       ) : null}
 
-      <AnalistasKpiStrip kpis={snapshot.kpis} />
+      <AnalistasKpiStrip kpis={snapshot.kpis} context={issuesContext} />
 
       <div className="grid gap-6 xl:grid-cols-2">
-        <AnalistasDistributionTable title="Distribuição por módulo" rows={snapshot.por_modulo} />
-        <AnalistasDistributionTable title="Distribuição por parceiro" rows={snapshot.por_parceiro} />
+        <AnalistasDistributionTable
+          title="Distribuição por módulo"
+          rows={snapshot.por_modulo}
+          dimension="modulo"
+          context={issuesContext}
+        />
+        <AnalistasDistributionTable
+          title="Distribuição por parceiro"
+          rows={snapshot.por_parceiro}
+          dimension="parceria"
+          context={issuesContext}
+        />
       </div>
 
       <AnalistasIssuesTable rows={snapshot.issues} />
