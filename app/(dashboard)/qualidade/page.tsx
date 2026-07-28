@@ -2,6 +2,7 @@ import { BarChartCard } from "@/components/dashboard/BarChartCard";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { QualidadeResumo } from "@/components/dashboard/QualidadeResumo";
 import { SetupBanner } from "@/components/dashboard/SetupBanner";
+import { BacklogAbertoPeriodoAviso } from "@/components/dashboard/BacklogAbertoPeriodoAviso";
 import { AlertasPorModuloTabela } from "@/components/dashboard/tables/AlertasPorModuloTabela";
 import { FaixaIdadeTabela } from "@/components/dashboard/tables/FaixaIdadeTabela";
 import { TopLeadTimesTabela } from "@/components/dashboard/tables/TopLeadTimesTabela";
@@ -93,6 +94,8 @@ export default async function QualidadePage({ searchParams }: DashboardPageProps
         titleTooltip={QUALIDADE_SECTION_TOOLTIPS.conformidade}
         data={qualidade}
       />
+
+      <BacklogAbertoPeriodoAviso filters={filters} />
 
       <BarChartCard
         title="Backlog aberto por módulo"

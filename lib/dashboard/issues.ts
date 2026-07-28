@@ -42,6 +42,8 @@ export type IssuesSearchParams = {
   sla: IssueSla;
   faixaIdade: string | null;
   autor: string;
+  /** Filtro de autor por GitLab user id (author direto ou participante). */
+  gitlabAuthorId?: number | null;
   criadoDe: string | null;
   criadoAte: string | null;
   fechadoDe?: string | null;
@@ -127,6 +129,12 @@ export async function searchIssues(
 
   if (params.exigeParceria) {
     args.p_exige_parceria = true;
+  }
+
+  // Só envia quando presente: mantém compatibilidade com a assinatura anterior
+  // do RPC (drill-down de autor por gitlab_user_id — migration 067).
+  if (params.gitlabAuthorId != null) {
+    args.p_gitlab_author_id = params.gitlabAuthorId;
   }
 
   const { data, error } = await supabase.rpc("search_issues", args);

@@ -15,3 +15,13 @@ export const DETALHAMENTO_SECTION_TOOLTIPS = {
   kpisPorTipo:
     "Indicadores consolidados por tipo de issue (bug, melhoria, etc.).\n\nInclui volume, taxa de fechamento e lead time médio/mediano.",
 } as const;
+
+/** Textos de tooltip das colunas da tabela "KPI por tipo de issue". */
+export const KPI_POR_TIPO_COLUNA_TOOLTIPS = {
+  taxaFechamento:
+    "Percentual de issues fechadas em relação ao total do tipo no recorte filtrado (fechadas ÷ total).",
+  leadMedio:
+    "Tempo médio, em dias, entre a criação e o fechamento das issues fechadas do tipo.",
+  leadMediano:
+    "Mediana (em dias) do tempo entre criação e fechamento das issues fechadas.\n\nMenos sensível a valores extremos (outliers) do que a média.",
+} as const;

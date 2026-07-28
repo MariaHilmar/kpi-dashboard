@@ -102,6 +102,21 @@ export function resolvePeriodDates(
   return EMPTY_PERIOD;
 }
 
+/**
+ * Verdadeiro quando o recorte de período aplica janela de fechamento ou merge —
+ * o que exclui issues abertas (elas não têm data de fechamento/merge). Nesses
+ * casos os painéis de backlog aberto ficam vazios e cabe orientar o usuário a
+ * usar "data de criação".
+ */
+export function periodoExcluiAbertas(
+  filters: Pick<DashboardFilters, "periodoTipo" | "periodoDe" | "periodoAte" | "ano">,
+): boolean {
+  const resolved = resolvePeriodDates(filters);
+  return Boolean(
+    resolved.fechadoDe || resolved.fechadoAte || resolved.mergeadoDe || resolved.mergeadoAte,
+  );
+}
+
 export function formatPeriodSummary(
   filters: Pick<DashboardFilters, "periodoTipo" | "periodoDe" | "periodoAte" | "ano">,
   tipoLabels: Record<PeriodoTipo, string>,
