@@ -8,7 +8,7 @@ export const EVOLUCAO_MENSAL_WINDOWS = [
 
 export type EvolucaoMensalWindow = (typeof EVOLUCAO_MENSAL_WINDOWS)[number]["id"];
 
-export const DEFAULT_EVOLUCAO_MENSAL_WINDOW: EvolucaoMensalWindow = "1y";
+export const DEFAULT_EVOLUCAO_MENSAL_WINDOW: EvolucaoMensalWindow = "6m";
 
 export const EVOLUCAO_MENSAL_WINDOW_PARAM = "evolucaoJanela";
 

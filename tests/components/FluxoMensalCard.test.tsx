@@ -63,25 +63,25 @@ describe("FluxoMensalCard", () => {
     expect(screen.getByRole("radio", { name: "6 meses" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "1 ano" })).toBeInTheDocument();
     expect(screen.getByRole("radio", { name: "2 anos" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "1 ano" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "6 meses" })).toBeChecked();
   });
 
   it("atualiza URL sem navegar ao trocar janela", async () => {
     const user = userEvent.setup();
     render(<FluxoMensalCard title="Evolução mensal" data={data} />);
 
-    await user.click(screen.getByRole("radio", { name: "6 meses" }));
+    await user.click(screen.getByRole("radio", { name: "1 ano" }));
 
     expect(pushMock).not.toHaveBeenCalled();
-    expect(replaceStateMock).toHaveBeenCalledWith(null, "", "/?evolucaoJanela=6m");
-    expect(screen.getByRole("radio", { name: "6 meses" })).toBeChecked();
+    expect(replaceStateMock).toHaveBeenCalledWith(null, "", "/?evolucaoJanela=1y");
+    expect(screen.getByRole("radio", { name: "1 ano" })).toBeChecked();
   });
 
   it("usa default quando URL legada pede 1 mês", () => {
     currentParams = "evolucaoJanela=1m";
     render(<FluxoMensalCard title="Evolução mensal" data={data} />);
 
-    expect(screen.getByRole("radio", { name: "1 ano" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "6 meses" })).toBeChecked();
   });
 
   it("mantém backlog líquido no gráfico", () => {

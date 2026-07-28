@@ -6,7 +6,11 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { PeriodFilterField } from "@/components/layout/PeriodFilterField";
 import { DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
 import { ensureFilterOption, parseFilters, sortFilterOptions } from "@/lib/dashboard/filters";
-import { formatPeriodContextLabel } from "@/lib/dashboard/period-filter";
+import {
+  defaultPeriodRange,
+  formatPeriodContextLabelParts,
+  PERIODO_TODOS,
+} from "@/lib/dashboard/period-filter";
 import type { FilterOptions } from "@/types/database";
 
 type Props = {
@@ -180,19 +184,29 @@ export function GlobalFilters({ options }: Props) {
   const selectedSprint = read("sprint");
   const selectedEquipe = read("equipe");
   const selectedTipo = read("tipo");
+  // "Todos" explícito (?periodo=todos) desliga o default; sem período/ano na URL exibe o default.
+  const periodoTodos = searchParams.get("periodo") === PERIODO_TODOS;
+  const hasExplicitPeriodo =
+    searchParams.has("periodoDe") || searchParams.has("periodoAte") || searchParams.has("ano");
+  const showDefaultPeriodo = !periodoTodos && !hasExplicitPeriodo;
+  const periodoDefault = showDefaultPeriodo ? defaultPeriodRange() : null;
+
   const periodoTipo = ((): PeriodoTipo => {
     const raw = searchParams.get("periodoTipo");
-    return raw && (PERIODO_TIPOS as readonly string[]).includes(raw)
-      ? (raw as PeriodoTipo)
-      : DEFAULT_PERIODO_TIPO;
+    if (raw && (PERIODO_TIPOS as readonly string[]).includes(raw)) {
+      return raw as PeriodoTipo;
+    }
+    return periodoDefault ? "fechamento" : DEFAULT_PERIODO_TIPO;
   })();
-  const periodoDe = searchParams.get("periodoDe") ?? "";
-  const periodoAte = searchParams.get("periodoAte") ?? "";
+  const periodoDe = searchParams.get("periodoDe") ?? periodoDefault?.de ?? "";
+  const periodoAte = searchParams.get("periodoAte") ?? periodoDefault?.ate ?? "";
 
-  const periodContextLabel = useMemo(() => {
+  const periodContextParts = useMemo(() => {
     const raw = Object.fromEntries(searchParams.entries());
-    return formatPeriodContextLabel(parseFilters(raw));
+    return formatPeriodContextLabelParts(parseFilters(raw));
   }, [searchParams]);
+
+  const [periodOpen, setPeriodOpen] = useState(false);
 
   const moduloOptions = useMemo(() => {
     let list = options.modulos;
@@ -273,7 +287,12 @@ export function GlobalFilters({ options }: Props) {
       params.delete("periodoTipo");
       params.delete("periodoDe");
       params.delete("periodoAte");
-      if (!next || (!next.de && !next.ate)) return;
+      params.delete("periodo");
+      if (!next || (!next.de && !next.ate)) {
+        // "Limpar período": marca explicitamente Todos para não reaplicar o default de 6 meses.
+        params.set("periodo", PERIODO_TODOS);
+        return;
+      }
       params.set("periodoTipo", next.tipo);
       if (next.de) params.set("periodoDe", next.de);
       if (next.ate) params.set("periodoAte", next.ate);
@@ -357,14 +376,29 @@ export function GlobalFilters({ options }: Props) {
               value={{ tipo: periodoTipo, de: periodoDe, ate: periodoAte }}
               yearPresets={yearPresets}
               onChange={updatePeriod}
+              open={periodOpen}
+              onOpenChange={setPeriodOpen}
             />
           </div>
         </div>
       </div>
 
-      {periodContextLabel ? (
-        <p className="mt-3 border-t border-slate-100 pt-3 text-sm text-slate-600" role="status">
-          {periodContextLabel}
+      {periodContextParts ? (
+        <p
+          className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-sm text-slate-600"
+          role="status"
+        >
+          <span>
+            {periodContextParts.lead}
+            <strong className="font-semibold text-slate-800">{periodContextParts.strong}</strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setPeriodOpen(true)}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+          >
+            Alterar data
+          </button>
         </p>
       ) : null}
 

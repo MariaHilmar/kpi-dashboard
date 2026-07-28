@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const dataset = await fetchExecutivoDataset(filters);
 
   const buffer = await buildExecutivoRelatorioDocx(dataset);
-  const filename = buildExecutivoWordFilename();
+  const filename = buildExecutivoWordFilename(dataset);
 
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,

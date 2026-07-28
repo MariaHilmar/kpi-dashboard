@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const dataset = await fetchExecutivoDataset(filters);
 
   const buffer = await buildExecutivoExportWorkbook(dataset);
-  const filename = buildExecutivoExportFilename();
+  const filename = buildExecutivoExportFilename(dataset);
 
   return new NextResponse(new Uint8Array(buffer), {
     status: 200,

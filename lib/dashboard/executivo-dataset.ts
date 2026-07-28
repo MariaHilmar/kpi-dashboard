@@ -9,7 +9,10 @@ import {
   fetchMergeadasPorEpico,
   fetchMergeadasPorPeriodo,
 } from "@/lib/dashboard/fetchers";
-import { lastMonthsKeys } from "@/lib/dashboard/mergeadas-format";
+import {
+  mergeadasPivotPeriodKeys,
+  type MergeadasPivotDimensao,
+} from "@/lib/dashboard/mergeadas-pivot";
 import type {
   ChartPoint,
   DashboardFilters,
@@ -41,11 +44,11 @@ export type ExecutivoDataset = {
   mergeadas: {
     porPeriodo: MergeadaPorPeriodo[];
     porEpico: MergeadaPorEpico[];
-    pivot: MergeadaPivotRow[];
+    pivots: Record<MergeadasPivotDimensao, MergeadaPivotRow[]>;
     periodos: string[];
-    porModulo: boolean;
     totalMergeadas: number;
   };
+  filters: DashboardFilters;
 };
 
 /** Reúne TODOS os dados exibidos na página Executivo (para exports completos). */
@@ -66,7 +69,9 @@ export async function fetchExecutivoDataset(
     kpisPorTipo,
     porPeriodo,
     porEpico,
-    pivot,
+    pivotModulo,
+    pivotEpico,
+    pivotParceria,
   ] = await Promise.all([
     fetchKpis(filters),
     fetchFluxoMensal(filters),
@@ -81,7 +86,9 @@ export async function fetchExecutivoDataset(
     fetchKpisPorTipo(filters),
     fetchMergeadasPorPeriodo(filters),
     fetchMergeadasPorEpico(filters),
-    fetchMergeadasPivot(filters),
+    fetchMergeadasPivot(filters, "modulo"),
+    fetchMergeadasPivot(filters, "epico"),
+    fetchMergeadasPivot(filters, "parceria"),
   ]);
 
   return {
@@ -99,10 +106,10 @@ export async function fetchExecutivoDataset(
     mergeadas: {
       porPeriodo,
       porEpico,
-      pivot,
-      periodos: lastMonthsKeys(6),
-      porModulo: filters.modulo === TODOS,
+      pivots: { modulo: pivotModulo, epico: pivotEpico, parceria: pivotParceria },
+      periodos: mergeadasPivotPeriodKeys(filters),
       totalMergeadas: porPeriodo.reduce((acc, row) => acc + row.total, 0),
     },
+    filters,
   };
 }

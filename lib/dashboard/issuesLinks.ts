@@ -25,6 +25,10 @@ import type {
 } from "@/lib/dashboard/milestone-delivery";
 import { milestoneDeliveryDimensionToAggregate } from "@/lib/dashboard/milestone-delivery";
 import type { MilestoneRoadmapGroupBy } from "@/lib/dashboard/milestone-roadmap";
+import {
+  mergeadasPivotPeriodWindow,
+  type MergeadasPivotDimensao,
+} from "@/lib/dashboard/mergeadas-pivot";
 import type { DashboardFilters } from "@/types/database";
 
 /** Presets de KPI reutilizados em Executivo, Qualidade e Sprint. */
@@ -209,13 +213,13 @@ export function buildMergeadasPivotIssuesHref(
   opts: {
     linha?: string;
     periodo?: string;
-    porModulo: boolean;
+    dimensao: MergeadasPivotDimensao;
   },
 ): string | null {
   const base = stripSprintAndPeriodFilters(filters);
   const range = opts.periodo
     ? periodKeyToMergeRange(opts.periodo)
-    : mergeadasSixMonthWindow();
+    : mergeadasPivotPeriodWindow(filters);
   if (!range) return null;
 
   const extra: Record<string, string> = {
@@ -224,11 +228,7 @@ export function buildMergeadasPivotIssuesHref(
   };
 
   if (opts.linha) {
-    if (opts.porModulo) {
-      extra.modulo = aggregateLabelToFilterValue(opts.linha);
-    } else {
-      extra.epico = aggregateLabelToFilterValue(opts.linha);
-    }
+    extra[opts.dimensao] = aggregateLabelToFilterValue(opts.linha);
   }
 
   return buildIssuesHref(base, extra);

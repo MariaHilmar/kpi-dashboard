@@ -2,121 +2,155 @@ import ExcelJS from "exceljs";
 
 import type { ExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
+import {
+  buildPivotLinhas,
+  mergeadasPivotDimensaoLabel,
+  pivotPeriodTotals,
+} from "@/lib/dashboard/mergeadas-pivot";
+import { recorteResumo, recorteFilenameSlug } from "@/lib/dashboard/recorte";
 import type { ChartPoint, KpiPorTipo, MergeadaPivotRow } from "@/types/database";
 
-const THIN_BORDER: ExcelJS.Border = { style: "thin", color: { argb: "FFD9D9D9" } };
-const HEADER_FILL: ExcelJS.Fill = {
-  type: "pattern",
-  pattern: "solid",
-  fgColor: { argb: "FFEFF3FB" },
+const ACCENT = "FF1351B4";
+const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1351B4" } };
+const STRIPE_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF3F6FC" } };
+const TITLE_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFEFF3FB" } };
+const BORDER: Partial<ExcelJS.Borders> = {
+  top: { style: "thin", color: { argb: "FFDCE3F0" } },
+  bottom: { style: "thin", color: { argb: "FFDCE3F0" } },
+  left: { style: "thin", color: { argb: "FFDCE3F0" } },
+  right: { style: "thin", color: { argb: "FFDCE3F0" } },
 };
 
-function styleHeaderRow(row: ExcelJS.Row) {
-  row.eachCell((cell) => {
-    cell.font = { bold: true, size: 10 };
-    cell.fill = HEADER_FILL;
-    cell.border = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
-  });
-}
+type Col = { name: string; width: number; fmt?: string };
 
-function styleDataRow(row: ExcelJS.Row) {
-  row.eachCell((cell) => {
-    cell.border = { top: THIN_BORDER, bottom: THIN_BORDER, left: THIN_BORDER, right: THIN_BORDER };
-    cell.font = { size: 10 };
+/**
+ * Planilha com cabeçalho estilizado + autoFilter (dropdowns de filtro), faixas
+ * alternadas, cabeçalho congelado, formatação numérica e barras de dados opcionais.
+ * Não usa addTable (que gera XML de tabela inválido no ExcelJS e corrompe o arquivo).
+ */
+function addDataTable(
+  workbook: ExcelJS.Workbook,
+  sheetName: string,
+  columns: Col[],
+  rows: (string | number)[][],
+  opts: { dataBarCol?: number; totalsRow?: (string | number)[] } = {},
+): void {
+  const sheet = workbook.addWorksheet(sheetName);
+  sheet.views = [{ state: "frozen", ySplit: 1 }];
+
+  columns.forEach((c, i) => {
+    const col = sheet.getColumn(i + 1);
+    col.width = c.width;
+    if (c.fmt) col.numFmt = c.fmt;
   });
+
+  const header = sheet.addRow(columns.map((c) => c.name));
+  header.eachCell((cell, ci) => {
+    cell.font = { bold: true, size: 10, color: { argb: "FFFFFFFF" } };
+    cell.fill = HEADER_FILL;
+    cell.border = BORDER;
+    cell.alignment = { vertical: "middle", horizontal: ci === 1 ? "left" : "right" };
+  });
+
+  const body = rows.length > 0 ? rows : [columns.map(() => "—")];
+  body.forEach((r, ri) => {
+    const row = sheet.addRow(r);
+    row.eachCell((cell, ci) => {
+      cell.border = BORDER;
+      cell.font = { size: 10 };
+      if (ri % 2 === 1) cell.fill = STRIPE_FILL;
+      cell.alignment = { vertical: "middle", horizontal: ci === 1 ? "left" : "right" };
+    });
+  });
+
+  const lastCol = sheet.getColumn(columns.length).letter;
+  const lastRow = 1 + body.length;
+  sheet.autoFilter = `A1:${lastCol}${lastRow}`;
+
+  if (opts.dataBarCol != null && rows.length > 0) {
+    const letter = sheet.getColumn(opts.dataBarCol + 1).letter;
+    sheet.addConditionalFormatting({
+      ref: `${letter}2:${letter}${rows.length + 1}`,
+      rules: [
+        {
+          type: "dataBar",
+          cfvo: [{ type: "min" }, { type: "max" }],
+          color: { argb: ACCENT },
+        } as unknown as ExcelJS.ConditionalFormattingRule,
+      ],
+    });
+  }
+
+  if (opts.totalsRow) {
+    const row = sheet.addRow(opts.totalsRow);
+    row.eachCell((cell, ci) => {
+      cell.font = { bold: true, size: 10 };
+      cell.border = BORDER;
+      cell.alignment = { vertical: "middle", horizontal: ci === 1 ? "left" : "right" };
+    });
+  }
 }
 
 function num(value: number | null | undefined): number | string {
   return value === null || value === undefined ? "—" : value;
 }
 
-function addChartSheet(workbook: ExcelJS.Workbook, name: string, rows: ChartPoint[]) {
-  const sheet = workbook.addWorksheet(name);
-  sheet.columns = [{ width: 40 }, { width: 14 }];
-  styleHeaderRow(sheet.addRow(["Label", "Quantidade"]));
-  for (const row of rows) {
-    styleDataRow(sheet.addRow([row.label, row.quantidade]));
+function chartRows(rows: ChartPoint[]): (string | number)[][] {
+  return rows.map((r) => [r.label, r.quantidade]);
+}
+
+/** Primeira aba: título, geração e o recorte (período + filtros aplicados). */
+function addCapaSheet(workbook: ExcelJS.Workbook, dataset: ExecutivoDataset): void {
+  const sheet = workbook.addWorksheet("Capa");
+  sheet.getColumn(1).width = 22;
+  sheet.getColumn(2).width = 78;
+
+  const recorte = recorteResumo(dataset.filters);
+  const linhas: [string, string][] = [
+    ["Relatório", "Dashboard Executivo — MGI KPI"],
+    ["Gerado em", new Date().toLocaleString("pt-BR")],
+    ["Período", recorte.periodo],
+    ["Filtros aplicados", recorte.filtrosTexto],
+    ["Total mergeadas no recorte", String(dataset.mergeadas.totalMergeadas)],
+  ];
+
+  const title = sheet.addRow(["Dashboard Executivo"]);
+  title.font = { bold: true, size: 16, color: { argb: ACCENT } };
+  sheet.addRow([]);
+
+  for (const [label, value] of linhas) {
+    const row = sheet.addRow([label, value]);
+    row.getCell(1).font = { bold: true, size: 10 };
+    row.getCell(1).fill = TITLE_FILL;
+    row.getCell(2).font = { size: 10 };
+    row.getCell(2).alignment = { wrapText: true, vertical: "top" };
   }
 }
 
 function addPivotSheet(
   workbook: ExcelJS.Workbook,
-  name: string,
+  sheetName: string,
   linhaHeader: string,
   periodos: string[],
   pivot: MergeadaPivotRow[],
-) {
-  const sheet = workbook.addWorksheet(name);
-  const headers = [linhaHeader, ...periodos.map(formatPeriodoLabel), "Total"];
-  sheet.columns = [{ width: 48 }, ...periodos.map(() => ({ width: 12 })), { width: 12 }];
-  styleHeaderRow(sheet.addRow(headers));
-
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of pivot) {
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-
-  const linhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
-
-  for (const l of linhas) {
-    styleDataRow(
-      sheet.addRow([
-        l.linha,
-        ...periodos.map((p) => l.cols.get(p) ?? 0),
-        l.total,
-      ]),
-    );
-  }
-
-  const totais = periodos.map((p) =>
-    linhas.reduce((acc, l) => acc + (l.cols.get(p) ?? 0), 0),
-  );
-  styleDataRow(
-    sheet.addRow(["Total", ...totais, totais.reduce((a, b) => a + b, 0)]),
-  );
-}
-
-function addKpisPorTipoSheet(workbook: ExcelJS.Workbook, rows: KpiPorTipo[]) {
-  const sheet = workbook.addWorksheet("KPI por tipo");
-  sheet.columns = [
-    { width: 24 },
-    { width: 12 },
-    { width: 12 },
-    { width: 12 },
-    { width: 14 },
-    { width: 14 },
-    { width: 14 },
+): void {
+  const columns: Col[] = [
+    { name: linhaHeader, width: 46 },
+    ...periodos.map((p) => ({ name: formatPeriodoLabel(p), width: 11, fmt: "#,##0" })),
+    { name: "Total", width: 12, fmt: "#,##0" },
   ];
-  styleHeaderRow(
-    sheet.addRow([
-      "Tipo",
-      "Total",
-      "Abertas",
-      "Fechadas",
-      "Taxa fech. (%)",
-      "Lead médio (d)",
-      "Lead mediano (d)",
-    ]),
-  );
-  for (const row of rows) {
-    styleDataRow(
-      sheet.addRow([
-        row.tipo,
-        row.total,
-        row.abertas,
-        row.fechadas,
-        row.taxa_fechamento,
-        num(row.lead_medio),
-        num(row.lead_mediano),
-      ]),
-    );
-  }
+
+  const linhas = buildPivotLinhas(pivot, periodos);
+  const rows: (string | number)[][] = linhas.map((l) => [
+    l.linha,
+    ...periodos.map((p) => l.cols.get(p) ?? 0),
+    l.total,
+  ]);
+
+  const totais = pivotPeriodTotals(linhas, periodos);
+  const totalRow: (string | number)[] = ["Total", ...totais, totais.reduce((a, b) => a + b, 0)];
+
+  addDataTable(workbook, sheetName, columns, rows, { totalsRow: totalRow });
 }
 
 /** Workbook Excel com TODAS as visões da página Executivo. */
@@ -127,104 +161,113 @@ export async function buildExecutivoExportWorkbook(
   workbook.creator = "MGI KPI Dashboard";
   workbook.created = new Date();
 
+  addCapaSheet(workbook, dataset);
+
   // KPIs
-  const kpis = workbook.addWorksheet("KPIs");
-  kpis.columns = [{ width: 28 }, { width: 16 }];
-  styleHeaderRow(kpis.addRow(["Indicador", "Valor"]));
+  const kpiRows: (string | number)[][] = [];
   if (dataset.kpis) {
     const k = dataset.kpis;
-    const rows: [string, number | null][] = [
-      ["Total", k.total],
-      ["Abertas", k.abertas],
-      ["Fechadas", k.fechadas],
-      ["Taxa fechamento (%)", k.taxa_fechamento],
-      ["Lead time médio (d)", k.lead_time_medio],
-      ["Bugs abertos", k.bugs_abertos],
-      ["Melhorias abertas", k.melhorias_abertas],
-      ["Sem tipo", k.sem_tipo],
-      ["% bugs no backlog", k.pct_bugs_backlog],
-      ["Taxa fech. bug (%)", k.taxa_fech_bug],
-      ["SLA > 90 dias", k.sla_acima_90],
-    ];
-    for (const [label, value] of rows) {
-      styleDataRow(kpis.addRow([label, num(value)]));
-    }
+    kpiRows.push(
+      ["Total", num(k.total)],
+      ["Abertas", num(k.abertas)],
+      ["Fechadas", num(k.fechadas)],
+      ["Taxa fechamento (%)", num(k.taxa_fechamento)],
+      ["Lead time médio (d)", num(k.lead_time_medio)],
+      ["Bugs abertos", num(k.bugs_abertos)],
+      ["Melhorias abertas", num(k.melhorias_abertas)],
+      ["Sem tipo", num(k.sem_tipo)],
+      ["% bugs no backlog", num(k.pct_bugs_backlog)],
+      ["Taxa fech. bug (%)", num(k.taxa_fech_bug)],
+      ["SLA > 90 dias", num(k.sla_acima_90)],
+    );
   }
+  addDataTable(
+    workbook,
+    "KPIs",
+    [
+      { name: "Indicador", width: 28 },
+      { name: "Valor", width: 16, fmt: "#,##0.##" },
+    ],
+    kpiRows,
+  );
 
   // Evolução mensal
-  const fluxo = workbook.addWorksheet("Evolução mensal");
-  fluxo.columns = [
-    { width: 14 },
-    { width: 12 },
-    { width: 12 },
-    { width: 16 },
-    { width: 12 },
-  ];
-  styleHeaderRow(
-    fluxo.addRow(["Mês", "Criados", "Fechados", "Backlog líquido", "Mergeadas"]),
-  );
-  for (const row of dataset.fluxoMensal) {
-    styleDataRow(
-      fluxo.addRow([
-        row.mes,
-        row.criados,
-        row.fechados,
-        row.backlog_liquido,
-        row.mergeadas,
-      ]),
-    );
-  }
-
-  // Distribuição
-  addChartSheet(workbook, "Status", dataset.distribuicao.status);
-  addChartSheet(workbook, "Tipo (distribuição)", dataset.distribuicao.tipo);
-  addChartSheet(workbook, "Prioridade", dataset.distribuicao.prioridade);
-
-  // Detalhamento
-  addChartSheet(workbook, "Parcerias", dataset.detalhamento.parceria);
-  addChartSheet(workbook, "Módulos", dataset.detalhamento.modulos);
-  addChartSheet(workbook, "Área funcional", dataset.detalhamento.areaFuncional);
-  addChartSheet(workbook, "Equipes", dataset.detalhamento.equipes);
-
-  const lead = workbook.addWorksheet("Lead time por módulo");
-  lead.columns = [{ width: 28 }, { width: 12 }, { width: 14 }, { width: 14 }];
-  styleHeaderRow(lead.addRow(["Módulo", "Itens", "Lead médio", "Lead mediano"]));
-  for (const row of dataset.detalhamento.leadTimePorModulo) {
-    styleDataRow(
-      lead.addRow([row.modulo, row.itens, num(row.lead_medio), num(row.lead_mediano)]),
-    );
-  }
-
-  addKpisPorTipoSheet(workbook, dataset.detalhamento.kpisPorTipo);
-
-  // Mergeadas
-  const periodo = workbook.addWorksheet("Mergeadas por período");
-  periodo.columns = [{ width: 16 }, { width: 16 }];
-  styleHeaderRow(periodo.addRow(["Período (mês do merge)", "Mergeadas"]));
-  for (const row of dataset.mergeadas.porPeriodo) {
-    styleDataRow(periodo.addRow([formatPeriodoLabel(row.periodo), row.total]));
-  }
-  styleDataRow(periodo.addRow(["Total", dataset.mergeadas.totalMergeadas]));
-
-  const epico = workbook.addWorksheet("Mergeadas por épico");
-  epico.columns = [{ width: 70 }, { width: 16 }];
-  styleHeaderRow(epico.addRow(["Épico", "Mergeadas"]));
-  for (const row of dataset.mergeadas.porEpico) {
-    styleDataRow(epico.addRow([row.epico, row.total]));
-  }
-
-  addPivotSheet(
+  addDataTable(
     workbook,
-    "Mergeadas pivot 6m",
-    dataset.mergeadas.porModulo ? "Módulo" : "Épico",
-    dataset.mergeadas.periodos,
-    dataset.mergeadas.pivot,
+    "Evolução mensal",
+    [
+      { name: "Mês", width: 14 },
+      { name: "Criados", width: 12, fmt: "#,##0" },
+      { name: "Fechados", width: 12, fmt: "#,##0" },
+      { name: "Backlog líquido", width: 16, fmt: "#,##0" },
+      { name: "Mergeadas", width: 12, fmt: "#,##0" },
+    ],
+    dataset.fluxoMensal.map((r) => [r.mes, r.criados, r.fechados, r.backlog_liquido, r.mergeadas]),
   );
+
+  // Distribuição e detalhamento (com barras de dados na coluna de quantidade)
+  const distcols: Col[] = [
+    { name: "Rótulo", width: 40 },
+    { name: "Quantidade", width: 16, fmt: "#,##0" },
+  ];
+  addDataTable(workbook, "Status", distcols, chartRows(dataset.distribuicao.status), { dataBarCol: 1 });
+  addDataTable(workbook, "Tipo (distribuição)", distcols, chartRows(dataset.distribuicao.tipo), { dataBarCol: 1 });
+  addDataTable(workbook, "Prioridade", distcols, chartRows(dataset.distribuicao.prioridade), { dataBarCol: 1 });
+  addDataTable(workbook, "Parcerias", distcols, chartRows(dataset.detalhamento.parceria), { dataBarCol: 1 });
+  addDataTable(workbook, "Módulos", distcols, chartRows(dataset.detalhamento.modulos), { dataBarCol: 1 });
+  addDataTable(workbook, "Área funcional", distcols, chartRows(dataset.detalhamento.areaFuncional), { dataBarCol: 1 });
+  addDataTable(workbook, "Equipes", distcols, chartRows(dataset.detalhamento.equipes), { dataBarCol: 1 });
+
+  // Lead time por módulo
+  addDataTable(
+    workbook,
+    "Lead time por módulo",
+    [
+      { name: "Módulo", width: 28 },
+      { name: "Itens", width: 12, fmt: "#,##0" },
+      { name: "Lead médio", width: 14, fmt: "#,##0.0" },
+      { name: "Lead mediano", width: 14, fmt: "#,##0.0" },
+    ],
+    dataset.detalhamento.leadTimePorModulo.map((r) => [
+      r.modulo,
+      r.itens,
+      num(r.lead_medio),
+      num(r.lead_mediano),
+    ]),
+  );
+
+  // KPI por tipo
+  addDataTable(
+    workbook,
+    "KPI por tipo",
+    [
+      { name: "Tipo", width: 24 },
+      { name: "Total", width: 12, fmt: "#,##0" },
+      { name: "Abertas", width: 12, fmt: "#,##0" },
+      { name: "Fechadas", width: 12, fmt: "#,##0" },
+      { name: "Taxa fech. (%)", width: 14, fmt: "#,##0.0" },
+      { name: "Lead médio (d)", width: 14, fmt: "#,##0.0" },
+      { name: "Lead mediano (d)", width: 16, fmt: "#,##0.0" },
+    ],
+    dataset.detalhamento.kpisPorTipo.map((r: KpiPorTipo) => [
+      r.tipo,
+      r.total,
+      r.abertas,
+      r.fechadas,
+      r.taxa_fechamento,
+      num(r.lead_medio),
+      num(r.lead_mediano),
+    ]),
+  );
+
+  // Mergeadas por dimensão (matriz por mês): Módulo, Épico e Parceria
+  addPivotSheet(workbook, "Mergeadas por Módulo", mergeadasPivotDimensaoLabel("modulo"), dataset.mergeadas.periodos, dataset.mergeadas.pivots.modulo);
+  addPivotSheet(workbook, "Mergeadas por Épico", mergeadasPivotDimensaoLabel("epico"), dataset.mergeadas.periodos, dataset.mergeadas.pivots.epico);
+  addPivotSheet(workbook, "Mergeadas por Parceria", mergeadasPivotDimensaoLabel("parceria"), dataset.mergeadas.periodos, dataset.mergeadas.pivots.parceria);
 
   return workbook.xlsx.writeBuffer();
 }
 
-export function buildExecutivoExportFilename(): string {
-  const date = new Date().toISOString().slice(0, 10);
-  return `executivo-${date}.xlsx`;
+export function buildExecutivoExportFilename(dataset: ExecutivoDataset): string {
+  return `executivo_${recorteFilenameSlug(dataset.filters)}.xlsx`;
 }

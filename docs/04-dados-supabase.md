@@ -53,7 +53,7 @@ Espelho processado das issues GitLab (equivalente à aba **Dados** do Excel lega
 |------------------|----------|
 | Identificação | `issue_key`, `gitlab_iid`, `gitlab_repo`, `titulo` |
 | Taxonomia | `modulo`, `modulo_normalizado`, `area_funcional`, `tipo`, `categoria` |
-| Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` |
+| Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` (ver [Épico no GitLab](#épico-no-gitlab-mgi)) |
 | Pessoas | `assignee`, `autor`, `desenvolvedor`, `solicitante` (texto para UI) |
 | Identidades GitLab | `gitlab_author_id`, `gitlab_assignee_ids[]`, `gitlab_developer_id` |
 | Datas / métricas | `criado_em`, `fechado_em`, `lead_time_dias`, `idade_dias`, `sla_mais_90_dias` |
@@ -235,9 +235,19 @@ O pipeline Python deriva campos antes do upsert:
 | gitlab_author_id, gitlab_* , issue_participants | `gitlab_identities.py` + `sync_supabase.py` |
 | modulo_ok, padrao_* | regras de qualidade em `taxonomy.py` |
 | parceria, sprint | labels / milestone GitLab |
-| epico | vinculo GitLab (`issue.epic`), label `Épico::`/`Epico::`, ou catalogo `gitlab_epics` (filtro) |
+| epico | Parent (GraphQL), label `Épico::`, REST `issue.epic`, catálogo `gitlab_epics` |
 
-Ver `mgi-kpi-pipeline/README.md` para detalhes de processamento.
+Ver `mgi-kpi-pipeline/docs/06-epicos-gitlab.md`.
+
+### Épico no GitLab MGI
+
+No grupo **comprasnet**, o épico de uma issue é o work item indicado como
+**Parent** no painel lateral (hierarquia de work items). Ex.: issue #1053 em
+Contratos v2 tem Parent `[Fiscalização] Checklist de fiscalização...`.
+
+O pipeline grava o título em `issues.epico` via GraphQL (`WorkItemWidgetHierarchy`)
+no sync e no backfill, com fallbacks por label, REST `issue.epic` e catálogo do
+grupo. Documentação: `mgi-kpi-pipeline/docs/06-epicos-gitlab.md`.
 
 ## Aplicar schema no Supabase
 

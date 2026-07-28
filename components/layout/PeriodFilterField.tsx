@@ -21,10 +21,26 @@ type Props = {
   yearPresets: number[];
   onChange: (next: PeriodValue | null) => void;
   className?: string;
+  /** Modo controlado (opcional): abre/fecha o popup de fora do componente. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
-export function PeriodFilterField({ value, yearPresets, onChange, className = "" }: Props) {
-  const [open, setOpen] = useState(false);
+export function PeriodFilterField({
+  value,
+  yearPresets,
+  onChange,
+  className = "",
+  open: openProp,
+  onOpenChange,
+}: Props) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (next: boolean | ((current: boolean) => boolean)) => {
+    const value = typeof next === "function" ? next(open) : next;
+    onOpenChange?.(value);
+    if (openProp === undefined) setInternalOpen(value);
+  };
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

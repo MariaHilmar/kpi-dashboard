@@ -5,6 +5,7 @@ import {
   dateArgs,
   dateArgsIgnored,
   rpcFilterArgs,
+  rpcFilterArgsForMergeadasPivot,
   rpcFilterArgsIgnoringSprintAndPeriod,
   sortFilterOptions,
   sortSprintOptions,
@@ -262,9 +263,10 @@ export const fetchMergeadasPorEpico = cachedFetch(
 
 async function fetchMergeadasPivotInner(
   filters: DashboardFilters,
+  linhaDimensao: "modulo" | "epico" | "parceria",
 ): Promise<MergeadaPivotRow[]> {
   const rows = await selectRows("dashboard_mergeadas_pivot", (client) =>
-    client.rpc("dashboard_mergeadas_pivot", rpcFilterArgsIgnoringSprintAndPeriod(filters)),
+    client.rpc("dashboard_mergeadas_pivot", rpcFilterArgsForMergeadasPivot(filters, linhaDimensao)),
   );
 
   return rows.map((row) => ({
@@ -277,8 +279,9 @@ async function fetchMergeadasPivotInner(
 /** Sem Data Cache: pivô de mergeadas depende de mergeado_em atualizado. */
 export async function fetchMergeadasPivot(
   filters: DashboardFilters,
+  linhaDimensao: "modulo" | "epico" | "parceria" = "modulo",
 ): Promise<MergeadaPivotRow[]> {
-  return fetchMergeadasPivotInner(filters);
+  return fetchMergeadasPivotInner(filters, linhaDimensao);
 }
 
 async function fetchMergeadasAggregateInner(

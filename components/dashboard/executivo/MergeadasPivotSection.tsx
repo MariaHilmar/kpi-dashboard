@@ -1,28 +1,38 @@
 import { DonutChartCard } from "@/components/dashboard/DonutChartCard";
 import { MergeadasPivotTabela } from "@/components/dashboard/tables/MergeadasPivotTabela";
-import { TODOS } from "@/lib/dashboard/constants";
 import { mergeVolumeSubtitle } from "@/lib/dashboard/executivo-chart-labels";
 import { EXECUTIVO_SECTION_TOOLTIPS } from "@/lib/dashboard/executivo-section-tooltips";
 import { fetchMergeadasAggregate, fetchMergeadasPivot } from "@/lib/dashboard/fetchers";
-import { lastMonthsKeys } from "@/lib/dashboard/mergeadas-format";
 import { mergeadasSixMonthWindow } from "@/lib/dashboard/issuesLinks";
+import {
+  mergeadasPivotPeriodKeys,
+  mergeadasPivotTableTitle,
+  parseMergeadasPivotDimensao,
+} from "@/lib/dashboard/mergeadas-pivot";
+import { hasActiveGlobalPeriodFilter } from "@/lib/dashboard/period-filter";
+import type { DashboardSearchParams } from "@/lib/dashboard/page";
 import type { DashboardFilters } from "@/types/database";
 
 type Props = {
   filters: DashboardFilters;
+  searchParams: DashboardSearchParams;
 };
 
-export async function MergeadasPivotSection({ filters }: Props) {
-  const [pivot, parceria, tipo, prioridades] = await Promise.all([
-    fetchMergeadasPivot(filters),
+export async function MergeadasPivotSection({ filters, searchParams }: Props) {
+  const initialDimensao = parseMergeadasPivotDimensao(searchParams.mergeadasPor);
+
+  const [pivotModulo, pivotEpico, pivotParceria, parceria, tipo, prioridades] = await Promise.all([
+    fetchMergeadasPivot(filters, "modulo"),
+    fetchMergeadasPivot(filters, "epico"),
+    fetchMergeadasPivot(filters, "parceria"),
     fetchMergeadasAggregate("parceria", filters),
     fetchMergeadasAggregate("tipo", filters),
     fetchMergeadasAggregate("prioridade", filters),
   ]);
 
-  const porModulo = filters.modulo === TODOS;
-  const periodos = lastMonthsKeys(6);
-  const linhaHeader = porModulo ? "Módulo" : "Épico";
+  const periodos = mergeadasPivotPeriodKeys(filters);
+  const periodoAtivo = hasActiveGlobalPeriodFilter(filters);
+
   const mergeWindow = mergeadasSixMonthWindow();
   const mergeDrilldown = {
     filters,
@@ -33,12 +43,12 @@ export async function MergeadasPivotSection({ filters }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <MergeadasPivotTabela
-        linhaHeader={linhaHeader}
-        subtitle={`Contagem por ${linhaHeader.toLowerCase()} e mês do merge (a partir da data atual)`}
+        title={mergeadasPivotTableTitle(filters)}
+        subtitleBase={periodoAtivo ? "global" : "sixMonths"}
         periodos={periodos}
-        rows={pivot}
+        rowsByDimensao={{ modulo: pivotModulo, epico: pivotEpico, parceria: pivotParceria }}
         filters={filters}
-        porModulo={porModulo}
+        initialDimensao={initialDimensao}
         titleTooltip={EXECUTIVO_SECTION_TOOLTIPS.mergeadasPorPeriodo}
       />
 
