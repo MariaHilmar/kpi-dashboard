@@ -1,5 +1,10 @@
 import { NAO_INFORMADO, DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
-import { resolvePeriodDates } from "@/lib/dashboard/period-filter";
+import {
+  defaultPeriodRange,
+  hasActiveGlobalPeriodFilter,
+  PERIODO_TODOS,
+  resolvePeriodDates,
+} from "@/lib/dashboard/period-filter";
 import type { DashboardFilters } from "@/types/database";
 
 export const DEFAULT_FILTERS: DashboardFilters = {
@@ -50,9 +55,20 @@ export function parseFilters(
   const anoRaw = typeof searchParams.ano === "string" ? searchParams.ano : "";
   const ano = anoRaw && anoRaw !== TODOS ? Number(anoRaw) : null;
 
-  const periodoDe = dateOr(searchParams.periodoDe);
-  const periodoAte = dateOr(searchParams.periodoAte);
-  const periodoTipo = periodoTipoOr(searchParams.periodoTipo);
+  let periodoDe = dateOr(searchParams.periodoDe);
+  let periodoAte = dateOr(searchParams.periodoAte);
+  let periodoTipo = periodoTipoOr(searchParams.periodoTipo);
+
+  // Default do filtro global: sem período/ano na URL e sem o sentinela ?periodo=todos,
+  // aplica os últimos 6 meses por data de fechamento. O usuário pode limpar (?periodo=todos)
+  // ou informar outro intervalo/ano.
+  const periodoTodos = searchParams.periodo === PERIODO_TODOS;
+  if (!periodoTodos && !periodoDe && !periodoAte && ano == null) {
+    const def = defaultPeriodRange();
+    periodoDe = def.de;
+    periodoAte = def.ate;
+    periodoTipo = "fechamento";
+  }
 
   const filters: DashboardFilters = {
     modulo: strOr(searchParams.modulo),
@@ -119,7 +135,24 @@ export function dateArgs(filters: DashboardFilters) {
   };
 }
 
-/** Pivô de mergeadas ignora filtro de período (sempre últimos 6 meses do merge). */
+/**
+ * Pivô de mergeadas ignora sprint; ignora período global apenas quando período não está informado.
+ */
+export function rpcFilterArgsForMergeadasPivot(
+  filters: DashboardFilters,
+  linhaDimensao: "modulo" | "epico" | "parceria",
+) {
+  const base = commonArgs({ ...filters, sprint: TODOS, ano: null });
+  const dates = hasActiveGlobalPeriodFilter(filters) ? dateArgs(filters) : dateArgsIgnored();
+
+  return {
+    ...base,
+    ...dates,
+    p_linha_dimensao: linhaDimensao,
+  };
+}
+
+/** Pivô legado / evolução mensal: ignora datas globais. */
 export function dateArgsIgnored() {
   return {
     p_criado_de: null,

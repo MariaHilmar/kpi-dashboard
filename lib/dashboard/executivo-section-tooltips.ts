@@ -1,7 +1,11 @@
 /** Textos de tooltip dos títulos da página Executivo (/). */
 export const EXECUTIVO_SECTION_TOOLTIPS = {
   page:
-    "Visão consolidada das issues GitLab conforme os filtros globais.\n\nReúne KPIs de issues, evolução mensal, distribuições e mergeadas.",
+    "Visão consolidada das issues GitLab conforme os filtros globais.\n\nReúne indicadores por issue (backlog e fechamento) e por merge (MR mergeado no GitLab).",
+  porIssue:
+    "KPIs, evolução mensal, distribuição e detalhamento contando issues no recorte filtrado (criação, fechamento e status).",
+  porMerge:
+    "Tabela dos últimos 6 meses do merge e gráficos por parceria, tipo e prioridade - contagem por data de merge do MR no GitLab.",
   totalIssues:
     "Total de issues GitLab no recorte definido pelos filtros globais.",
   issuesFechadas:
@@ -35,7 +39,7 @@ export const EXECUTIVO_SECTION_TOOLTIPS = {
   equipes:
     "Ranking das equipes com maior volume de issues no recorte.\n\nExibe os 14 principais grupos de demanda.",
   mergeadasPorPeriodo:
-    "Selecione o módulo nos filtros globais para visualizar os totais por épicos.\n\nQuando o módulo não é selecionado, é apresentado o total por módulo. Ignora Sprint e Período; usa sempre os últimos 6 meses do merge.",
+    "Contagem de MRs mergeados no GitLab, distribuída pelo mês do merge.\n\nUse os botões Módulo/Épico para trocar a dimensão das linhas.\n\nOs meses exibidos seguem o filtro global de Período quando ele está preenchido (padrão: últimos 6 meses por fechamento). Ao limpar o período, mostra os últimos 6 meses pela data de merge.",
   mergeadasParceria:
     "Total de merges (MR mergeado no GitLab) no recorte filtrado, agrupados por parceria.\n\nRespeita o período e demais filtros globais. A tabela acima usa sempre os últimos 6 meses do merge.",
   mergeadasTipo:
@@ -44,4 +48,16 @@ export const EXECUTIVO_SECTION_TOOLTIPS = {
     "Total de merges no recorte filtrado, agrupados por prioridade.\n\nRespeita o período e demais filtros globais.",
   mergeadasPorEpico:
     "Issues com MR mergeado no GitLab distribuídas por épico.\n\nExibe os épicos com maior volume de merges no recorte filtrado.",
+} as const;
+
+export const EXECUTIVO_PAGE_SECTIONS = {
+  porIssue: {
+    title: "Por issue",
+    subtitle: "Backlog, fechamento e distribuição no recorte filtrado",
+  },
+  porMerge: {
+    title: "Por merge",
+    subtitle:
+      "MRs mergeados no GitLab - tabela dos últimos 6 meses e totais no período",
+  },
 } as const;

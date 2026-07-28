@@ -187,7 +187,7 @@ describe("issuesLinks", () => {
     const href = buildMergeadasPivotIssuesHref(filters, {
       linha: "PNCP",
       periodo: "2026/02",
-      porModulo: true,
+      dimensao: "modulo",
     });
     expect(href).not.toBeNull();
     const params = new URL(href!, "http://localhost").searchParams;
@@ -195,6 +195,18 @@ describe("issuesLinks", () => {
     expect(params.get("mergeadoDe")).toBe("2026-02-01");
     expect(params.get("mergeadoAte")).toBe("2026-02-28");
     expect(params.get("sprint")).toBeNull();
+  });
+
+  it("buildMergeadasPivotIssuesHref filtra por parceria quando a dimensão é parceria", () => {
+    const href = buildMergeadasPivotIssuesHref(filters, {
+      linha: "SEBRAE",
+      periodo: "2026/02",
+      dimensao: "parceria",
+    });
+    expect(href).not.toBeNull();
+    const params = new URL(href!, "http://localhost").searchParams;
+    expect(params.get("parceria")).toBe("SEBRAE");
+    expect(params.get("mergeadoDe")).toBe("2026-02-01");
   });
 
   it("mergeadasSixMonthWindow cobre 6 meses incluindo o atual", () => {

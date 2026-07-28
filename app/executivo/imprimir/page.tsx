@@ -1,8 +1,13 @@
 import { AutoPrint } from "@/components/dashboard/executivo/AutoPrint";
 import { fetchExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
+import {
+  mergeadasPivotDimensaoLabel,
+  parseMergeadasPivotDimensao,
+} from "@/lib/dashboard/mergeadas-pivot";
 import { parseFilters } from "@/lib/dashboard/filters";
 import { type DashboardPageProps } from "@/lib/dashboard/page";
+import { recorteResumo } from "@/lib/dashboard/recorte";
 import { formatDecimal, formatNumber, formatPercentFixed } from "@/lib/format";
 import type { ChartPoint } from "@/types/database";
 
@@ -10,6 +15,10 @@ const PRINT_CSS = `
   @page { size: A4 portrait; margin: 1.2cm; }
   @media print {
     .no-print { display: none !important; }
+    /* Repete o cabeçalho da tabela em cada página e não quebra linhas no meio. */
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
+    h1, h2 { break-after: avoid; }
   }
   body { background: #fff; }
 `;
@@ -60,14 +69,17 @@ function chartRows(data: ChartPoint[]): (string | number)[][] {
 }
 
 export default async function ExecutivoImprimirPage({ searchParams }: DashboardPageProps) {
-  const filters = parseFilters(await searchParams);
+  const sp = await searchParams;
+  const filters = parseFilters(sp);
   const dataset = await fetchExecutivoDataset(filters);
   const k = dataset.kpis;
+  const recorte = recorteResumo(filters);
   const periodos = dataset.mergeadas.periodos;
-  const linhaHeader = dataset.mergeadas.porModulo ? "Módulo" : "Épico";
+  const dimensao = parseMergeadasPivotDimensao(sp.mergeadasPor);
+  const linhaHeader = mergeadasPivotDimensaoLabel(dimensao);
 
   const matrix = new Map<string, Map<string, number>>();
-  for (const row of dataset.mergeadas.pivot) {
+  for (const row of dataset.mergeadas.pivots[dimensao]) {
     if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
     matrix.get(row.linha)!.set(row.periodo, row.total);
   }
@@ -93,6 +105,12 @@ export default async function ExecutivoImprimirPage({ searchParams }: DashboardP
           Gerado em {new Date().toLocaleString("pt-BR")} ·{" "}
           {formatNumber(dataset.mergeadas.totalMergeadas)} mergeadas no recorte
         </p>
+        <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs text-slate-700">
+          <dt className="font-semibold">Recorte:</dt>
+          <dd>{recorte.periodo}</dd>
+          <dt className="font-semibold">Filtros:</dt>
+          <dd>{recorte.filtrosTexto}</dd>
+        </dl>
       </header>
 
       {k ? (
@@ -192,7 +210,7 @@ export default async function ExecutivoImprimirPage({ searchParams }: DashboardP
       />
 
       <SimpleTable
-        title={`Mergeadas por ${linhaHeader.toLowerCase()} (últimos 6 meses)`}
+        title={`Mergeadas por ${linhaHeader.toLowerCase()}`}
         headers={[linhaHeader, ...periodos.map(formatPeriodoLabel), "Total"]}
         rows={pivotLinhas.map((l) => [
           l.linha,

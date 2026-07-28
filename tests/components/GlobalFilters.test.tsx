@@ -153,13 +153,25 @@ describe("GlobalFilters", () => {
     expect(pushMock).toHaveBeenCalledWith(expect.stringContaining("sprint=Sprint"));
   });
 
-  it("exibe resumo do período selecionado na tela", () => {
+  it("exibe resumo do período selecionado na tela com o trecho em destaque", () => {
     currentParams =
       "periodoTipo=fechamento&periodoDe=2026-06-01&periodoAte=2026-06-30";
     render(<GlobalFilters options={options} />);
 
-    expect(
-      screen.getByText("Dados por data de fechamento de 01/06/2026 a 30/06/2026"),
-    ).toBeInTheDocument();
+    const strong = screen.getByText("fechamento de 01/06/2026 a 30/06/2026");
+    expect(strong).toBeInTheDocument();
+    expect(strong.tagName).toBe("STRONG");
+    expect(screen.getByText(/Dados por data de/)).toBeInTheDocument();
+  });
+
+  it("botão [alterar data] abre o popup de período", async () => {
+    currentParams =
+      "periodoTipo=fechamento&periodoDe=2026-06-01&periodoAte=2026-06-30";
+    const user = userEvent.setup();
+    render(<GlobalFilters options={options} />);
+
+    expect(screen.queryByRole("dialog", { name: "Filtro de período" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Alterar data" }));
+    expect(screen.getByRole("dialog", { name: "Filtro de período" })).toBeInTheDocument();
   });
 });

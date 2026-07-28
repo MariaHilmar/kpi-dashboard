@@ -3,13 +3,55 @@ import type { DashboardFilters } from "@/types/database";
 
 /** Tooltip do filtro global de período. */
 export const PERIODO_FILTER_TOOLTIP =
-  "Filtra o recorte por intervalo de datas.\n\nEscolha se a data é de criação, fechamento da issue ou merge do MR no GitLab.\n\nNão afeta Evolução mensal nem a tabela Mergeadas por período (últimos 6 meses).";
+  "Filtra o recorte por intervalo de datas.\n\nEscolha se a data é de criação, fechamento da issue ou merge do MR no GitLab.\n\nNão afeta Evolução mensal (sempre últimos 6 meses). A tabela Mergeadas por período usa o intervalo informado quando o período global estiver preenchido; caso contrário, mostra os últimos 6 meses do merge.";
+
+/** Sentinela na URL (?periodo=todos) que desliga o default e mostra todo o histórico. */
+export const PERIODO_TODOS = "todos";
+
+/** Número de meses do recorte padrão do filtro global de período. */
+export const DEFAULT_PERIODO_MESES = 6;
+
+function toISODate(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Intervalo padrão do filtro global: últimos N meses-calendário até hoje, por data
+ * de fechamento. Começa no 1º dia do mês (N-1) meses atrás para abranger exatamente
+ * N meses (ex.: N=6 em julho → 01/02 a hoje, 6 colunas mensais no pivô).
+ */
+export function defaultPeriodRange(today: Date = new Date()): { de: string; ate: string } {
+  const ate = new Date(today);
+  const de = new Date(today.getFullYear(), today.getMonth() - (DEFAULT_PERIODO_MESES - 1), 1);
+  return { de: toISODate(de), ate: toISODate(ate) };
+}
+
+export function hasActiveGlobalPeriodFilter(
+  filters: Pick<DashboardFilters, "periodoDe" | "periodoAte" | "ano">,
+): boolean {
+  return Boolean(
+    filters.periodoDe || filters.periodoAte || (filters.ano != null && Number.isFinite(filters.ano)),
+  );
+}
 
 const PERIODO_TIPO_DATA_LABEL: Record<PeriodoTipo, string> = {
   criacao: "data de criação",
   fechamento: "data de fechamento",
   merge: "data de merge",
 };
+
+/** Palavra do tipo de data (sem o prefixo "data de"), para o trecho em destaque. */
+const PERIODO_TIPO_PALAVRA: Record<PeriodoTipo, string> = {
+  criacao: "criação",
+  fechamento: "fechamento",
+  merge: "merge",
+};
+
+/** Prefixo fixo do rótulo de contexto do período. */
+const PERIODO_CONTEXT_LEAD = "Dados por data de ";
 
 type ResolvedPeriod = {
   ano: number | null;
@@ -82,13 +124,17 @@ export function formatPeriodSummary(
   return "Todos";
 }
 
-/** Texto de contexto para a tela (ex.: "Dados por data de fechamento de 01/06/2026 a 30/06/2026"). */
-export function formatPeriodContextLabel(
+/**
+ * Partes do rótulo de contexto do período: `lead` (fixo) + `strong` (destaque com
+ * o tipo de data e o intervalo selecionado). Ex.: lead "Dados por data de ",
+ * strong "fechamento de 27/01/2026 a 27/07/2026".
+ */
+export function formatPeriodContextLabelParts(
   filters: Pick<DashboardFilters, "periodoTipo" | "periodoDe" | "periodoAte" | "ano">,
-): string | null {
+): { lead: string; strong: string } | null {
   const resolved = resolvePeriodDates(filters);
   const tipo = filters.periodoTipo ?? DEFAULT_PERIODO_TIPO;
-  const dataLabel = PERIODO_TIPO_DATA_LABEL[tipo];
+  const palavra = PERIODO_TIPO_PALAVRA[tipo];
 
   const de =
     tipo === "criacao"
@@ -105,12 +151,24 @@ export function formatPeriodContextLabel(
 
   if (!de && !ate) return null;
 
+  let strong: string;
   if (de && ate) {
-    return `Dados por ${dataLabel} de ${formatBrDate(de)} a ${formatBrDate(ate)}`;
+    strong = `${palavra} de ${formatBrDate(de)} a ${formatBrDate(ate)}`;
+  } else if (de) {
+    strong = `${palavra} a partir de ${formatBrDate(de)}`;
+  } else {
+    strong = `${palavra} até ${formatBrDate(ate!)}`;
   }
-  if (de) return `Dados por ${dataLabel} a partir de ${formatBrDate(de)}`;
-  if (ate) return `Dados por ${dataLabel} até ${formatBrDate(ate)}`;
-  return null;
+
+  return { lead: PERIODO_CONTEXT_LEAD, strong };
+}
+
+/** Texto de contexto para a tela (ex.: "Dados por data de fechamento de 01/06/2026 a 30/06/2026"). */
+export function formatPeriodContextLabel(
+  filters: Pick<DashboardFilters, "periodoTipo" | "periodoDe" | "periodoAte" | "ano">,
+): string | null {
+  const parts = formatPeriodContextLabelParts(filters);
+  return parts ? `${parts.lead}${parts.strong}` : null;
 }
 
 /** Rótulo curto para o botão do filtro (telas estreitas). */

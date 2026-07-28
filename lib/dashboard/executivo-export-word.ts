@@ -1,6 +1,7 @@
 import {
   AlignmentType,
   Document,
+  HeadingLevel,
   Packer,
   Paragraph,
   Table,
@@ -20,11 +21,69 @@ import {
 } from "@/lib/dashboard/docx-report-primitives";
 import type { ExecutivoDataset } from "@/lib/dashboard/executivo-dataset";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
+import {
+  mergeadasPivotDimensaoLabel,
+  type MergeadasPivotDimensao,
+} from "@/lib/dashboard/mergeadas-pivot";
+import { recorteResumo, recorteFilenameSlug } from "@/lib/dashboard/recorte";
 import { formatDecimal, formatNumber, formatPercentFixed } from "@/lib/format";
-import type { ChartPoint } from "@/types/database";
+import type { ChartPoint, MergeadaPivotRow } from "@/types/database";
 
 function chartTable(rows: ChartPoint[]): Table {
   return docxTwoColTable(rows.map((r) => [r.label, formatNumber(r.quantidade)]));
+}
+
+/** Monta o cabeçalho (Paragraph) + tabela de um pivô de mergeadas para uma dimensão. */
+function pivotSection(
+  dimensao: MergeadasPivotDimensao,
+  periodos: string[],
+  pivot: MergeadaPivotRow[],
+): (Paragraph | Table)[] {
+  const linhaHeader = mergeadasPivotDimensaoLabel(dimensao);
+  const matrix = new Map<string, Map<string, number>>();
+  for (const row of pivot) {
+    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
+    matrix.get(row.linha)!.set(row.periodo, row.total);
+  }
+  const linhas = Array.from(matrix.entries())
+    .map(([linha, cols]) => {
+      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
+      return { linha, cols, total };
+    })
+    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
+
+  const colPct = Math.floor(60 / Math.max(periodos.length, 1));
+  const firstPct = 100 - colPct * periodos.length - 12;
+
+  return [
+    docxSectionHeading(`Mergeadas por ${linhaHeader.toLowerCase()}`),
+    new Table({
+      width: { size: 100, type: WidthType.PERCENTAGE },
+      borders: DOCX_TABLE_BORDERS,
+      rows: [
+        new TableRow({
+          tableHeader: true,
+          children: [
+            docxHeaderCell(linhaHeader, firstPct),
+            ...periodos.map((p) => docxHeaderCell(formatPeriodoLabel(p), colPct, true)),
+            docxHeaderCell("Total", 12, true),
+          ],
+        }),
+        ...linhas.map(
+          (l) =>
+            new TableRow({
+              children: [
+                docxBodyCell(l.linha, firstPct),
+                ...periodos.map((p) =>
+                  docxBodyCell(formatNumber(l.cols.get(p) ?? 0), colPct, true),
+                ),
+                docxBodyCell(formatNumber(l.total), 12, true),
+              ],
+            }),
+        ),
+      ],
+    }),
+  ];
 }
 
 /** Relatório Word A4 com todas as seções do Executivo. */
@@ -32,21 +91,34 @@ export async function buildExecutivoRelatorioDocx(
   dataset: ExecutivoDataset,
 ): Promise<Buffer> {
   const k = dataset.kpis;
+  const recorte = recorteResumo(dataset.filters);
   const children: (Paragraph | Table)[] = [
     new Paragraph({
+      heading: HeadingLevel.HEADING_1,
       alignment: AlignmentType.CENTER,
-      spacing: { after: 200 },
+      spacing: { after: 160 },
       children: [
-        new TextRun({ text: "DASHBOARD EXECUTIVO", bold: true, size: 32 }),
+        new TextRun({ text: "Dashboard Executivo", bold: true, size: 32 }),
       ],
     }),
     new Paragraph({
-      spacing: { after: 200 },
+      spacing: { after: 60 },
       children: [
-        new TextRun({
-          text: `Gerado em ${new Date().toLocaleString("pt-BR")}.`,
-          size: 18,
-        }),
+        new TextRun({ text: `Gerado em ${new Date().toLocaleString("pt-BR")}.`, size: 18, color: "666666" }),
+      ],
+    }),
+    new Paragraph({
+      spacing: { after: 40 },
+      children: [
+        new TextRun({ text: "Recorte: ", bold: true, size: 18 }),
+        new TextRun({ text: recorte.periodo, size: 18 }),
+      ],
+    }),
+    new Paragraph({
+      spacing: { after: 220 },
+      children: [
+        new TextRun({ text: "Filtros: ", bold: true, size: 18 }),
+        new TextRun({ text: recorte.filtrosTexto, size: 18 }),
       ],
     }),
   ];
@@ -169,50 +241,10 @@ export async function buildExecutivoRelatorioDocx(
   );
 
   const periodos = dataset.mergeadas.periodos;
-  const linhaHeader = dataset.mergeadas.porModulo ? "Módulo" : "Épico";
-  const matrix = new Map<string, Map<string, number>>();
-  for (const row of dataset.mergeadas.pivot) {
-    if (!matrix.has(row.linha)) matrix.set(row.linha, new Map());
-    matrix.get(row.linha)!.set(row.periodo, row.total);
-  }
-  const linhas = Array.from(matrix.entries())
-    .map(([linha, cols]) => {
-      const total = periodos.reduce((acc, p) => acc + (cols.get(p) ?? 0), 0);
-      return { linha, cols, total };
-    })
-    .sort((a, b) => b.total - a.total || a.linha.localeCompare(b.linha, "pt-BR"));
-
-  const colPct = Math.floor(60 / Math.max(periodos.length, 1));
-  const firstPct = 100 - colPct * periodos.length - 12;
-
-  children.push(docxSectionHeading(`Mergeadas por ${linhaHeader.toLowerCase()} (últimos 6 meses)`));
   children.push(
-    new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
-      borders: DOCX_TABLE_BORDERS,
-      rows: [
-        new TableRow({
-          tableHeader: true,
-          children: [
-            docxHeaderCell(linhaHeader, firstPct),
-            ...periodos.map((p) => docxHeaderCell(formatPeriodoLabel(p), colPct, true)),
-            docxHeaderCell("Total", 12, true),
-          ],
-        }),
-        ...linhas.map(
-          (l) =>
-            new TableRow({
-              children: [
-                docxBodyCell(l.linha, firstPct),
-                ...periodos.map((p) =>
-                  docxBodyCell(formatNumber(l.cols.get(p) ?? 0), colPct, true),
-                ),
-                docxBodyCell(formatNumber(l.total), 12, true),
-              ],
-            }),
-        ),
-      ],
-    }),
+    ...pivotSection("modulo", periodos, dataset.mergeadas.pivots.modulo),
+    ...pivotSection("epico", periodos, dataset.mergeadas.pivots.epico),
+    ...pivotSection("parceria", periodos, dataset.mergeadas.pivots.parceria),
   );
 
   const doc = new Document({
@@ -239,7 +271,6 @@ export async function buildExecutivoRelatorioDocx(
   return Packer.toBuffer(doc);
 }
 
-export function buildExecutivoWordFilename(): string {
-  const date = new Date().toISOString().slice(0, 10);
-  return `executivo-${date}.docx`;
+export function buildExecutivoWordFilename(dataset: ExecutivoDataset): string {
+  return `executivo_${recorteFilenameSlug(dataset.filters)}.docx`;
 }

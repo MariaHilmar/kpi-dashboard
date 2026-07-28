@@ -13,14 +13,25 @@ import {
   sortSprintOptions,
 } from "@/lib/dashboard/filters";
 import {
+  defaultPeriodRange,
   formatPeriodContextLabel,
   formatPeriodSummaryShort,
   resolvePeriodDates,
 } from "@/lib/dashboard/period-filter";
 
 describe("parseFilters", () => {
-  it("retorna defaults quando searchParams vazio", () => {
-    expect(parseFilters({})).toEqual(DEFAULT_FILTERS);
+  it("aplica default de últimos 6 meses por fechamento quando searchParams vazio", () => {
+    const filters = parseFilters({});
+    const def = defaultPeriodRange();
+    expect(filters.periodoTipo).toBe("fechamento");
+    expect(filters.periodoDe).toBe(def.de);
+    expect(filters.periodoAte).toBe(def.ate);
+    expect(filters.fechadoDe).toBe(def.de);
+    expect(filters.fechadoAte).toBe(def.ate);
+  });
+
+  it("?periodo=todos remove o default e mostra todo o histórico", () => {
+    expect(parseFilters({ periodo: "todos" })).toEqual(DEFAULT_FILTERS);
   });
 
   it("parseia periodo por tipo criação", () => {
