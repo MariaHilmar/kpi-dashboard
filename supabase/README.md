@@ -29,7 +29,7 @@ Inclua `schema.sql` no mesmo commit da migration.
 ## Como o schema e gerado
 
 1. **Preferencial:** `supabase db dump` usando `DATABASE_URL` (ou `SUPABASE_DB_URL` /
-   `DIRECT_URL`) definido em `mgi-workspace/.env`.
+   `DIRECT_URL`) definido em `kpi-workspace/.env`.
 2. **Fallback:** concatenacao ordenada de `migrations/*.sql` quando o dump remoto
    nao estiver disponivel.
 

@@ -31,7 +31,7 @@ No pipeline Python (workspace `kpi-pipeline`):
 ```powershell
 cd seu-workspace\kpi-pipeline
 
-# Variáveis — ou use .env em mgi-workspace/.env
+# Variáveis — ou use .env em kpi-workspace/.env
 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GITLAB_TOKEN*
 
 # 1) Issues com IDs GitLab no JSON (após migration 012)
