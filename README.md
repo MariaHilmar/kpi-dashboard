@@ -29,7 +29,6 @@ O dashboard é **somente leitura** em relação ao GitLab: não altera issues na
 - **Arquitetura em camadas** — separação clara entre fetchers (`lib/dashboard/`), cache e componentes de UI
 - **Regras no banco** — RPCs PostgreSQL centralizam agregações; o frontend foca em visualização
 - **UX contextual** — filtros globais sincronizados via URL, tooltips informativos e drill-down em KPIs
-- **GovBR Design System** — identidade visual alinhada a padrões de acessibilidade governamental
 - **Vitest + Testing Library** — **358 testes** unitários e de componente (59 arquivos de teste)
 - **GitHub Actions + SonarCloud** — lint, tipos, testes e análise de qualidade a cada push/PR
 
