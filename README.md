@@ -10,9 +10,7 @@ Dashboard web para acompanhamento de **KPIs, alertas e fluxos de engenharia**. F
 
 > **Aviso legal:** projeto de **portfólio pessoal** de [Maria Hilmar](https://github.com/MariaHilmar). Reflete uma arquitetura inspirada em necessidades reais de monitoramento de equipes (GitLab, sprints, módulos). **Não é um sistema oficial do MGI** nem produto institucional. Não contém dados sensíveis, tokens ou credenciais versionados.
 
-**Demo:** [web-mgi-delog.vercel.app](https://web-mgi-delog.vercel.app) (acesso autenticado)
-
-![Tela de login — GovBR Design System](docs/screenshots/login.png)
+**Demo:** [web-mgi-delog.vercel.app](https://web-mgi-delog.vercel.app) 
 
 ---
 
