@@ -9,7 +9,6 @@ import {
   mergeadasPivotTableTitle,
   parseMergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
-import { hasActiveGlobalPeriodFilter } from "@/lib/dashboard/period-filter";
 import type { DashboardSearchParams } from "@/lib/dashboard/page";
 import type { DashboardFilters } from "@/types/database";
 
@@ -31,7 +30,6 @@ export async function MergeadasPivotSection({ filters, searchParams }: Props) {
   ]);
 
   const periodos = mergeadasPivotPeriodKeys(filters);
-  const periodoAtivo = hasActiveGlobalPeriodFilter(filters);
 
   const mergeWindow = mergeadasSixMonthWindow();
   const mergeDrilldown = {
@@ -44,7 +42,6 @@ export async function MergeadasPivotSection({ filters, searchParams }: Props) {
     <div className="flex flex-col gap-6">
       <MergeadasPivotTabela
         title={mergeadasPivotTableTitle(filters)}
-        subtitleBase={periodoAtivo ? "global" : "sixMonths"}
         periodos={periodos}
         rowsByDimensao={{ modulo: pivotModulo, epico: pivotEpico, parceria: pivotParceria }}
         filters={filters}

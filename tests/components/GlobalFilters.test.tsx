@@ -174,4 +174,15 @@ describe("GlobalFilters", () => {
     await user.click(screen.getByRole("button", { name: "Alterar data" }));
     expect(screen.getByRole("dialog", { name: "Filtro de período" })).toBeInTheDocument();
   });
+
+  it("evento externo abre o popup de período", async () => {
+    currentParams =
+      "periodoTipo=merge&periodoDe=2026-02-01&periodoAte=2026-07-29";
+    render(<GlobalFilters options={options} />);
+
+    expect(screen.queryByRole("dialog", { name: "Filtro de período" })).not.toBeInTheDocument();
+    const { requestOpenPeriodFilter } = await import("@/lib/dashboard/period-filter");
+    requestOpenPeriodFilter();
+    expect(await screen.findByRole("dialog", { name: "Filtro de período" })).toBeInTheDocument();
+  });
 });

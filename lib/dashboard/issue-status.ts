@@ -46,7 +46,7 @@ const STATUS_TONE_DEFINITIONS: StatusToneDefinition[] = [
     chartHex: "#7F3F98",
   },
   {
-    keys: ["delivered", "concluida", "concluída", "done", "fechada"],
+    keys: ["delivered", "concluida", "concluída", "done", "fechada", "testing"],
     badgeClassName: "bg-emerald-100 text-emerald-800",
     excelFillArgb: "FFD1FAE5",
     excelFontArgb: "FF065F46",

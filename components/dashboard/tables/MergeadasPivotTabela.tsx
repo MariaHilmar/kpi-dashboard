@@ -9,10 +9,12 @@ import { buildMergeadasPivotIssuesHref } from "@/lib/dashboard/issuesLinks";
 import {
   buildPivotLinhas,
   mergeadasPivotDimensaoLabel,
+  mergeadasPivotPeriodFilterLabel,
   pivotPeriodTotals,
   type MergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
 import { formatPeriodoLabel } from "@/lib/dashboard/mergeadas-format";
+import { requestOpenPeriodFilter } from "@/lib/dashboard/period-filter";
 import { formatNumber } from "@/lib/format";
 import type { DashboardFilters, MergeadaPivotRow } from "@/types/database";
 const NAO_INFORMADO = "Não informado";
@@ -28,9 +30,34 @@ function comparePivotLinhas(
   return a.linha.localeCompare(b.linha, "pt-BR");
 }
 
+function mergeadasPivotSubtitleNode(
+  filters: DashboardFilters,
+  dimensao: MergeadasPivotDimensao,
+): ReactNode {
+  const linha = mergeadasPivotDimensaoLabel(dimensao).toLowerCase();
+  const periodo = mergeadasPivotPeriodFilterLabel(filters);
+  if (!periodo) {
+    return `Contagem por ${linha} e mês do merge (últimos 6 meses)`;
+  }
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
+      <span>
+        Contagem por {linha} e mês do merge (
+        <strong className="font-semibold text-slate-600">Filtro aplicado:</strong> {periodo})
+      </span>
+      <button
+        type="button"
+        onClick={requestOpenPeriodFilter}
+        className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
+      >
+        Alterar filtro
+      </button>
+    </p>
+  );
+}
+
 type Props = {
   title: string;
-  subtitleBase: "global" | "sixMonths";
   periodos: string[];
   rowsByDimensao: Record<MergeadasPivotDimensao, MergeadaPivotRow[]>;
   filters: DashboardFilters;
@@ -40,7 +67,6 @@ type Props = {
 
 export function MergeadasPivotTabela({
   title,
-  subtitleBase,
   periodos,
   rowsByDimensao,
   filters,
@@ -49,10 +75,7 @@ export function MergeadasPivotTabela({
 }: Props) {
   const [dimensao, setDimensao] = useState(initialDimensao);
   const linhaHeader = mergeadasPivotDimensaoLabel(dimensao);
-  const subtitle: ReactNode =
-    subtitleBase === "global"
-      ? `Contagem por ${linhaHeader.toLowerCase()} e mês do merge no período global`
-      : `Contagem por ${linhaHeader.toLowerCase()} e mês do merge (últimos 6 meses)`;
+  const subtitle = mergeadasPivotSubtitleNode(filters, dimensao);
   const linhas = buildPivotLinhas(rowsByDimensao[dimensao], periodos, comparePivotLinhas);
   const totaisPorPeriodo = pivotPeriodTotals(linhas, periodos);
   const totalGeral = totaisPorPeriodo.reduce((acc, v) => acc + v, 0);

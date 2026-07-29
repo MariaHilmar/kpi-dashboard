@@ -1,4 +1,5 @@
-import { formatIssueStatusDisplayLabel } from "@/lib/dashboard/issue-status";
+import { IssueEstadoBadge } from "@/components/issues/IssueEstadoBadge";
+import { IssueStatusBadge } from "@/components/issues/IssueStatusBadge";
 import { resolveGitlabWorkItemUrl } from "@/lib/dashboard/gitlab-url";
 import { formatNumber } from "@/lib/format";
 import type { AnalistaIssueRow } from "@/types/analistas";
@@ -6,6 +7,12 @@ import type { AnalistaIssueRow } from "@/types/analistas";
 type Props = {
   rows: AnalistaIssueRow[];
 };
+
+function analistaStatusToEstado(status: string | null): "open" | "closed" | null {
+  if (status === "Aberta") return "open";
+  if (status === "Fechada") return "closed";
+  return null;
+}
 
 export function AnalistasIssuesTable({ rows }: Props) {
   const abertas = rows.filter((row) => row.status === "Aberta").length;
@@ -49,6 +56,7 @@ export function AnalistasIssuesTable({ rows }: Props) {
                   url: row.url,
                 });
                 const issueLabel = row.gitlab_iid != null ? `#${row.gitlab_iid}` : "—";
+                const estado = analistaStatusToEstado(row.status);
 
                 return (
                 <tr
@@ -72,11 +80,15 @@ export function AnalistasIssuesTable({ rows }: Props) {
                   <td className="max-w-md px-3 py-2 text-slate-900">{row.titulo ?? "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.modulo ?? "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.colaborador ?? "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.status ?? "—"}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-slate-600">
-                    {row.status_label
-                      ? formatIssueStatusDisplayLabel(row.status_label)
-                      : "—"}
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {estado ? (
+                      <IssueEstadoBadge row={{ estado }} />
+                    ) : (
+                      <span className="text-slate-500">{row.status ?? "—"}</span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <IssueStatusBadge row={{ status: row.status_label }} />
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.parceiro ?? "—"}</td>
                   <td className="whitespace-nowrap px-3 py-2 text-slate-600">{row.sprint ?? "—"}</td>

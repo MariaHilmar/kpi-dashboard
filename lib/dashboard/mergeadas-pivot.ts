@@ -1,7 +1,19 @@
+import type { PeriodoTipo } from "@/lib/dashboard/constants";
 import { mergeadasSixMonthWindow, periodKeyToMergeRange } from "@/lib/dashboard/issuesLinks";
 import { lastMonthsKeys } from "@/lib/dashboard/mergeadas-format";
-import { hasActiveGlobalPeriodFilter, resolvePeriodDates } from "@/lib/dashboard/period-filter";
+import {
+  formatPeriodSummaryShort,
+  hasActiveGlobalPeriodFilter,
+  resolvePeriodDates,
+} from "@/lib/dashboard/period-filter";
 import type { DashboardFilters, MergeadaPivotRow } from "@/types/database";
+
+/** Rótulos do tipo de data no filtro global (legenda da tabela). */
+const PERIODO_TIPO_DATA_LABELS: Record<PeriodoTipo, string> = {
+  criacao: "Data de criação",
+  fechamento: "Data de fechamento",
+  merge: "Data de merge",
+};
 
 export const MERGEADAS_PIVOT_DIMENSAO_PARAM = "mergeadasPor";
 
@@ -128,6 +140,28 @@ export function mergeadasPivotTableTitle(filters: DashboardFilters): string {
     return "Mergeadas por período";
   }
   return "Mergeadas por período (últimos 6 meses)";
+}
+
+/** Resumo do filtro global para a legenda (ex.: "Data de fechamento · 01/02/2026 – 29/07/2026"). */
+export function mergeadasPivotPeriodFilterLabel(
+  filters: DashboardFilters,
+): string | null {
+  if (!hasActiveGlobalPeriodFilter(filters)) return null;
+  return formatPeriodSummaryShort(filters, PERIODO_TIPO_DATA_LABELS);
+}
+
+/** Legenda da tabela: dimensão ativa + recorte (últimos 6 meses ou filtro global). */
+export function mergeadasPivotSubtitle(
+  filters: DashboardFilters,
+  dimensao: MergeadasPivotDimensao,
+): string {
+  const linha = mergeadasPivotDimensaoLabel(dimensao).toLowerCase();
+  const base = `Contagem por ${linha} e mês do merge`;
+  const periodo = mergeadasPivotPeriodFilterLabel(filters);
+  if (!periodo) {
+    return `${base} (últimos 6 meses)`;
+  }
+  return `${base} (Filtro aplicado: ${periodo})`;
 }
 
 /** Intervalo de merge para drill-down do total do pivô. */

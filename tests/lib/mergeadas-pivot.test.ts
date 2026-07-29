@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_FILTERS } from "@/lib/dashboard/filters";
 import {
   mergeadasPivotPeriodKeys,
+  mergeadasPivotSubtitle,
   mergeadasPivotTableTitle,
   parseMergeadasPivotDimensao,
 } from "@/lib/dashboard/mergeadas-pivot";
@@ -63,5 +64,47 @@ describe("mergeadasPivotTableTitle", () => {
         mergeadoAte: "2026-06-30",
       }),
     ).toBe("Mergeadas por período");
+  });
+});
+
+describe("mergeadasPivotSubtitle", () => {
+  it("usa últimos 6 meses sem período global", () => {
+    expect(mergeadasPivotSubtitle(DEFAULT_FILTERS, "epico")).toBe(
+      "Contagem por épico e mês do merge (últimos 6 meses)",
+    );
+  });
+
+  it("inclui tipo e intervalo do filtro global", () => {
+    expect(
+      mergeadasPivotSubtitle(
+        {
+          ...DEFAULT_FILTERS,
+          periodoTipo: "merge",
+          periodoDe: "2026-02-01",
+          periodoAte: "2026-07-28",
+          mergeadoDe: "2026-02-01",
+          mergeadoAte: "2026-07-28",
+        },
+        "epico",
+      ),
+    ).toBe(
+      "Contagem por épico e mês do merge (Filtro aplicado: Data de merge · 01/02/2026 – 28/07/2026)",
+    );
+  });
+
+  it("reflete a dimensão ativa e data de fechamento", () => {
+    expect(
+      mergeadasPivotSubtitle(
+        {
+          ...DEFAULT_FILTERS,
+          periodoTipo: "fechamento",
+          periodoDe: "2026-01-01",
+          periodoAte: "2026-03-31",
+        },
+        "modulo",
+      ),
+    ).toBe(
+      "Contagem por módulo e mês do merge (Filtro aplicado: Data de fechamento · 01/01/2026 – 31/03/2026)",
+    );
   });
 });
