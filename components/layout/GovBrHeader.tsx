@@ -1,5 +1,5 @@
 import { AuthMenu } from "@/components/auth/AuthMenu";
-import { formatDateTime } from "@/lib/format";
+import { LastSyncLabel } from "@/components/layout/LastSyncLabel";
 
 type Props = {
   lastSync?: string | null;
@@ -17,11 +17,10 @@ export function GovBrHeader({ lastSync, userEmail }: Props) {
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-4">
-          {lastSync ? (
-            <p className="hidden text-sm text-white/80 md:block">
-              Dados atualizado em {formatDateTime(lastSync)}
-            </p>
-          ) : null}
+          <LastSyncLabel
+            initialLastSync={lastSync}
+            className="hidden text-sm text-white/80 md:block"
+          />
           {userEmail ? <AuthMenu email={userEmail} /> : null}
         </div>
       </div>

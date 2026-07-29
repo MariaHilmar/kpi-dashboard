@@ -7,6 +7,8 @@
  */
 
 const LOCALE = "pt-BR";
+/** Fuso do dashboard: evita horário UTC na Vercel e garante paridade local × produção. */
+const DISPLAY_TIME_ZONE = "America/Sao_Paulo";
 
 export const EMPTY_PLACEHOLDER = "—";
 
@@ -49,13 +51,13 @@ export function formatDate(value: string | null | undefined): string {
   if (!value) return EMPTY_PLACEHOLDER;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return EMPTY_PLACEHOLDER;
-  return date.toLocaleDateString(LOCALE);
+  return date.toLocaleDateString(LOCALE, { timeZone: DISPLAY_TIME_ZONE });
 }
 
-/** Data e hora (ex.: "15/06/2024 14:30"). Vazio/ inválido -> "—". */
+/** Data e hora em America/Sao_Paulo (ex.: "15/06/2024, 14:30:00"). Vazio/ inválido -> "—". */
 export function formatDateTime(value: string | null | undefined): string {
   if (!value) return EMPTY_PLACEHOLDER;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return EMPTY_PLACEHOLDER;
-  return date.toLocaleString(LOCALE);
+  return date.toLocaleString(LOCALE, { timeZone: DISPLAY_TIME_ZONE });
 }
