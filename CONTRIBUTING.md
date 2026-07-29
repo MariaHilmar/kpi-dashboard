@@ -52,7 +52,7 @@ O GitHub Actions (`.github/workflows/ci.yml`) executa em cada PR para `main`:
 3. Testes com cobertura (`npm run test:coverage`) — artefato `coverage-report`
 4. Auditoria de dependências (`npm audit --audit-level=high`)
 
-**SonarCloud:** análise automática via `.sonarcloud.properties` ([projeto no SonarCloud](https://sonarcloud.io/project/overview?id=MariaHilmar_mgi-kpi-dashboard)).
+**SonarCloud:** análise automática via `.sonarcloud.properties` ([projeto no SonarCloud](https://sonarcloud.io/project/overview?id=MariaHilmar_kpi-dashboard)).
 
 **Dependabot:** atualizações semanais de npm e GitHub Actions (`.github/dependabot.yml`).
 
@@ -74,4 +74,4 @@ Reporte vulnerabilidades conforme [SECURITY.md](SECURITY.md) (não abra issue p�
 
 ## Dúvidas
 
-Abra uma [issue](https://github.com/MariaHilmar/mgi-kpi-dashboard/issues) para discutir escopo antes de mudanças grandes.
+Abra uma [issue](https://github.com/MariaHilmar/kpi-dashboard/issues) para discutir escopo antes de mudanças grandes.

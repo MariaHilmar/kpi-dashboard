@@ -8,7 +8,7 @@
 | Node.js | 20+ |
 | npm | incluído com Node |
 | Projeto Supabase | schema aplicado (`supabase/migrations/`) |
-| Dados sincronizados | [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) executado ao menos uma vez |
+| Dados sincronizados | [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline) executado ao menos uma vez |
 
 ## 1. Configurar Supabase
 
@@ -26,10 +26,10 @@ Ou aplique todas via `supabase db push` a partir da raiz deste repositório (pas
 
 ### Sincronizar dados
 
-No pipeline Python (workspace `mgi-kpi-pipeline`):
+No pipeline Python (workspace `kpi-pipeline`):
 
 ```powershell
-cd seu-workspace\mgi-kpi-pipeline
+cd seu-workspace\kpi-pipeline
 
 # Variáveis — ou use .env em mgi-workspace/.env
 # SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GITLAB_TOKEN*
@@ -54,7 +54,7 @@ Ver [10-identidades-gitlab.md](./10-identidades-gitlab.md).
 ## 2. Configurar o dashboard localmente
 
 ```powershell
-cd seu-workspace\mgi-kpi-dashboard
+cd seu-workspace\kpi-dashboard
 npm install
 copy .env.local.example .env.local
 ```
@@ -91,7 +91,7 @@ npm run start
 
 ### Via painel Vercel
 
-1. Importe o repositório `MariaHilmar/mgi-kpi-dashboard`.
+1. Importe o repositório `MariaHilmar/kpi-dashboard`.
 2. **Root Directory:** raiz do repo (padrão).
 3. Framework: **Next.js** (detectado automaticamente via `vercel.json`).
 4. Configure variáveis de ambiente de **Production** e **Preview**:
@@ -112,7 +112,7 @@ Branches de feature geram previews; apenas merges em `main` disparam deploy de p
 ### Via CLI
 
 ```powershell
-cd seu-workspace\mgi-kpi-dashboard
+cd seu-workspace\kpi-dashboard
 npx vercel deploy --prod
 ```
 
@@ -124,10 +124,10 @@ Se **Deployment Protection** estiver ativa na Vercel, use bypass secret para ace
 
 ### Opção A — Pipeline manual (recomendado hoje)
 
-Execute periodicamente no repositório **mgi-kpi-pipeline** (Python; ambiente separado deste dashboard):
+Execute periodicamente no repositório **kpi-pipeline** (Python; ambiente separado deste dashboard):
 
 ```powershell
-cd seu-workspace\mgi-kpi-pipeline
+cd seu-workspace\kpi-pipeline
 python pipeline_maestro.py
 ```
 
@@ -170,13 +170,13 @@ Sync automático via HTTP trigger + endpoint protegido — item de roadmap em `S
 | `GITLAB_TOKEN` | Recomendada | Token para API GitLab |
 | `MGI_BASE_DIR` | Não | Base para JSON/logs |
 
-Ver tabela completa em `mgi-kpi-pipeline/README.md`.
+Ver tabela completa em `kpi-pipeline/README.md`.
 
 ## Troubleshooting
 
 ### SetupBanner aparece mesmo com .env.local
 
-- Confirme que o arquivo está na **raiz** de `mgi-kpi-dashboard/`.
+- Confirme que o arquivo está na **raiz** de `kpi-dashboard/`.
 - Reinicie `npm run dev` após alterar env vars.
 - Variáveis `NEXT_PUBLIC_*` são embutidas no build — redeploy na Vercel após mudanças.
 

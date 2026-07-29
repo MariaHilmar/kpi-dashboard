@@ -78,7 +78,7 @@ export async function buildParceriasExportWorkbook(
   const lastCol = String.fromCharCode(64 + headers.length);
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "MGI KPI Dashboard";
+  workbook.creator = "KPI Dashboard";
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet("Demandas");

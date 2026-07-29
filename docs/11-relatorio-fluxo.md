@@ -129,11 +129,11 @@ Mapeamento em `flow_map_etapa` (SQL) e `lib/dashboard/flow-stages.ts`:
 ## Coleta incremental (a partir de agora)
 
 1. **Snapshots diários:** automático no `pipeline_maestro.py` após sync (agendamento diário)
-   - Script manual: `python mgi-kpi-pipeline/snapshot_issue_status.py`
+   - Script manual: `python kpi-pipeline/snapshot_issue_status.py`
    - RPC `flow_capture_daily_snapshots`
    - Tabela `issue_status_snapshots`
 
-2. **Eventos (coleta implementada):** tabela `issue_status_events` — ver `mgi-kpi-pipeline/docs/06-status-events.md`
+2. **Eventos (coleta implementada):** tabela `issue_status_events` — ver `kpi-pipeline/docs/06-status-events.md`
    - Pipeline: `sync_supabase.py` + `backfill_status_events.py`
    - API GitLab: `resource_label_events` (labels `status::`)
 
@@ -154,7 +154,7 @@ Mapeamento em `flow_map_etapa` (SQL) e `lib/dashboard/flow-stages.ts`:
 ## Testes
 
 ```bash
-cd mgi-kpi-dashboard
+cd kpi-dashboard
 npm test -- tests/lib/flow-stages.test.ts tests/lib/flow-report.test.ts tests/lib/flow-charts.test.ts
 ```
 

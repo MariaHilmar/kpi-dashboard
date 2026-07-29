@@ -1,12 +1,12 @@
-# MGI KPI Dashboard
+# KPI Dashboard
 
-[![CI](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/MariaHilmar/mgi-kpi-dashboard/actions/workflows/ci.yml)
-[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MariaHilmar_mgi-kpi-dashboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MariaHilmar_mgi-kpi-dashboard)
+[![CI](https://github.com/MariaHilmar/kpi-dashboard/actions/workflows/ci.yml/badge.svg)](https://github.com/MariaHilmar/kpi-dashboard/actions/workflows/ci.yml)
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MariaHilmar_kpi-dashboard&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=MariaHilmar_kpi-dashboard)
 ![Next.js](https://img.shields.io/badge/Next.js-16-black.svg)
 ![Node](https://img.shields.io/badge/Node-%3E%3D20-brightgreen.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Dashboard web para acompanhamento de **KPIs, alertas e fluxos de engenharia**. Full-stack com Next.js 16, Supabase e GovBR Design System, integrado ao pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline).
+Dashboard web para acompanhamento de **KPIs, alertas e fluxos de engenharia**. Full-stack com Next.js 16, Supabase e GovBR Design System, integrado ao pipeline Python [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline).
 
 > **Aviso legal:** projeto de **portfólio pessoal** de [Maria Hilmar](https://github.com/MariaHilmar). Reflete uma arquitetura inspirada em necessidades reais de monitoramento de equipes (GitLab, sprints, módulos). **Não é um sistema oficial do MGI** nem produto institucional. Não contém dados sensíveis, tokens ou credenciais versionados.
 
@@ -18,7 +18,7 @@ Dashboard web para acompanhamento de **KPIs, alertas e fluxos de engenharia**. F
 
 ## Visão geral
 
-Dashboard Full-Stack desenvolvido para **visualizar métricas complexas de engenharia de software**, integrando-se ao [MGI KPI Pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline). A solução utiliza tecnologias modernas de web para entregar alta performance, cache inteligente e uma experiência de usuário alinhada ao **GovBR Design System**.
+Dashboard Full-Stack desenvolvido para **visualizar métricas complexas de engenharia de software**, integrando-se ao [KPI Pipeline](https://github.com/MariaHilmar/kpi-pipeline). A solução utiliza tecnologias modernas de web para entregar alta performance, cache inteligente e uma experiência de usuário alinhada ao **GovBR Design System**.
 
 O dashboard é **somente leitura** em relação ao GitLab: não altera issues na origem. Consulta views e funções RPC no Supabase para montar gráficos, tabelas e KPIs com filtros globais compartilhados entre todas as páginas.
 
@@ -41,7 +41,7 @@ O dashboard é **somente leitura** em relação ao GitLab: não altera issues na
 
 ```mermaid
 graph TD
-    GitLab[GitLab / Repos Git] -->|issues + commits| Pipeline[mgi-kpi-pipeline<br/>Python ETL]
+    GitLab[GitLab / Repos Git] -->|issues + commits| Pipeline[kpi-pipeline<br/>Python ETL]
     Pipeline -->|upsert| Supabase[(Supabase / PostgreSQL<br/>RPCs + Views)]
     Supabase -->|read-only| Fetchers[lib/dashboard/fetchers.ts]
     Fetchers --> Cache[unstable_cache TTL 24h]
@@ -123,7 +123,7 @@ graph TD
 
 - Node.js **20+**
 - Projeto Supabase configurado (schema + RPCs — ver `supabase/migrations/`)
-- Dados sincronizados pelo [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline)
+- Dados sincronizados pelo [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline)
 
 > O CI usa `ubuntu-latest` (padrão GitHub Actions). A produção roda na Vercel (Linux serverless). Desenvolvimento local funciona em Windows + PowerShell sem WSL.
 
@@ -132,8 +132,8 @@ graph TD
 ## Configuração e execução
 
 ```powershell
-git clone https://github.com/MariaHilmar/mgi-kpi-dashboard.git
-cd mgi-kpi-dashboard
+git clone https://github.com/MariaHilmar/kpi-dashboard.git
+cd kpi-dashboard
 
 npm install
 copy .env.local.example .env.local
@@ -174,7 +174,7 @@ O projeto segue padrões de nível corporativo com integração contínua no **G
 ## Estrutura do projeto
 
 ```
-mgi-kpi-dashboard/
+kpi-dashboard/
 ├── app/
 │   ├── (dashboard)/            # Páginas do dashboard (route group)
 │   └── api/                    # Revalidate, import, export, reports
@@ -195,7 +195,7 @@ Documentação detalhada: [docs/README.md](docs/README.md).
 
 ## Deploy (Vercel)
 
-1. Conecte o repositório GitHub `MariaHilmar/mgi-kpi-dashboard`
+1. Conecte o repositório GitHub `MariaHilmar/kpi-dashboard`
 2. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`)
 3. Framework: **Next.js** (região `gru1` via `vercel.json`)
 4. Deploy de produção apenas na branch `main`
@@ -206,8 +206,8 @@ Documentação detalhada: [docs/README.md](docs/README.md).
 
 | Repositório | Papel |
 |-------------|-------|
-| [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, processamento em memória, sync Supabase |
-| **mgi-kpi-dashboard** (este) | Visualização web dos KPIs — portfólio |
+| [kpi-pipeline](https://github.com/MariaHilmar/kpi-pipeline) | Coleta GitLab, processamento em memória, sync Supabase |
+| **kpi-dashboard** (este) | Visualização web dos KPIs — portfólio |
 
 ---
 

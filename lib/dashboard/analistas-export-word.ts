@@ -294,7 +294,7 @@ function buildReportHeader(analystName: string, anoMes: string): Paragraph[] {
     }),
     new Paragraph({
       spacing: { after: 80 },
-      children: [new TextRun({ text: "Projeto Contratos – MGI", size: 22 })],
+      children: [new TextRun({ text: "Projeto Contratos", size: 22 })],
     }),
     new Paragraph({
       spacing: { after: 80 },
@@ -337,7 +337,7 @@ export async function buildAnalistaRelatorioDocx(params: AnalistaExportParams): 
   ]);
 
   const doc = new Document({
-    creator: "MGI KPI Dashboard",
+    creator: "KPI Dashboard",
     title: `Relatório Mensal de Atividades — ${analystName} ${periodo}`,
     sections: [
       {

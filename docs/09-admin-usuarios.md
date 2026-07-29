@@ -53,7 +53,7 @@ Aplique migrations em ordem no Supabase **antes** de usar o CRUD.
 Após migration 012 e sync de issues:
 
 ```powershell
-cd seu-workspace\mgi-kpi-pipeline
+cd seu-workspace\kpi-pipeline
 python backfill_profile_gitlab_ids.py --dry-run
 python backfill_profile_gitlab_ids.py
 ```
@@ -104,6 +104,6 @@ lib/supabase/admin.ts
 supabase/migrations/008_profiles_admin.sql
 supabase/migrations/011_analista_relatorio_por_autor.sql
 supabase/migrations/012_gitlab_identities.sql
-mgi-kpi-pipeline/backfill_profile_gitlab_ids.py
-mgi-kpi-pipeline/provision_gitlab_users.py
+kpi-pipeline/backfill_profile_gitlab_ids.py
+kpi-pipeline/provision_gitlab_users.py
 ```

@@ -39,6 +39,10 @@ describe("getIssueStatusTone", () => {
     expect(getIssueStatusTone("Doing").chartHex).toBe("#1351B4");
     expect(getIssueStatusTone("Em execução").chartHex).toBe("#1351B4");
     expect(getIssueStatusTone("Delivered").chartHex).toBe("#168821");
+    expect(getIssueStatusTone("Testing").chartHex).toBe("#168821");
+    expect(getIssueStatusTone("Testing").badgeClassName).toContain("emerald");
+    expect(getIssueStatusTone("Testing").chartHex).toBe("#168821");
+    expect(getIssueStatusTone("Testing").badgeClassName).toContain("emerald");
   });
 
   it("reutiliza a mesma cor para status desconhecido", () => {

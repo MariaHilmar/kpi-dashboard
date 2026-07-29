@@ -2,7 +2,7 @@
 
 ## O que é
 
-O **MGI KPI Dashboard** é a interface web oficial para acompanhar indicadores de issues, alertas de qualidade e métricas operacionais dos repositórios GitLab do MGI (principalmente **Contratos v2** e repositórios relacionados).
+O **KPI Dashboard** é a interface web para acompanhar indicadores de issues, alertas de qualidade e métricas operacionais dos repositórios GitLab (principalmente **Contratos v2** e repositórios relacionados).
 
 O sistema é **predominantemente somente leitura** em relação ao GitLab: o pipeline Python sincroniza issues; o dashboard consulta RPCs/views. Exceções controladas no próprio dashboard: **administração de usuários** e **importação Planning Poker** (campos de relatório em `issues`/`milestone_issues`).
 
@@ -20,10 +20,10 @@ O dashboard web replica e expande as visualizações do **Dashboard Executivo** 
 ## Fluxo de dados (vigente)
 
 ```
-GitLab API + repos Git (mgi-kpi-pipeline)
+GitLab API + repos Git (kpi-pipeline)
         │
         ▼
-mgi-kpi-pipeline
+kpi-pipeline
   ├── atualizar_gitlab_issues.py  →  gitlab_issues_raw.json
   ├── coleta_git_contratos.py     →  gitlab_git_data.json
   └── pipeline_maestro.py
@@ -34,13 +34,13 @@ mgi-kpi-pipeline
          issues | releases | sync_runs
                     │
                     ▼
-           mgi-kpi-dashboard (Next.js)
+           kpi-dashboard (Next.js)
               consulta RPCs + views
 ```
 
-O Excel **não faz mais parte do fluxo principal** de sincronização (confirmado no README do `mgi-kpi-pipeline`). Planilhas Excel e scripts legados permanecem no workspace histórico, mas o dashboard web depende exclusivamente do Supabase.
+O Excel **não faz mais parte do fluxo principal** de sincronização (confirmado no README do `kpi-pipeline`). Planilhas Excel e scripts legados permanecem no workspace histórico, mas o dashboard web depende exclusivamente do Supabase.
 
-> **Ambiente:** o **mgi-kpi-dashboard** roda em **Windows** (Node.js + PowerShell) em desenvolvimento e na **Vercel** em produção. WSL/Linux faz parte do setup do repositório [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline), não deste projeto web.
+> **Ambiente:** o **kpi-dashboard** roda em **Windows** (Node.js + PowerShell) em desenvolvimento e na **Vercel** em produção. WSL/Linux faz parte do setup do repositório [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline), não deste projeto web.
 
 ## Paridade Excel ↔ Web
 

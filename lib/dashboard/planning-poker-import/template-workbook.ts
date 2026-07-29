@@ -14,7 +14,7 @@ const TEMPLATE_EXAMPLES: (string | number)[][] = [
 ];
 
 const HELP_LINES = [
-  "Planning Poker — importação MGI",
+  "Planning Poker — importação",
   "",
   "Colunas obrigatórias: gitlab_repo, gitlab_iid",
   "Coluna principal: story_points (resultado da votação)",
@@ -60,7 +60,7 @@ function addInstructionsSheet(workbook: ExcelJS.Workbook): void {
 
 export async function buildPlanningPokerTemplateWorkbook(): Promise<ExcelJS.Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "MGI KPI Dashboard";
+  workbook.creator = "KPI Dashboard";
   workbook.created = new Date();
 
   const sheet = workbook.addWorksheet("Planning Poker");

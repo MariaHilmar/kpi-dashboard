@@ -9,6 +9,7 @@ import { ensureFilterOption, parseFilters, sortFilterOptions } from "@/lib/dashb
 import {
   defaultPeriodRange,
   formatPeriodContextLabelParts,
+  OPEN_PERIOD_FILTER_EVENT,
   PERIODO_TODOS,
 } from "@/lib/dashboard/period-filter";
 import type { FilterOptions } from "@/types/database";
@@ -208,6 +209,18 @@ export function GlobalFilters({ options }: Props) {
 
   const [periodOpen, setPeriodOpen] = useState(false);
 
+  useEffect(() => {
+    function onOpenPeriodFilter() {
+      setPeriodOpen(true);
+      const el = document.getElementById("filtro-periodo-global");
+      if (el && typeof el.scrollIntoView === "function") {
+        el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+    window.addEventListener(OPEN_PERIOD_FILTER_EVENT, onOpenPeriodFilter);
+    return () => window.removeEventListener(OPEN_PERIOD_FILTER_EVENT, onOpenPeriodFilter);
+  }, []);
+
   const moduloOptions = useMemo(() => {
     let list = options.modulos;
     if (selectedArea !== "Todos") {
@@ -371,7 +384,10 @@ export function GlobalFilters({ options }: Props) {
           onChange={updateFilter}
         />
         <div className="col-span-2 border-t border-slate-100 pt-3 sm:col-span-3 lg:col-span-4 xl:col-span-1 xl:border-t-0 xl:pt-0">
-          <div className="rounded-lg border border-govbr-blue/30 bg-blue-50 p-2">
+          <div
+            id="filtro-periodo-global"
+            className="rounded-lg border border-govbr-blue/30 bg-blue-50 p-2"
+          >
             <PeriodFilterField
               value={{ tipo: periodoTipo, de: periodoDe, ate: periodoAte }}
               yearPresets={yearPresets}

@@ -1,5 +1,5 @@
 # =============================================================================
-# Reescrita de histórico Git — mgi-kpi-dashboard (portfólio público)
+# Reescrita de histórico Git — kpi-dashboard (portfólio público)
 # =============================================================================
 #
 # Remove do histórico INTEIRO:
@@ -18,7 +18,7 @@
 # Pré-requisitos:
 #   - Python 3 + pip (git-filter-repo)
 #   - Branch main atualizada com limpezas do HEAD (sem docs/analise, sem tmp-*)
-#   - Backup: git clone --mirror <url> ..\mgi-kpi-dashboard-backup.git
+#   - Backup: git clone --mirror <url> ..\kpi-dashboard-backup.git
 # =============================================================================
 
 [CmdletBinding()]
@@ -31,11 +31,11 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$RemoteUrl = "https://github.com/MariaHilmar/mgi-kpi-dashboard.git"
+$RemoteUrl = "https://github.com/MariaHilmar/kpi-dashboard.git"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 
 if (-not (Test-Path (Join-Path $RepoRoot ".git"))) {
-    throw "Execute na raiz do clone mgi-kpi-dashboard (pasta com .git)."
+    throw "Execute na raiz do clone kpi-dashboard (pasta com .git)."
 }
 
 Set-Location $RepoRoot
@@ -76,7 +76,7 @@ function Test-HistoryClean {
 Write-Host @"
 
 ╔══════════════════════════════════════════════════════════════════╗
-║  Sanitização de histórico — mgi-kpi-dashboard                    ║
+║  Sanitização de histórico — kpi-dashboard                    ║
 ║  Modo: $(if ($Execute) { if ($Push) { 'EXECUTAR + FORCE PUSH' } else { 'EXECUTAR filter-repo' } } else { 'SIMULAÇÃO (-Execute para rodar)' })                          ║
 ╚══════════════════════════════════════════════════════════════════╝
 "@ -ForegroundColor Yellow

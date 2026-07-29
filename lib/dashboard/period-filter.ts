@@ -5,6 +5,15 @@ import type { DashboardFilters } from "@/types/database";
 export const PERIODO_FILTER_TOOLTIP =
   "Filtra o recorte por intervalo de datas.\n\nEscolha se a data é de criação, fechamento da issue ou merge do MR no GitLab.\n\nNão afeta Evolução mensal (sempre últimos 6 meses). A tabela Mergeadas por período usa o intervalo informado quando o período global estiver preenchido; caso contrário, mostra os últimos 6 meses do merge.";
 
+/** Evento para abrir o popup do filtro global de período a partir de outras seções. */
+export const OPEN_PERIOD_FILTER_EVENT = "mgi:open-period-filter";
+
+/** Solicita abertura do filtro de período (escutado por GlobalFilters). */
+export function requestOpenPeriodFilter(): void {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(OPEN_PERIOD_FILTER_EVENT));
+}
+
 /** Sentinela na URL (?periodo=todos) que desliga o default e mostra todo o histórico. */
 export const PERIODO_TODOS = "todos";
 

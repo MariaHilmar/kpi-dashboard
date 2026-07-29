@@ -57,7 +57,7 @@ Campo `source`: `gitlab_api` | `git_commits` | `assignee_fallback`.
 ## Fluxo operacional (pós-migration)
 
 ```powershell
-cd seu-workspace\mgi-kpi-pipeline
+cd seu-workspace\kpi-pipeline
 
 # 1) Issues com author.id / assignees[].id no JSON
 python atualizar_gitlab_issues.py --full

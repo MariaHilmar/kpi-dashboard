@@ -237,7 +237,7 @@ O pipeline Python deriva campos antes do upsert:
 | parceria, sprint | labels / milestone GitLab |
 | epico | Parent (GraphQL), label `Épico::`, REST `issue.epic`, catálogo `gitlab_epics` |
 
-Ver `mgi-kpi-pipeline/docs/06-epicos-gitlab.md`.
+Ver `kpi-pipeline/docs/06-epicos-gitlab.md`.
 
 ### Épico no GitLab MGI
 
@@ -247,7 +247,7 @@ Contratos v2 tem Parent `[Fiscalização] Checklist de fiscalização...`.
 
 O pipeline grava o título em `issues.epico` via GraphQL (`WorkItemWidgetHierarchy`)
 no sync e no backfill, com fallbacks por label, REST `issue.epic` e catálogo do
-grupo. Documentação: `mgi-kpi-pipeline/docs/06-epicos-gitlab.md`.
+grupo. Documentação: `kpi-pipeline/docs/06-epicos-gitlab.md`.
 
 ## Aplicar schema no Supabase
 
@@ -257,7 +257,7 @@ grupo. Documentação: `mgi-kpi-pipeline/docs/06-epicos-gitlab.md`.
 4. Atualizar issues do GitLab e sincronizar:
 
 ```powershell
-cd seu-workspace\mgi-kpi-pipeline
+cd seu-workspace\kpi-pipeline
 python atualizar_gitlab_issues.py --full
 python sync_supabase.py
 python backfill_profile_gitlab_ids.py

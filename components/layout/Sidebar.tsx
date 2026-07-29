@@ -20,7 +20,7 @@ export function Sidebar({ isAdmin = false }: SidebarProps) {
   const groups = getNavGroups(isAdmin, isLocalhost);
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)]">
+    <aside className="hidden w-64 shrink-0 border-r border-slate-200 bg-white lg:flex lg:flex-col lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]">
       <nav className="flex-1 overflow-y-auto px-2 py-4" aria-label="Navegação principal">
         {groups.map((group) => (
           <div key={group.title} className="mb-4">

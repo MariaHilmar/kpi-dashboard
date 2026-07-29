@@ -1,8 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ReactNode } from "react";
-
-import govbrLogo from "@/public/govbr-logo.png";
 
 type AuthShellProps = {
   title: string;
@@ -16,9 +13,8 @@ export function AuthShell({ title, subtitle, children, footer }: AuthShellProps)
     <div className="flex min-h-screen flex-col bg-background">
       <header className="bg-govbr-blue px-4 py-4 shadow-md">
         <div className="mx-auto flex max-w-md items-center gap-3">
-          <Image src={govbrLogo} alt="gov.br" priority className="h-6 w-auto bg-white p-1" sizes="80px" />
           <Link href="/login" className="font-[var(--font-display)] text-sm font-bold text-white">
-            MGI · Dashboard
+            Dashboard KPI
           </Link>
         </div>
       </header>

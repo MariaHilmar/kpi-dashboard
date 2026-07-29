@@ -1,6 +1,6 @@
 # Documentação — MGI KPI Dashboard
 
-Documentação do sistema **mgi-kpi-dashboard**: dashboard web de KPIs, alertas e issues dos projetos MGI.
+Documentação do sistema **kpi-dashboard**: dashboard web de KPIs, alertas e issues dos projetos GitLab.
 
 ## Índice
 
@@ -32,14 +32,14 @@ Material de contexto em `seu-workspace\docs`:
 | [ROADMAP_EXPANSÃO_PIPELINE.md](../../docs/ROADMAP_EXPANSÃO_PIPELINE.md) | Roadmap de dashboards avançados (Fase 3) |
 | [DIAGNÓSTICO_MÓDULOS_REPOSITÓRIO.md](../../docs/DIAGNÓSTICO_MÓDULOS_REPOSITÓRIO.md) | Estrutura do Excel e módulos MGI |
 
-> **Nota sobre o fluxo de dados:** o pipeline atual (`mgi-kpi-pipeline`) sincroniza **diretamente com o Supabase**, sem passar pelo Excel. O documento `SETUP_DASHBOARD_WEB.md` ainda menciona leitura da aba **Dados** de `MGI_Dashboard.xlsx`; isso reflete a fase inicial do projeto. Consulte [01-visao-geral.md](./01-visao-geral.md) para o fluxo vigente.
+> **Nota sobre o fluxo de dados:** o pipeline atual (`kpi-pipeline`) sincroniza **diretamente com o Supabase**, sem passar pelo Excel. O documento `SETUP_DASHBOARD_WEB.md` ainda menciona leitura da aba **Dados** de `MGI_Dashboard.xlsx`; isso reflete a fase inicial do projeto. Consulte [01-visao-geral.md](./01-visao-geral.md) para o fluxo vigente.
 
 ## Repositórios do ecossistema
 
 | Repositório | Papel |
 |-------------|-------|
-| **mgi-kpi-dashboard** (este) | Visualização web (somente leitura) |
-| [mgi-kpi-pipeline](https://github.com/MariaHilmar/mgi-kpi-pipeline) | Coleta GitLab, processamento, sync Supabase |
+| **kpi-dashboard** (este) | Visualização web (somente leitura) |
+| [kpi-pipeline](https://github.com/MariaHilmar/kpi-pipeline) | Coleta GitLab, processamento, sync Supabase |
 | `supabase/migrations/` (workspace) | Schema Postgres versionado |
 
 ---

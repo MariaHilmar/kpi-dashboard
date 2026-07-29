@@ -1,3 +1,4 @@
+import { ISSUE_LIST_BADGE_CLASS } from "@/lib/dashboard/badge-styles";
 import { getIssueStatusTone, resolveIssueWorkflowStatusLabel } from "@/lib/dashboard/issue-status";
 import type { IssueRow } from "@/lib/dashboard/issues";
 
@@ -15,9 +16,7 @@ export function IssueStatusBadge({ row, className = "" }: Readonly<Props>) {
   const tone = getIssueStatusTone(label);
 
   return (
-    <span
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${tone.badgeClassName} ${className}`}
-    >
+    <span className={`${ISSUE_LIST_BADGE_CLASS} ${tone.badgeClassName} ${className}`}>
       {label}
     </span>
   );

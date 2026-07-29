@@ -93,7 +93,7 @@ Restrição por página ou por módulo do dashboard (além de admin/user) pode u
 ## Desenvolvimento local
 
 ```powershell
-cd seu-workspace\mgi-kpi-dashboard
+cd seu-workspace\kpi-dashboard
 copy .env.local.example .env.local
 # Preencher NEXT_PUBLIC_SUPABASE_* 
 npm run dev
