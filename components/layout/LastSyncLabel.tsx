@@ -18,7 +18,8 @@ export function LastSyncLabel({
   prefix = "Dados atualizados em",
   className,
 }: Props) {
-  const [lastSync, setLastSync] = useState<string | null>(initialLastSync);
+  const [fetchedLastSync, setFetchedLastSync] = useState<string | null>(null);
+  const lastSync = fetchedLastSync ?? initialLastSync;
 
   const refresh = useCallback(async () => {
     try {
@@ -26,16 +27,12 @@ export function LastSyncLabel({
       if (!response.ok) return;
       const body = (await response.json()) as { lastSync?: string | null };
       if (typeof body.lastSync === "string" || body.lastSync === null) {
-        setLastSync(body.lastSync);
+        setFetchedLastSync(body.lastSync);
       }
     } catch {
       // Mantém o valor atual se a rede falhar.
     }
   }, []);
-
-  useEffect(() => {
-    setLastSync(initialLastSync);
-  }, [initialLastSync]);
 
   useEffect(() => {
     const onFocus = () => {
