@@ -107,7 +107,7 @@ function addCapaSheet(workbook: ExcelJS.Workbook, dataset: ExecutivoDataset): vo
 
   const recorte = recorteResumo(dataset.filters);
   const linhas: [string, string][] = [
-    ["Relatório", "Dashboard Executivo — MGI KPI"],
+    ["Relatório", "Dashboard Executivo — KPI"],
     ["Gerado em", new Date().toLocaleString("pt-BR")],
     ["Período", recorte.periodo],
     ["Filtros aplicados", recorte.filtrosTexto],
@@ -158,7 +158,7 @@ export async function buildExecutivoExportWorkbook(
   dataset: ExecutivoDataset,
 ): Promise<ExcelJS.Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "MGI KPI Dashboard";
+  workbook.creator = "KPI Dashboard";
   workbook.created = new Date();
 
   addCapaSheet(workbook, dataset);

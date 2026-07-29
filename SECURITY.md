@@ -25,11 +25,11 @@ Se você encontrar um problema de segurança neste repositório ou no ambiente e
 
 Esta política cobre:
 
-- código deste repositório (`mgi-kpi-dashboard`);
+- código deste repositório (`kpi-dashboard`);
 - rotas de API expostas pelo app (ex.: `/api/revalidate`, exportações, importação);
 - autenticação e autorização via Supabase Auth / RLS.
 
-Problemas no **Supabase**, **GitLab** ou no pipeline Python [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) devem ser reportados pelo mesmo canal; encaminharemos ao repositório adequado quando necessário.
+Problemas no **Supabase**, **GitLab** ou no pipeline Python [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline) devem ser reportados pelo mesmo canal; encaminharemos ao repositório adequado quando necessário.
 
 ## O que não incluir no reporte público
 

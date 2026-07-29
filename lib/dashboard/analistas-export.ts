@@ -64,7 +64,7 @@ export async function buildAnalistaRelatorioWorkbook(
   const { kpis, por_modulo, por_parceiro, issues } = snapshot;
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "MGI KPI Dashboard";
+  workbook.creator = "KPI Dashboard";
   workbook.created = new Date();
 
   // ---------------------------------------------------------------- Painel

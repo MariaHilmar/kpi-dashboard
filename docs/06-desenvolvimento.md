@@ -1,6 +1,6 @@
 # Desenvolvimento
 
-Guia para contribuir e estender o **mgi-kpi-dashboard**.
+Guia para contribuir e estender o **kpi-dashboard**.
 
 ## Scripts npm
 
@@ -166,7 +166,7 @@ Dispara em push/PR para `main`:
 
 Badge no README aponta para este workflow. Guia de contribuição: [CONTRIBUTING.md](../CONTRIBUTING.md).
 
-**SonarCloud:** análise automática em [sonarcloud.io](https://sonarcloud.io/project/overview?id=MariaHilmar_mgi-kpi-dashboard) (`.sonarcloud.properties`).
+**SonarCloud:** análise automática em [sonarcloud.io](https://sonarcloud.io/project/overview?id=MariaHilmar_kpi-dashboard) (`.sonarcloud.properties`).
 
 **Dependabot:** `.github/dependabot.yml` — atualizações semanais de npm e GitHub Actions.
 
@@ -238,4 +238,4 @@ Opcional: Supabase CLI com banco local para desenvolvimento offline. Migrations 
 | Módulos MGI | `docs/MÓDULOS_RESUMO_EXECUTIVO.txt` |
 | Roadmap BI | `docs/ROADMAP_EXPANSÃO_PIPELINE.md` Fase 3 |
 
-O README na raiz do repo (`mgi-kpi-dashboard/README.md`) é o ponto de entrada rápido; esta pasta `docs/` é a documentação de sistema detalhada.
+O README na raiz do repo (`kpi-dashboard/README.md`) é o ponto de entrada rápido; esta pasta `docs/` é a documentação de sistema detalhada.

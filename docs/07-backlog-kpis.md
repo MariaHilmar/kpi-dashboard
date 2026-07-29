@@ -1,6 +1,6 @@
 # Backlog de KPIs — priorização para implementação
 
-Backlog derivado do blueprint "Dashboards GitLab + Power BI" (acompanhamento ágil) comparado com o estado atual do `mgi-kpi-dashboard`.
+Backlog derivado do blueprint "Dashboards GitLab + Power BI" (acompanhamento ágil) comparado com o estado atual do `kpi-dashboard`.
 
 **Critério de entrada de um KPI** (todos devem ser "sim"):
 

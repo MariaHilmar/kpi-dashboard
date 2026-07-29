@@ -25,7 +25,7 @@
 | CI (GitHub Actions) | Linux (`ubuntu-latest`) | Runner padrão para projetos Node — não substitui o SO de dev |
 | Produção (Vercel) | Linux serverless | Região `gru1`; por isso `optionalDependencies` inclui `@resvg/resvg-js-linux-x64-gnu` (gráficos PNG no servidor) |
 
-O repositório [`mgi-kpi-pipeline`](https://github.com/MariaHilmar/mgi-kpi-pipeline) (Python, coleta GitLab) é **separado** e pode rodar em WSL/Linux; isso não faz parte do setup deste dashboard web.
+O repositório [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline) (Python, coleta GitLab) é **separado** e pode rodar em WSL/Linux; isso não faz parte do setup deste dashboard web.
 
 ## Diagrama de camadas
 
@@ -51,7 +51,7 @@ flowchart TB
     Tables[issues / releases / sync_runs / milestones]
   end
 
-  subgraph pipeline [mgi-kpi-pipeline Python]
+  subgraph pipeline [kpi-pipeline Python]
     Sync[sync_supabase.py]
   end
 
@@ -71,7 +71,7 @@ flowchart TB
 ## Estrutura de diretórios
 
 ```
-mgi-kpi-dashboard/
+kpi-dashboard/
 ├── app/
 │   ├── layout.tsx                 # Layout raiz (fontes, metadados)
 │   ├── api/
@@ -233,7 +233,7 @@ Fetchers registram erros no console (`console.error`) e retornam arrays vazios o
 
 ## Integração com o pipeline
 
-O pipeline Python vive no repositório **mgi-kpi-pipeline** (ambiente próprio; pode usar WSL/Linux). Este dashboard apenas **lê** o Supabase após o sync.
+O pipeline Python vive no repositório **kpi-pipeline** (ambiente próprio; pode usar WSL/Linux). Este dashboard apenas **lê** o Supabase após o sync.
 
 | Responsabilidade | Componente |
 |------------------|------------|

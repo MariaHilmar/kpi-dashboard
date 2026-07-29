@@ -239,7 +239,7 @@ export async function buildExecutivoRelatorioDocx(
   );
 
   const doc = new Document({
-    creator: "MGI KPI Dashboard",
+    creator: "KPI Dashboard",
     title: "Dashboard Executivo",
     sections: [
       {

@@ -23,7 +23,7 @@ O **código atual** em `main` já foi sanitizado (PR #52). Porém commits antigo
 2. **Backup espelho** do repositório remoto:
 
 ```powershell
-git clone --mirror https://github.com/MariaHilmar/mgi-kpi-dashboard.git seu-workspace\mgi-kpi-dashboard-backup.git
+git clone --mirror https://github.com/MariaHilmar/kpi-dashboard.git seu-workspace\kpi-dashboard-backup.git
 ```
 
 3. Python 3 com `git-filter-repo`:
@@ -39,7 +39,7 @@ python -m pip install --user git-filter-repo
 ### 1. Simular
 
 ```powershell
-cd seu-workspace\mgi-kpi-dashboard
+cd seu-workspace\kpi-dashboard
 git checkout main
 git pull origin main
 
@@ -108,7 +108,7 @@ Não foram encontradas chaves reais no histórico. Rotacionar a **anon key** no 
 ## Execução manual (alternativa)
 
 ```powershell
-cd seu-workspace\mgi-kpi-dashboard
+cd seu-workspace\kpi-dashboard
 git checkout main
 git pull origin main
 
@@ -124,7 +124,7 @@ git filter-repo --force `
   --replace-text replacements.txt `
   --commit-callback "$(Get-Content scripts/git-filter-commit-callback.py -Raw)"
 
-git remote add origin https://github.com/MariaHilmar/mgi-kpi-dashboard.git
+git remote add origin https://github.com/MariaHilmar/kpi-dashboard.git
 git push origin --force --all
 git push origin --force --tags
 ```
@@ -139,6 +139,6 @@ git push origin --force --tags
 
 Isso **não** apaga commits antigos — apenas o estado atual.
 
-## Repositório mgi-kpi-pipeline
+## Repositório kpi-pipeline
 
 Auditoria separada: sem tokens nem e-mails reais nas migrations. Reescrita de histórico não necessária para credenciais.

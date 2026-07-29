@@ -13,7 +13,7 @@ export function SetupBanner({ message }: Props) {
       <ol className="mt-3 list-decimal space-y-1 pl-5">
         <li>Execute as migrations em supabase/migrations/ no SQL Editor do Supabase.</li>
         <li>Configure as variáveis de ambiente em .env e web/.env.local.</li>
-        <li>Rode python mgi/sync_supabase.py para carregar a aba Dados.</li>
+        <li>Execute o pipeline (sync_supabase.py) para carregar os dados no Supabase.</li>
       </ol>
     </div>
   );

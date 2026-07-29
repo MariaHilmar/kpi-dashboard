@@ -8,7 +8,7 @@ import { getSessionUser } from "@/lib/supabase/session";
 
 export function HeaderSkeleton() {
   return (
-    <div className="sticky top-0 z-50 h-14 animate-pulse bg-govbr-blue/80" aria-hidden />
+    <div className="sticky top-0 z-50 h-16 animate-pulse bg-govbr-blue/80" aria-hidden />
   );
 }
 

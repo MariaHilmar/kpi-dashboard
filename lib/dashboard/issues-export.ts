@@ -62,7 +62,7 @@ function formatExportDate(value: string | null): string {
 /** Gera workbook Excel com abas Dados (todas as colunas) e Gráficos (pizzas). */
 export async function buildIssuesExportWorkbook(rows: IssueRow[]): Promise<ExcelJS.Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "MGI KPI Dashboard";
+  workbook.creator = "KPI Dashboard";
   workbook.created = new Date();
 
   const dados = workbook.addWorksheet("Dados");

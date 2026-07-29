@@ -31,8 +31,8 @@ SCHEMA_HEADER_RULE = "-- =======================================================
 MIGRATION_SEPARATOR = "-- -----------------------------------------------------------------------------"
 ENV_CANDIDATES = (
     WORKSPACE_DIR / ".env",
-    WORKSPACE_DIR / "mgi-kpi-pipeline" / ".env",
-    WORKSPACE_DIR / "mgi-kpi-dashboard" / ".env.local",
+    WORKSPACE_DIR / "kpi-pipeline" / ".env",
+    WORKSPACE_DIR / "kpi-dashboard" / ".env.local",
 )
 
 DB_URL_KEYS = (

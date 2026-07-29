@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MGI · Dashboard Kpis Projetos",
+  title: "Dashboard Kpis Projetos",
   description:
-    "Painel de acompanhamento de issues GitLab — KPIs, parceria, área, repositório e qualidade. Padrão Digital de Governo (gov.br).",
+    "Painel de acompanhamento de issues GitLab — KPIs, parceria, área, repositório e qualidade.",
 };
 
 export default function RootLayout({
