@@ -6,7 +6,7 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 3
     labels:
       - dependencies
     groups:
@@ -20,6 +20,9 @@ updates:
           - "@vitest/*"
           - "@testing-library/*"
           - jsdom
+      npm-other:
+        patterns:
+          - "*"
     ignore:
       - dependency-name: typescript
         update-types:
@@ -33,6 +36,10 @@ updates:
     schedule:
       interval: weekly
       day: monday
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     labels:
       - dependencies
+    groups:
+      github-actions:
+        patterns:
+          - "*"
