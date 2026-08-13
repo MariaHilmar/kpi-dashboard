@@ -22,7 +22,7 @@
     "@govbr-ds/core": "^3.7.0",
     "@resvg/resvg-js": "^2.6.2",
     "@supabase/ssr": "^0.12.4",
-    "@supabase/supabase-js": "^2.110.8",
+    "@supabase/supabase-js": "^2.112.2",
     "@vintproykt/dejavu-fonts-ttf": "^2.37.0",
     "docx": "^9.7.1",
     "exceljs": "^4.4.0",
