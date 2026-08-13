@@ -6,7 +6,7 @@ Obrigado pelo interesse no **MGI KPI Dashboard**. Este guia resume o fluxo para 
 
 1. Leia o [README](README.md) e a documentação em [`docs/`](docs/README.md).
 2. Configure o ambiente local (`.env.local` a partir de `.env.local.example`).
-3. Use **Node.js 20+** (`engines` em `package.json`).
+3. Use **Node.js 22+** (`engines` em `package.json`). O grupo de testes (`jsdom` 30, `vitest` 4) exige Node 22 ou superior.
 
 ## Fluxo de trabalho
 
