@@ -8,7 +8,7 @@ Documentação do sistema **kpi-dashboard**: dashboard web de KPIs, alertas e is
 |-----------|----------|
 | [01-visao-geral.md](./01-visao-geral.md) | Propósito, ecossistema MGI, paridade com Excel legado |
 | [02-arquitetura.md](./02-arquitetura.md) | Stack, fluxo de dados, renderização SSR, cache e streaming |
-| [03-paginas-funcionalidades.md](./03-paginas-funcionalidades.md) | Rotas, gráficos, KPIs, drill-down e filtros |
+| [03-paginas-funcionalidades.md](./03-paginas-funcionalidades.md) | Rotas, gráficos, KPIs, drill-down, filtros e páginas ocultas (MGI) |
 | [04-dados-supabase.md](./04-dados-supabase.md) | Schema Postgres, RPCs, views e contrato de filtros |
 | [05-setup-deploy.md](./05-setup-deploy.md) | Ambiente local, variáveis, Supabase, Vercel |
 | [06-desenvolvimento.md](./06-desenvolvimento.md) | Estrutura de código, testes, CI e convenções |
@@ -16,8 +16,9 @@ Documentação do sistema **kpi-dashboard**: dashboard web de KPIs, alertas e is
 | [08-autenticacao.md](./08-autenticacao.md) | Login, cadastro, Minha conta e sessão (Supabase Auth) |
 | [09-admin-usuarios.md](./09-admin-usuarios.md) | CRUD de usuários (somente admin) |
 | [10-identidades-gitlab.md](./10-identidades-gitlab.md) | Vínculo issue ↔ usuário por ID GitLab, sync e backfill |
-| [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) | Relatório Kanban: CFD, throughput, lead time, WIP, APIs `/api/reports/flow/*` |
-| [12-importar-dados.md](./12-importar-dados.md) | Importação Planning Poker (Excel/CSV) — story points e campos de sprint |
+| [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) | Relatório Kanban (`/fluxo`, **oculto na MGI**): CFD, throughput, lead time, WIP |
+| [12-importar-dados.md](./12-importar-dados.md) | Importação Planning Poker (Excel/CSV) - story points e campos de sprint |
+| [13-relatorio-milestone.md](./13-relatorio-milestone.md) | Relatório milestone / sprint / roadmap (**ocultos na MGI**) |
 
 ## Documentação relacionada no workspace
 
@@ -44,4 +45,4 @@ Material de contexto em `seu-workspace\docs`:
 
 ---
 
-**Última atualização:** 2026-07-03
+**Última atualização:** 2026-08-21

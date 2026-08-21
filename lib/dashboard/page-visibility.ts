@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-/** Páginas ocultas do menu; acesso direto redireciona para a home. */
+/** Páginas ocultas do menu (não utilizadas na MGI); acesso direto redireciona para a home. */
 export const HIDDEN_DASHBOARD_PAGE_HREFS = new Set([
   "/fluxo",
   "/milestone",
