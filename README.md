@@ -194,10 +194,12 @@ Documentação detalhada: [docs/README.md](docs/README.md).
 
 ## Deploy (Vercel)
 
-1. Conecte o repositório GitHub `MariaHilmar/kpi-dashboard`
+1. Conecte o repositório GitHub [`MariaHilmar/kpi-dashboard`](https://github.com/MariaHilmar/kpi-dashboard)
 2. Configure as variáveis de ambiente (`NEXT_PUBLIC_SUPABASE_*`, `REVALIDATE_SECRET`)
 3. Framework: **Next.js** (região `gru1` via `vercel.json`)
 4. Deploy de produção apenas na branch `main`
+
+Guias: [TUTORIAL-IMPLANTACAO.md](docs/TUTORIAL-IMPLANTACAO.md) e [MIGRAR-PRODUCAO.md](docs/MIGRAR-PRODUCAO.md). Pipeline e `.bat`: [kpi-pipeline](https://github.com/MariaHilmar/kpi-pipeline).
 
 ---
 

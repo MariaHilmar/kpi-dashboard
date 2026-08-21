@@ -7,6 +7,8 @@ import {
   rpcFilterArgs,
   rpcFilterArgsForMergeadasPivot,
   rpcFilterArgsIgnoringSprintAndPeriod,
+  moduloAreaPairsFromAreasPorModulo,
+  parseAreasPorModulo,
   sortFilterOptions,
   sortSprintOptions,
 } from "@/lib/dashboard/filters";
@@ -38,6 +40,7 @@ import type {
   MergeadaPivotRow,
   MergeadaPorEpico,
   MergeadaPorPeriodo,
+  ModuloAreaPair,
   TopLeadTime,
 } from "@/types/database";
 
@@ -423,8 +426,44 @@ async function _fetchQualidadeInner(filters: DashboardFilters): Promise<ChartPoi
 
 // --- consultas a views/tabelas ----------------------------------------------
 
+const MODULO_AREA_PAIRS_PAGE_SIZE = 1000;
+
+async function fetchAllModuloAreaPairs(client: DbClient): Promise<ModuloAreaPair[]> {
+  const all: ModuloAreaPair[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await client
+      .from("v_modulo_area_pairs")
+      .select("modulo,area")
+      .order("modulo")
+      .order("area")
+      .range(offset, offset + MODULO_AREA_PAIRS_PAGE_SIZE - 1);
+
+    if (error) {
+      console.error("v_modulo_area_pairs", error.message);
+      break;
+    }
+
+    const rows = (data ?? []) as DbRow[];
+    if (rows.length === 0) break;
+
+    for (const row of rows) {
+      all.push({
+        modulo: str(row.modulo, NAO_INFORMADO),
+        area: str(row.area, NAO_INFORMADO),
+      });
+    }
+
+    if (rows.length < MODULO_AREA_PAIRS_PAGE_SIZE) break;
+    offset += MODULO_AREA_PAIRS_PAGE_SIZE;
+  }
+
+  return all;
+}
+
 export const fetchFilterOptions = cachedFetch(
-  "filter-options",
+  "filter-options-v2",
   async (): Promise<FilterOptions> => {
     const empty: FilterOptions = {
       modulos: [TODOS],
@@ -440,15 +479,13 @@ export const fetchFilterOptions = cachedFetch(
       autores: [TODOS],
       anos: [],
       moduloAreaPairs: [],
+      areasPorModulo: {},
     };
 
     const supabase = createStaticSupabase();
     if (!supabase) return empty;
 
-    const [{ data, error }, pairsResult] = await Promise.all([
-      supabase.from("v_filter_options_full").select("*").maybeSingle(),
-      supabase.from("v_modulo_area_pairs").select("modulo,area"),
-    ]);
+    const { data, error } = await supabase.from("v_filter_options_full").select("*").maybeSingle();
 
     if (error || !data) return empty;
 
@@ -460,10 +497,19 @@ export const fetchFilterOptions = cachedFetch(
         ? (row[key] as unknown[]).map(Number).filter((n) => Number.isFinite(n))
         : [];
 
-    const moduloAreaPairs = ((pairsResult.data ?? []) as DbRow[]).map((p) => ({
-      modulo: str(p.modulo, NAO_INFORMADO),
-      area: str(p.area, NAO_INFORMADO),
-    }));
+    const areasPorModulo = parseAreasPorModulo(row.areas_por_modulo);
+    const pairsFromJson = moduloAreaPairsFromAreasPorModulo(areasPorModulo);
+    const moduloAreaPairs =
+      pairsFromJson.length > 0 ? pairsFromJson : await fetchAllModuloAreaPairs(supabase);
+
+    if (Object.keys(areasPorModulo).length === 0 && moduloAreaPairs.length > 0) {
+      for (const pair of moduloAreaPairs) {
+        if (!areasPorModulo[pair.modulo]) areasPorModulo[pair.modulo] = [];
+        if (!areasPorModulo[pair.modulo].includes(pair.area)) {
+          areasPorModulo[pair.modulo].push(pair.area);
+        }
+      }
+    }
 
     return {
       modulos: sortFilterOptions(arr("modulos")),
@@ -479,6 +525,7 @@ export const fetchFilterOptions = cachedFetch(
       autores: sortFilterOptions(arr("autores")),
       anos: arrNum("anos"),
       moduloAreaPairs,
+      areasPorModulo,
     };
   },
 );

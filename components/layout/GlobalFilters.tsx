@@ -5,7 +5,13 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { PeriodFilterField } from "@/components/layout/PeriodFilterField";
 import { DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
-import { ensureFilterOption, parseFilters, sortFilterOptions } from "@/lib/dashboard/filters";
+import {
+  ensureFilterOption,
+  parseFilters,
+  resolveAreasForModulo,
+  resolveModulosForArea,
+  sortFilterOptions,
+} from "@/lib/dashboard/filters";
 import {
   defaultPeriodRange,
   formatPeriodContextLabelParts,
@@ -223,14 +229,13 @@ export function GlobalFilters({ options }: Props) {
 
   const moduloOptions = useMemo(() => {
     let list = options.modulos;
-    if (selectedArea !== "Todos") {
-      const relacionados = options.moduloAreaPairs
-        .filter((p) => p.area === selectedArea)
-        .map((p) => p.modulo);
-      list = sortFilterOptions(Array.from(new Set(relacionados)));
+    if (selectedArea !== TODOS) {
+      list = sortFilterOptions(
+        resolveModulosForArea(options.areasPorModulo, options.moduloAreaPairs, selectedArea),
+      );
     }
     return ensureFilterOption(list, selectedModulo);
-  }, [options.modulos, options.moduloAreaPairs, selectedArea, selectedModulo]);
+  }, [options.modulos, options.areasPorModulo, options.moduloAreaPairs, selectedArea, selectedModulo]);
 
   const epicoOptions = useMemo(() => {
     if (selectedModulo === TODOS) {
@@ -242,14 +247,13 @@ export function GlobalFilters({ options }: Props) {
 
   const areaOptions = useMemo(() => {
     let list = options.areas;
-    if (selectedModulo !== "Todos") {
-      const relacionadas = options.moduloAreaPairs
-        .filter((p) => p.modulo === selectedModulo)
-        .map((p) => p.area);
-      list = sortFilterOptions(Array.from(new Set(relacionadas)));
+    if (selectedModulo !== TODOS) {
+      list = sortFilterOptions(
+        resolveAreasForModulo(options.areasPorModulo, options.moduloAreaPairs, selectedModulo),
+      );
     }
     return ensureFilterOption(list, selectedArea);
-  }, [options.areas, options.moduloAreaPairs, selectedModulo, selectedArea]);
+  }, [options.areas, options.areasPorModulo, options.moduloAreaPairs, selectedModulo, selectedArea]);
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -270,23 +274,29 @@ export function GlobalFilters({ options }: Props) {
       if (name === "modulo") {
         const area = params.get("area");
         if (
-          value !== "Todos" &&
+          value !== TODOS &&
           area &&
-          !options.moduloAreaPairs.some((p) => p.modulo === value && p.area === area)
+          !resolveAreasForModulo(options.areasPorModulo, options.moduloAreaPairs, value).includes(
+            area,
+          )
         ) {
           params.delete("area");
         }
         const epico = params.get("epico");
-        if (value !== "Todos" && epico && epicoModulo(epico) !== value) {
+        if (value !== TODOS && epico && epicoModulo(epico) !== value) {
           params.delete("epico");
         }
       }
       if (name === "area") {
         const modulo = params.get("modulo");
         if (
-          value !== "Todos" &&
+          value !== TODOS &&
           modulo &&
-          !options.moduloAreaPairs.some((p) => p.area === value && p.modulo === modulo)
+          !resolveModulosForArea(
+            options.areasPorModulo,
+            options.moduloAreaPairs,
+            value,
+          ).includes(modulo)
         ) {
           params.delete("modulo");
         }

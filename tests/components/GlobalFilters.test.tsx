@@ -36,6 +36,10 @@ const options: FilterOptions = {
     { modulo: "PNCP", area: "PNCP" },
     { modulo: "Empenho", area: "Minuta de Empenho" },
   ],
+  areasPorModulo: {
+    PNCP: ["PNCP"],
+    Empenho: ["Minuta de Empenho"],
+  },
 };
 
 describe("GlobalFilters", () => {
@@ -89,6 +93,16 @@ describe("GlobalFilters", () => {
     const url = pushMock.mock.calls[1][0] as string;
     expect(url).toContain("modulo=PNCP");
     expect(url).not.toContain("area=");
+  });
+
+  it("filtra áreas pelo módulo selecionado", () => {
+    currentParams = "modulo=Empenho";
+    render(<GlobalFilters options={options} />);
+
+    const areaSelect = screen.getByLabelText("Área funcional");
+    const labels = Array.from(areaSelect.querySelectorAll("option"), (o) => o.textContent);
+
+    expect(labels).toEqual(["Todos", "Minuta de Empenho"]);
   });
 
   it("filtra épicos pelo módulo selecionado (prefixo [Módulo])", () => {

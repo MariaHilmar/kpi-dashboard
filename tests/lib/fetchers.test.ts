@@ -303,14 +303,17 @@ describe("fetchers", () => {
             repositorios: ["contratos_v2"],
             autores: ["Maria Silva", "Não informado"],
             anos: [2024, 2025],
+            areas_por_modulo: { PNCP: ["PNCP"] },
           },
           error: null,
         });
       }
       return {
-        select: vi.fn(async () => ({
-          data: [{ modulo: "PNCP", area: "PNCP" }],
-          error: null,
+        select: vi.fn(() => ({
+          range: vi.fn(async () => ({
+            data: [{ modulo: "PNCP", area: "PNCP" }],
+            error: null,
+          })),
         })),
       };
     });
@@ -322,6 +325,7 @@ describe("fetchers", () => {
     expect(options.modulos).toContain("PNCP");
     expect(options.sprints).toEqual(["Todos", "Sprint 10", "Sprint 2"]);
     expect(options.moduloAreaPairs).toEqual([{ modulo: "PNCP", area: "PNCP" }]);
+    expect(options.areasPorModulo).toEqual({ PNCP: ["PNCP"] });
     expect(options.autores[0]).toBe("Todos");
     expect(options.autores).toContain("Maria Silva");
     expect(options.anos).toEqual([2024, 2025]);

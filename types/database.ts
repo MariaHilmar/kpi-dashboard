@@ -139,6 +139,7 @@ export type FilterOptions = {
   autores: string[];
   anos: number[];
   moduloAreaPairs: ModuloAreaPair[];
+  areasPorModulo: Record<string, string[]>;
 };
 
 export type DashboardData = {

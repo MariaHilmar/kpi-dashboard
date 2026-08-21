@@ -51,7 +51,11 @@ export default async function IssuesPage({ searchParams }: DashboardPageProps) {
         subtitle="Busca livre por título, autor, responsável ou ID — respeitando os filtros globais."
       />
 
-      <IssuesToolbar autores={filterOptions.autores} exportHref={exportHref} />
+      <IssuesToolbar
+        autores={filterOptions.autores}
+        statuses={filterOptions.statuses}
+        exportHref={exportHref}
+      />
 
       <IssuesTable rows={result.rows} visibleColumns={visibleColumns} />
 

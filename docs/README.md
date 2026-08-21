@@ -19,6 +19,8 @@ Documentação do sistema **kpi-dashboard**: dashboard web de KPIs, alertas e is
 | [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) | Relatório Kanban (`/fluxo`, **oculto na MGI**): CFD, throughput, lead time, WIP |
 | [12-importar-dados.md](./12-importar-dados.md) | Importação Planning Poker (Excel/CSV) - story points e campos de sprint |
 | [13-relatorio-milestone.md](./13-relatorio-milestone.md) | Relatório milestone / sprint / roadmap (**ocultos na MGI**) |
+| [TUTORIAL-IMPLANTACAO.md](./TUTORIAL-IMPLANTACAO.md) | Implantacao: Supabase, Vercel, Railway ou pipeline local |
+| [MIGRAR-PRODUCAO.md](./MIGRAR-PRODUCAO.md) | Migrar contas para producao e agendar `.bat` |
 
 ## Documentação relacionada no workspace
 
