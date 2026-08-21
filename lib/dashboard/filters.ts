@@ -1,12 +1,11 @@
 import { NAO_INFORMADO, DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
-import type { ModuloAreaPair } from "@/types/database";
+import type { DashboardFilters, ModuloAreaPair } from "@/types/database";
 import {
   defaultPeriodRange,
   hasActiveGlobalPeriodFilter,
   PERIODO_TODOS,
   resolvePeriodDates,
 } from "@/lib/dashboard/period-filter";
-import type { DashboardFilters } from "@/types/database";
 
 export const DEFAULT_FILTERS: DashboardFilters = {
   modulo: TODOS,
@@ -238,34 +237,55 @@ export function buildModuloAreaIndex(pairs: ModuloAreaPair[]): Map<string, strin
 }
 
 /** Áreas do módulo selecionado (com fallback de comparação sem acento). */
-export function areasForModulo(index: Map<string, string[]>, modulo: string): string[] {
+function lookupAreasByModulo(
+  getAreas: (key: string) => string[] | undefined,
+  keys: Iterable<string>,
+  modulo: string,
+  normalize: boolean,
+): string[] {
   if (!modulo || modulo === TODOS) return [];
 
-  const direct = index.get(modulo);
-  if (direct?.length) return direct;
+  const finish = (areas: string[]) =>
+    normalize ? sortFilterOptions(areas).filter((area) => area !== TODOS) : areas;
+
+  const direct = getAreas(modulo);
+  if (direct?.length) return finish(direct);
 
   const target = normalizeFilterKey(modulo);
-  for (const [key, areas] of index) {
-    if (normalizeFilterKey(key) === target && areas.length > 0) return areas;
+  for (const key of keys) {
+    if (normalizeFilterKey(key) !== target) continue;
+    const areas = getAreas(key);
+    if (areas && areas.length > 0) return finish(areas);
   }
 
   return [];
 }
 
+export function areasForModulo(index: Map<string, string[]>, modulo: string): string[] {
+  return lookupAreasByModulo((key) => index.get(key), index.keys(), modulo, false);
+}
+
 /** Módulos que contêm a área selecionada (com fallback de comparação sem acento). */
-export function modulosForArea(index: Map<string, string[]>, area: string): string[] {
+function collectModulosForArea(
+  entries: Iterable<[string, string[]]>,
+  area: string,
+): string[] {
   if (!area || area === TODOS) return [];
 
   const modulos = new Set<string>();
   const target = normalizeFilterKey(area);
 
-  for (const [modulo, areas] of index) {
+  for (const [modulo, areas] of entries) {
     if (areas.includes(area) || areas.some((item) => normalizeFilterKey(item) === target)) {
       modulos.add(modulo);
     }
   }
 
   return sortFilterOptions(Array.from(modulos)).filter((modulo) => modulo !== TODOS);
+}
+
+export function modulosForArea(index: Map<string, string[]>, area: string): string[] {
+  return collectModulosForArea(index.entries(), area);
 }
 
 function parseJsonValue(raw: string): unknown {
@@ -332,21 +352,7 @@ export function areasForModuloFromMap(
   map: Record<string, string[]>,
   modulo: string,
 ): string[] {
-  if (!modulo || modulo === TODOS) return [];
-
-  const direct = map[modulo];
-  if (direct?.length) {
-    return sortFilterOptions(direct).filter((area) => area !== TODOS);
-  }
-
-  const target = normalizeFilterKey(modulo);
-  for (const [key, areas] of Object.entries(map)) {
-    if (normalizeFilterKey(key) === target && areas.length > 0) {
-      return sortFilterOptions(areas).filter((area) => area !== TODOS);
-    }
-  }
-
-  return [];
+  return lookupAreasByModulo((key) => map[key], Object.keys(map), modulo, true);
 }
 
 /** Resolve áreas do módulo: mapa jsonb → índice de pares (fallback). */
@@ -366,19 +372,8 @@ export function resolveModulosForArea(
   pairs: ModuloAreaPair[],
   area: string,
 ): string[] {
-  const fromMap = new Set<string>();
-  const target = normalizeFilterKey(area);
-
-  for (const [modulo, areas] of Object.entries(areasPorModulo)) {
-    if (areas.includes(area) || areas.some((item) => normalizeFilterKey(item) === target)) {
-      fromMap.add(modulo);
-    }
-  }
-
-  if (fromMap.size > 0) {
-    return sortFilterOptions(Array.from(fromMap)).filter((modulo) => modulo !== TODOS);
-  }
-
+  const fromMap = collectModulosForArea(Object.entries(areasPorModulo), area);
+  if (fromMap.length > 0) return fromMap;
   return modulosForArea(buildModuloAreaIndex(pairs), area);
 }
 
