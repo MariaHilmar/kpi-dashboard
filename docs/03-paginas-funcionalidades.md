@@ -8,18 +8,36 @@ A navegação é definida em `lib/navigation.ts` e reutilizada pela `Sidebar` (d
 |-------|------|-------|-----------|
 | Visão geral | `/` | Executivo | KPIs e visão consolidada |
 | Análise | `/temporal` | Análise Temporal | Criados × fechados × backlog |
-| Análise | `/fluxo` | Fluxo Kanban | CFD, throughput, lead time, WIP |
+| Análise | `/fluxo` | Fluxo Kanban | **Oculta** (não utilizada na MGI) |
 | Análise | `/detalhamento` | Detalhamento | Parceria, área, lead time, KPI por tipo |
 | Análise | `/qualidade` | Qualidade | Conformidade de preenchimento |
 | Análise | `/alertas` | Alertas | Sem épico/parceria + idade |
-| Operação | `/sprint` | Sprint Atual | Visão focada no sprint selecionado |
+| Operação | `/sprint` | Sprint Atual | **Oculta** (não utilizada na MGI) |
+| Operação | `/milestone` | Relatório Milestone (DEV) | **Oculta** (não utilizada na MGI) |
+| Operação | `/milestone/roadmap` | Roadmap PMO | **Oculta** (não utilizada na MGI) |
 | Operação | `/parcerias` | Parcerias | Relatório mensal por parceiro |
-| Operação | `/equipes` | Equipes & Devs | Volume, devs, merge em master |
+| Operação | `/equipes` | Equipes & Devs | **Oculta** (não utilizada na MGI) |
 | Operação | `/analistas` | Analistas | Relatório mensal de atividades |
 | Dados | `/issues` | Issues | Busca livre + tabela paginada |
 | Dados | `/importar-dados` | Importar Dados | Planning Poker — Excel/CSV |
 
 Rotas **sem filtros globais:** `/parcerias` e `/importar-dados` (`ConditionalGlobalFilters`).
+
+### Páginas ocultas (não utilizadas na MGI)
+
+As rotas abaixo **permanecem no código**, mas **não aparecem no menu**. Acesso direto redireciona para a home (`/`). Motivo: **não seriam utilizadas na MGI**.
+
+Lista em `lib/dashboard/page-visibility.ts` (`HIDDEN_DASHBOARD_PAGE_HREFS`):
+
+| Rota | Página |
+|------|--------|
+| `/fluxo` | Fluxo Kanban |
+| `/milestone` | Relatório Milestone (DEV) |
+| `/milestone/roadmap` | Roadmap PMO |
+| `/equipes` | Equipes & Devs |
+| `/sprint` | Sprint Atual |
+
+O código ainda descreve essas telas nas seções seguintes e em [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) / [13-relatorio-milestone.md](./13-relatorio-milestone.md), para quem for reativar ou remover o código depois.
 
 ---
 

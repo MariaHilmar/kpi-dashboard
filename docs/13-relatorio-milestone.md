@@ -1,6 +1,8 @@
 # Relatório Milestone (sprint)
 
-Página `/milestone` — relatório operacional por milestone GitLab (Sprint 89, 90, 91…).
+> **Oculto no produto MGI.** As rotas `/milestone`, `/milestone/roadmap` e `/sprint` não entram no menu e o acesso direto redireciona para a home. Motivo: **não seriam utilizadas na MGI**. O código permanece neste repositório.
+
+Página `/milestone` - relatório operacional por milestone GitLab (Sprint 89, 90, 91…).
 
 Depende de:
 

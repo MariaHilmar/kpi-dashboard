@@ -1,5 +1,11 @@
 # Setup e deploy
 
+Para implantacao ponta a ponta (Supabase, Vercel, Railway ou Windows com `.bat`): [TUTORIAL-IMPLANTACAO.md](./TUTORIAL-IMPLANTACAO.md).
+
+Para migrar contas de teste para **producao** e agendar os `.bat`: [MIGRAR-PRODUCAO.md](./MIGRAR-PRODUCAO.md).
+
+Os atalhos `.bat` ficam no repositorio [kpi-pipeline](https://github.com/MariaHilmar/kpi-pipeline).
+
 ## Pré-requisitos
 
 | Item | Versão / detalhe |

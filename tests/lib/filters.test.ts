@@ -2,10 +2,14 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_FILTERS,
+  areasForModulo,
+  buildModuloAreaIndex,
   commonArgs,
   dateArgs,
   ensureFilterOption,
   filtersToSearchParams,
+  moduloAreaPairsFromAreasPorModulo,
+  modulosForArea,
   parseFilters,
   resolveLatestSprint,
   rpcFilterArgsIgnoringSprintAndPeriod,
@@ -268,5 +272,41 @@ describe("ensureFilterOption", () => {
   it("inclui valor da URL ausente na lista de opcoes", () => {
     const options = ensureFilterOption(["Todos", "PNCP"], "Fiscalização");
     expect(options).toContain("Fiscalização");
+  });
+});
+
+describe("moduloAreaPairsFromAreasPorModulo", () => {
+  it("converte jsonb areas_por_modulo em pares", () => {
+    expect(
+      moduloAreaPairsFromAreasPorModulo({
+        Fornecedor: ["Cadastro", "Consulta"],
+        PNCP: ["PNCP"],
+      }),
+    ).toEqual([
+      { modulo: "Fornecedor", area: "Cadastro" },
+      { modulo: "Fornecedor", area: "Consulta" },
+      { modulo: "PNCP", area: "PNCP" },
+    ]);
+  });
+
+  it("aceita json serializado em string", () => {
+    const raw = JSON.stringify({ Fiscalização: ["Checklist", "Contrato"] });
+    expect(moduloAreaPairsFromAreasPorModulo(raw)).toEqual([
+      { modulo: "Fiscalização", area: "Checklist" },
+      { modulo: "Fiscalização", area: "Contrato" },
+    ]);
+  });
+});
+
+describe("buildModuloAreaIndex", () => {
+  it("retorna áreas do módulo selecionado", () => {
+    const index = buildModuloAreaIndex([
+      { modulo: "Fornecedor", area: "Cadastro" },
+      { modulo: "Fornecedor", area: "Consulta" },
+      { modulo: "PNCP", area: "PNCP" },
+    ]);
+
+    expect(areasForModulo(index, "Fornecedor")).toEqual(["Cadastro", "Consulta"]);
+    expect(modulosForArea(index, "PNCP")).toEqual(["PNCP"]);
   });
 });

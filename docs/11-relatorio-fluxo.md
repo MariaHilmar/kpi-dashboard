@@ -1,5 +1,7 @@
 # Relatório de fluxo / Kanban
 
+> **Oculto no produto MGI.** A rota `/fluxo` não entra no menu e o acesso direto redireciona para a home. Motivo: **não seria utilizada na MGI**. O código e as APIs `/api/reports/flow/*` permanecem neste repositório.
+
 Relatório gerencial de fluxo baseado nas issues sincronizadas do GitLab (`public.issues`). **Não utiliza Story Points nem estimativas.**
 
 ## Endpoints REST
@@ -162,6 +164,6 @@ npm test -- tests/lib/flow-stages.test.ts tests/lib/flow-report.test.ts tests/li
 
 ## Página do dashboard
 
-Rota: **`/fluxo`** — menu **Análise → Fluxo Kanban**.
+Rota: **`/fluxo`** (oculta no menu; não utilizada na MGI). Historicamente: **Análise → Fluxo Kanban**.
 
 Componentes em `components/dashboard/fluxo/`; dados via `lib/dashboard/flow-report.ts` (RPCs live).

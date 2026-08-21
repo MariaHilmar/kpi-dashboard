@@ -1,10 +1,12 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
+import { MultiSelectField } from "@/components/ui/MultiSelectField";
 import { FAIXAS_IDADE_ISSUES, TODOS } from "@/lib/dashboard/constants";
 import { ensureFilterOption } from "@/lib/dashboard/filters";
+import { formatIssueStatusDisplayLabel } from "@/lib/dashboard/issue-status";
 
 import { IssuesColumnToggle } from "./IssuesColumnToggle";
 
@@ -21,6 +23,7 @@ const SLAS = [
 
 type Props = {
   autores: string[];
+  statuses: string[];
   exportHref: string;
 };
 
@@ -30,13 +33,13 @@ function LabeledSelect({
   value,
   options,
   onChange,
-}: {
+}: Readonly<{
   label: string;
   name: string;
   value: string;
   options: { value: string; label: string }[];
   onChange: (value: string) => void;
-}) {
+}>) {
   return (
     <label className="flex flex-col gap-1 text-xs">
       <span className="font-medium text-slate-600">{label}</span>
@@ -57,7 +60,7 @@ function LabeledSelect({
   );
 }
 
-export function IssuesToolbar({ autores, exportHref }: Props) {
+export function IssuesToolbar({ autores, statuses, exportHref }: Readonly<Props>) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -67,6 +70,7 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
 
   const estadoValue = searchParams.get("estado") ?? TODOS;
   const faixaValue = searchParams.get("faixaIdade") ?? TODOS;
+  const statusValue = searchParams.get("status") ?? TODOS;
 
   const faixaOptions = ensureFilterOption(
     [...FAIXAS_IDADE_ISSUES],
@@ -75,6 +79,15 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
     value,
     label: value === TODOS ? "Todas as faixas" : value,
   }));
+
+  const statusOptions = useMemo(() => {
+    const selected = statusValue === TODOS ? [] : statusValue.split(",").map((item) => item.trim());
+    let list = [...statuses];
+    for (const item of selected) {
+      list = ensureFilterOption(list, item);
+    }
+    return list;
+  }, [statuses, statusValue]);
 
   function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
@@ -98,27 +111,6 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
     pushParams((params) => {
       if (value === TODOS || value === "") params.delete(key);
       else params.set(key, value);
-    });
-  }
-
-  function applyDateRange(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const de = String(formData.get("criadoDe") ?? "");
-    const ate = String(formData.get("criadoAte") ?? "");
-
-    pushParams((params) => {
-      if (de) params.set("criadoDe", de);
-      else params.delete("criadoDe");
-      if (ate) params.set("criadoAte", ate);
-      else params.delete("criadoAte");
-    });
-  }
-
-  function clearDateRange() {
-    pushParams((params) => {
-      params.delete("criadoDe");
-      params.delete("criadoAte");
     });
   }
 
@@ -190,48 +182,14 @@ export function IssuesToolbar({ autores, exportHref }: Props) {
           onChange={(value) => setParam("sla", value)}
         />
 
-        <form onSubmit={applyDateRange} className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-slate-600">Criado de</span>
-            <input
-              type="date"
-              name="criadoDe"
-              aria-label="Data inicial de criação"
-              defaultValue={searchParams.get("criadoDe") ?? ""}
-              key={`criadoDe-${searchParams.get("criadoDe") ?? ""}`}
-              className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
-            />
-          </label>
-
-          <label className="flex flex-col gap-1 text-xs">
-            <span className="font-medium text-slate-600">Criado até</span>
-            <input
-              type="date"
-              name="criadoAte"
-              aria-label="Data final de criação"
-              defaultValue={searchParams.get("criadoAte") ?? ""}
-              key={`criadoAte-${searchParams.get("criadoAte") ?? ""}`}
-              className="rounded-lg border border-slate-300 px-2 py-1.5 text-sm text-slate-900"
-            />
-          </label>
-
-          <button
-            type="submit"
-            className="rounded-button border border-govbr-blue px-3 py-1.5 text-sm font-medium text-govbr-blue hover:bg-blue-50"
-          >
-            Aplicar período
-          </button>
-        </form>
-
-        {(searchParams.get("criadoDe") || searchParams.get("criadoAte")) && (
-          <button
-            type="button"
-            onClick={clearDateRange}
-            className="rounded-button px-2 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700"
-          >
-            Limpar datas de criação
-          </button>
-        )}
+        <MultiSelectField
+          label="Status"
+          name="status"
+          value={statusValue}
+          options={statusOptions}
+          formatLabel={formatIssueStatusDisplayLabel}
+          onChange={setParam}
+        />
 
         {(searchParams.get("fechadoDe") ||
           searchParams.get("fechadoAte") ||

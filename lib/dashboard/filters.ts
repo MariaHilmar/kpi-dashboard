@@ -1,11 +1,11 @@
 import { NAO_INFORMADO, DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
+import type { DashboardFilters, ModuloAreaPair } from "@/types/database";
 import {
   defaultPeriodRange,
   hasActiveGlobalPeriodFilter,
   PERIODO_TODOS,
   resolvePeriodDates,
 } from "@/lib/dashboard/period-filter";
-import type { DashboardFilters } from "@/types/database";
 
 export const DEFAULT_FILTERS: DashboardFilters = {
   modulo: TODOS,
@@ -208,6 +208,173 @@ export function filtersToSearchParams(
     params.set(key, String(value));
   }
   return params;
+}
+
+function normalizeFilterKey(value: string): string {
+  return value.trim().toLocaleLowerCase("pt-BR");
+}
+
+/** Índice módulo → áreas a partir dos pares carregados do banco. */
+export function buildModuloAreaIndex(pairs: ModuloAreaPair[]): Map<string, string[]> {
+  const grouped = new Map<string, Set<string>>();
+
+  for (const { modulo, area } of pairs) {
+    const moduloKey = modulo.trim();
+    const areaKey = area.trim();
+    if (!moduloKey || !areaKey) continue;
+    if (!grouped.has(moduloKey)) grouped.set(moduloKey, new Set());
+    grouped.get(moduloKey)!.add(areaKey);
+  }
+
+  const index = new Map<string, string[]>();
+  for (const [modulo, areas] of grouped) {
+    index.set(
+      modulo,
+      sortFilterOptions(Array.from(areas)).filter((area) => area !== TODOS),
+    );
+  }
+  return index;
+}
+
+/** Áreas do módulo selecionado (com fallback de comparação sem acento). */
+function lookupAreasByModulo(
+  getAreas: (key: string) => string[] | undefined,
+  keys: Iterable<string>,
+  modulo: string,
+  normalize: boolean,
+): string[] {
+  if (!modulo || modulo === TODOS) return [];
+
+  const finish = (areas: string[]) =>
+    normalize ? sortFilterOptions(areas).filter((area) => area !== TODOS) : areas;
+
+  const direct = getAreas(modulo);
+  if (direct?.length) return finish(direct);
+
+  const target = normalizeFilterKey(modulo);
+  for (const key of keys) {
+    if (normalizeFilterKey(key) !== target) continue;
+    const areas = getAreas(key);
+    if (areas && areas.length > 0) return finish(areas);
+  }
+
+  return [];
+}
+
+export function areasForModulo(index: Map<string, string[]>, modulo: string): string[] {
+  return lookupAreasByModulo((key) => index.get(key), index.keys(), modulo, false);
+}
+
+/** Módulos que contêm a área selecionada (com fallback de comparação sem acento). */
+function collectModulosForArea(
+  entries: Iterable<[string, string[]]>,
+  area: string,
+): string[] {
+  if (!area || area === TODOS) return [];
+
+  const modulos = new Set<string>();
+  const target = normalizeFilterKey(area);
+
+  for (const [modulo, areas] of entries) {
+    if (areas.includes(area) || areas.some((item) => normalizeFilterKey(item) === target)) {
+      modulos.add(modulo);
+    }
+  }
+
+  return sortFilterOptions(Array.from(modulos)).filter((modulo) => modulo !== TODOS);
+}
+
+export function modulosForArea(index: Map<string, string[]>, area: string): string[] {
+  return collectModulosForArea(index.entries(), area);
+}
+
+function parseJsonValue(raw: string): unknown {
+  try {
+    return JSON.parse(raw) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+/** Normaliza `areas_por_modulo` (jsonb/string) para mapa módulo → áreas. */
+export function parseAreasPorModulo(raw: unknown): Record<string, string[]> {
+  let parsed: unknown = raw;
+  if (typeof parsed === "string") {
+    parsed = parseJsonValue(parsed);
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return {};
+  }
+
+  const result: Record<string, string[]> = {};
+  for (const [modulo, areasRaw] of Object.entries(parsed as Record<string, unknown>)) {
+    const moduloKey = String(modulo).trim();
+    if (!moduloKey) continue;
+
+    let areasValue: unknown = areasRaw;
+    if (typeof areasValue === "string") {
+      areasValue = parseJsonValue(areasValue);
+    }
+    if (!Array.isArray(areasValue)) continue;
+
+    const areas = areasValue
+      .map((area) => String(area).trim())
+      .filter((area) => area.length > 0);
+    if (areas.length > 0) result[moduloKey] = areas;
+  }
+
+  return result;
+}
+
+/** Converte mapa módulo → áreas em pares para compatibilidade com helpers legados. */
+export function moduloAreaPairsFromAreasPorModulo(
+  areasPorModulo: unknown,
+): ModuloAreaPair[] {
+  const map =
+    areasPorModulo &&
+    typeof areasPorModulo === "object" &&
+    !Array.isArray(areasPorModulo) &&
+    !("areas_por_modulo" in (areasPorModulo as object))
+      ? (areasPorModulo as Record<string, string[]>)
+      : parseAreasPorModulo(areasPorModulo);
+
+  const pairs: ModuloAreaPair[] = [];
+  for (const [modulo, areas] of Object.entries(map)) {
+    for (const area of areas) {
+      pairs.push({ modulo, area });
+    }
+  }
+  return pairs;
+}
+
+/** Áreas de um módulo a partir do mapa `areas_por_modulo`. */
+export function areasForModuloFromMap(
+  map: Record<string, string[]>,
+  modulo: string,
+): string[] {
+  return lookupAreasByModulo((key) => map[key], Object.keys(map), modulo, true);
+}
+
+/** Resolve áreas do módulo: mapa jsonb → índice de pares (fallback). */
+export function resolveAreasForModulo(
+  areasPorModulo: Record<string, string[]>,
+  pairs: ModuloAreaPair[],
+  modulo: string,
+): string[] {
+  const fromMap = areasForModuloFromMap(areasPorModulo, modulo);
+  if (fromMap.length > 0) return fromMap;
+  return areasForModulo(buildModuloAreaIndex(pairs), modulo);
+}
+
+/** Resolve módulos da área: mapa jsonb → índice de pares (fallback). */
+export function resolveModulosForArea(
+  areasPorModulo: Record<string, string[]>,
+  pairs: ModuloAreaPair[],
+  area: string,
+): string[] {
+  const fromMap = collectModulosForArea(Object.entries(areasPorModulo), area);
+  if (fromMap.length > 0) return fromMap;
+  return modulosForArea(buildModuloAreaIndex(pairs), area);
 }
 
 /** Garante que o valor selecionado na URL apareça nas opções do select. */
