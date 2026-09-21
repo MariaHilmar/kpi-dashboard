@@ -115,7 +115,7 @@ git pull origin main
 # replacements.txt (UTF-8)
 # literal:seu-workspace==>seu-workspace
 # literal:seu-workspace==>seu-workspace
-# literal:\\wsl.localhost\Ubuntu\root\MGI\==>seu-caminho-wsl-removido\
+# literal:\\wsl.localhost\Ubuntu\root\kpi\==>seu-caminho-wsl-removido\
 
 git filter-repo --force `
   --invert-paths `

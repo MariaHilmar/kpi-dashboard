@@ -58,7 +58,7 @@ function Ensure-GitFilterRepo {
 }
 
 function New-ReplacementsFile {
-    $file = Join-Path $env:TEMP "mgi-dashboard-history-replacements.txt"
+    $file = Join-Path $env:TEMP "kpi-dashboard-history-replacements.txt"
     @(
         "literal:seu-workspace==>seu-workspace"
         "literal:seu-workspace==>seu-workspace"
@@ -105,7 +105,7 @@ if ($currentBranch -ne "main" -and -not $Force) {
 Write-Step "O que será removido/substituído em TODOS os commits"
 Write-Host @"
   Paths removidos:
-    - docs/analise/     (diagnósticos internos MGI, caminhos WSL)
+    - docs/analise/     (diagnósticos internos, caminhos WSL)
     - tmp-*             (37 artefatos de debug na raiz)
 
   Substituições em arquivos restantes:

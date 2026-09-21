@@ -18,7 +18,7 @@ SET standard_conforming_strings = on;
 -- migration: 001_initial_schema.sql
 -- -----------------------------------------------------------------------------
 
--- MGI Dashboard Web — schema inicial (aba Dados + agregações)
+-- KPI Dashboard Web — schema inicial (aba Dados + agregações)
 
 create extension if not exists "pgcrypto";
 
@@ -1055,7 +1055,7 @@ grant select on public.v_modulo_area_pairs to anon, authenticated, service_role;
 --   (c) Remover objetos mortos substituídos pelas migrations 003/005.
 --
 -- Esta migration NÃO altera assinaturas de função nem remove colunas usadas,
--- então o app (mgi-kpi-dashboard) e o pipeline (sync_supabase.py) continuam
+-- então o app (kpi-dashboard) e o pipeline (sync_supabase.py) continuam
 -- funcionando sem mudanças.
 -- =============================================================================
 
@@ -1400,7 +1400,7 @@ $$;
 
 -- -----------------------------------------------------------------------------
 -- (c) Remover objetos mortos (substituídos por *_v2 / *_full / v_filter_options_full).
---     Confirmado: não são referenciados pelo app (mgi-kpi-dashboard usa as novas).
+--     Confirmado: não são referenciados pelo app (kpi-dashboard usa as novas).
 -- -----------------------------------------------------------------------------
 drop function if exists public.dashboard_aggregate(text, text, text, integer, integer);
 drop function if exists public.dashboard_kpis(text, text, integer);

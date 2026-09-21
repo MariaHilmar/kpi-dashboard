@@ -8,24 +8,24 @@ A navegação é definida em `lib/navigation.ts` e reutilizada pela `Sidebar` (d
 |-------|------|-------|-----------|
 | Visão geral | `/` | Executivo | KPIs e visão consolidada |
 | Análise | `/temporal` | Análise Temporal | Criados × fechados × backlog |
-| Análise | `/fluxo` | Fluxo Kanban | **Oculta** (não utilizada na MGI) |
+| Análise | `/fluxo` | Fluxo Kanban | **Oculta** (não utilizada neste produto) |
 | Análise | `/detalhamento` | Detalhamento | Parceria, área, lead time, KPI por tipo |
 | Análise | `/qualidade` | Qualidade | Conformidade de preenchimento |
 | Análise | `/alertas` | Alertas | Sem épico/parceria + idade |
-| Operação | `/sprint` | Sprint Atual | **Oculta** (não utilizada na MGI) |
-| Operação | `/milestone` | Relatório Milestone (DEV) | **Oculta** (não utilizada na MGI) |
-| Operação | `/milestone/roadmap` | Roadmap PMO | **Oculta** (não utilizada na MGI) |
+| Operação | `/sprint` | Sprint Atual | **Oculta** (não utilizada neste produto) |
+| Operação | `/milestone` | Relatório Milestone (DEV) | **Oculta** (não utilizada neste produto) |
+| Operação | `/milestone/roadmap` | Roadmap PMO | **Oculta** (não utilizada neste produto) |
 | Operação | `/parcerias` | Parcerias | Relatório mensal por parceiro |
-| Operação | `/equipes` | Equipes & Devs | **Oculta** (não utilizada na MGI) |
+| Operação | `/equipes` | Equipes & Devs | **Oculta** (não utilizada neste produto) |
 | Operação | `/analistas` | Analistas | Relatório mensal de atividades |
 | Dados | `/issues` | Issues | Busca livre + tabela paginada |
 | Dados | `/importar-dados` | Importar Dados | Planning Poker — Excel/CSV |
 
 Rotas **sem filtros globais:** `/parcerias` e `/importar-dados` (`ConditionalGlobalFilters`).
 
-### Páginas ocultas (não utilizadas na MGI)
+### Páginas ocultas (não utilizadas neste produto)
 
-As rotas abaixo **permanecem no código**, mas **não aparecem no menu**. Acesso direto redireciona para a home (`/`). Motivo: **não seriam utilizadas na MGI**.
+As rotas abaixo **permanecem no código**, mas **não aparecem no menu**. Acesso direto redireciona para a home (`/`). Motivo: **não seriam utilizadas neste produto**.
 
 Lista em `lib/dashboard/page-visibility.ts` (`HIDDEN_DASHBOARD_PAGE_HREFS`):
 

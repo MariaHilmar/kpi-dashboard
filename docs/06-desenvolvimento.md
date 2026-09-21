@@ -235,7 +235,7 @@ Opcional: Supabase CLI com banco local para desenvolvimento offline. Migrations 
 |---------------|----------------|
 | Pipeline Excel | `docs/README_PIPELINE.md` |
 | Estrutura abas Excel | `docs/DIAGNÓSTICO_MÓDULOS_REPOSITÓRIO.md` |
-| Módulos MGI | `docs/MÓDULOS_RESUMO_EXECUTIVO.txt` |
+| Modulos | `docs/MÓDULOS_RESUMO_EXECUTIVO.txt` |
 | Roadmap BI | `docs/ROADMAP_EXPANSÃO_PIPELINE.md` Fase 3 |
 
 O README na raiz do repo (`kpi-dashboard/README.md`) é o ponto de entrada rápido; esta pasta `docs/` é a documentação de sistema detalhada.

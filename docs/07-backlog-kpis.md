@@ -21,7 +21,7 @@ Backlog derivado do blueprint "Dashboards GitLab + Power BI" (acompanhamento ág
 
 ## Onda 1 — Quick wins (dado já existe, só falta UI)
 
-Foco: PO + Qualidade, onde o MGI já lidera. Sem tocar no pipeline.
+Foco: PO + Qualidade, onde o projeto já lidera. Sem tocar no pipeline.
 
 | # | KPI / visualização | Persona | Status | Esforço | Observação |
 |---|--------------------|---------|--------|---------|------------|

@@ -53,7 +53,7 @@ Espelho processado das issues GitLab (equivalente à aba **Dados** do Excel lega
 |------------------|----------|
 | Identificação | `issue_key`, `gitlab_iid`, `gitlab_repo`, `titulo` |
 | Taxonomia | `modulo`, `modulo_normalizado`, `area_funcional`, `tipo`, `categoria` |
-| Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` (ver [Épico no GitLab](#épico-no-gitlab-mgi)) |
+| Workflow | `estado`, `status`, `prioridade`, `equipe`, `parceria`, `sprint`, `epico` (ver [Épico no GitLab](#épico-no-gitlab)) |
 | Pessoas | `assignee`, `autor`, `desenvolvedor`, `solicitante` (texto para UI) |
 | Identidades GitLab | `gitlab_author_id`, `gitlab_assignee_ids[]`, `gitlab_developer_id` |
 | Datas / métricas | `criado_em`, `fechado_em`, `lead_time_dias`, `idade_dias`, `sla_mais_90_dias` |
@@ -239,7 +239,7 @@ O pipeline Python deriva campos antes do upsert:
 
 Ver `kpi-pipeline/docs/06-epicos-gitlab.md`.
 
-### Épico no GitLab MGI
+### Épico no GitLab
 
 No grupo **comprasnet**, o épico de uma issue é o work item indicado como
 **Parent** no painel lateral (hierarquia de work items). Ex.: issue #1053 em
