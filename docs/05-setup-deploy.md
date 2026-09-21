@@ -174,7 +174,7 @@ Sync automático via HTTP trigger + endpoint protegido — item de roadmap em `S
 | `SUPABASE_URL` | Sim (sync) | Mesma URL do projeto |
 | `SUPABASE_SERVICE_ROLE_KEY` | Sim (sync) | Chave service role |
 | `GITLAB_TOKEN` | Recomendada | Token para API GitLab |
-| `MGI_BASE_DIR` | Não | Base para JSON/logs |
+| `KPI_BASE_DIR` | Não | Base para JSON/logs |
 
 Ver tabela completa em `kpi-pipeline/README.md`.
 

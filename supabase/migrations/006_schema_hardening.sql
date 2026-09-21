@@ -8,7 +8,7 @@
 --   (c) Remover objetos mortos substituídos pelas migrations 003/005.
 --
 -- Esta migration NÃO altera assinaturas de função nem remove colunas usadas,
--- então o app (mgi-kpi-dashboard) e o pipeline (sync_supabase.py) continuam
+-- então o app (kpi-dashboard) e o pipeline (sync_supabase.py) continuam
 -- funcionando sem mudanças.
 -- =============================================================================
 
@@ -353,7 +353,7 @@ $$;
 
 -- -----------------------------------------------------------------------------
 -- (c) Remover objetos mortos (substituídos por *_v2 / *_full / v_filter_options_full).
---     Confirmado: não são referenciados pelo app (mgi-kpi-dashboard usa as novas).
+--     Confirmado: não são referenciados pelo app (kpi-dashboard usa as novas).
 -- -----------------------------------------------------------------------------
 drop function if exists public.dashboard_aggregate(text, text, text, integer, integer);
 drop function if exists public.dashboard_kpis(text, text, integer);

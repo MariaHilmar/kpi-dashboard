@@ -8,9 +8,9 @@
 
 Dashboard web para acompanhamento de **KPIs, alertas e fluxos de engenharia**. Full-stack com Next.js 16, Supabase e GovBR Design System, integrado ao pipeline Python [`kpi-pipeline`](https://github.com/MariaHilmar/kpi-pipeline).
 
-> **Aviso legal:** projeto de **portfólio pessoal** de [Maria Hilmar](https://github.com/MariaHilmar). Reflete uma arquitetura inspirada em necessidades reais de monitoramento de equipes (GitLab, sprints, módulos). **Não é um sistema oficial do MGI** nem produto institucional. Não contém dados sensíveis, tokens ou credenciais versionados.
+> **Aviso legal:** projeto de **portfólio pessoal** de [Maria Hilmar](https://github.com/MariaHilmar). Reflete uma arquitetura inspirada em necessidades reais de monitoramento de equipes (GitLab, sprints, módulos). **Não é um sistema oficial do projeto** nem produto institucional. Não contém dados sensíveis, tokens ou credenciais versionados.
 
-**Demo:** [web-mgi-delog.vercel.app](https://web-mgi-delog.vercel.app)
+**Demo:** [kpi-dashboard.vercel.app](https://kpi-dashboard.vercel.app)
 
 ---
 
@@ -85,7 +85,7 @@ graph TD
 |------|-----------|
 | `/` | KPIs executivos, evolução mensal, distribuição por status/tipo/módulo |
 | `/temporal` | Criados × fechados × backlog líquido por mês |
-| `/fluxo` | *(oculta - não utilizada na MGI)* CFD, throughput, lead time, WIP, gargalos |
+| `/fluxo` | *(oculta - não utilizada neste produto)* CFD, throughput, lead time, WIP, gargalos |
 | `/detalhamento` | Parceria, área funcional, lead time por módulo, KPI por tipo |
 | `/qualidade` | Conformidade de preenchimento e backlog aberto |
 | `/alertas` | Sem épico/parceria, faixa de idade, maiores lead times |
@@ -94,9 +94,9 @@ graph TD
 
 | Rota | Descrição |
 |------|-----------|
-| `/sprint` | *(oculta - não utilizada na MGI)* Visão focada no sprint dos filtros globais |
+| `/sprint` | *(oculta - não utilizada neste produto)* Visão focada no sprint dos filtros globais |
 | `/parcerias` | Relatório mensal de demandas com label `Parceria::` |
-| `/equipes` | *(oculta - não utilizada na MGI)* Volume por equipe, top desenvolvedores, merge em master |
+| `/equipes` | *(oculta - não utilizada neste produto)* Volume por equipe, top desenvolvedores, merge em master |
 | `/analistas` | Relatório de atividades por analista (filtro por ID GitLab) |
 | `/issues` | Busca livre, paginação, filtros (estado, SLA) e export Excel |
 
@@ -108,7 +108,7 @@ graph TD
 | `/admin/usuarios` | CRUD de contas (somente admin) |
 | `/conta` | Nome de exibição e alteração de senha |
 
-**Páginas ocultas:** `/fluxo`, `/milestone`, `/milestone/roadmap`, `/equipes` e `/sprint` foram escondidas do menu (acesso direto redireciona para `/`) porque **não seriam utilizadas na MGI**. O código permanece; ver [docs/03-paginas-funcionalidades.md](docs/03-paginas-funcionalidades.md).
+**Páginas ocultas:** `/fluxo`, `/milestone`, `/milestone/roadmap`, `/equipes` e `/sprint` foram escondidas do menu (acesso direto redireciona para `/`) porque **não seriam utilizadas neste produto**. O código permanece; ver [docs/03-paginas-funcionalidades.md](docs/03-paginas-funcionalidades.md).
 
 **Autenticação:** rotas do dashboard exigem login (Supabase Auth). Papéis `admin` e `user`; área admin restrita. Issues filtradas por analista via `gitlab_user_id` quando vinculado. Ver [docs/08-autenticacao.md](docs/08-autenticacao.md).
 

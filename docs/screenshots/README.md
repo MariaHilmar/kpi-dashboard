@@ -18,5 +18,5 @@ O dashboard autenticado exige login. Para adicionar prints das páginas internas
 Exemplo com Playwright (página pública):
 
 ```powershell
-npx playwright screenshot https://web-mgi-delog.vercel.app/login docs/screenshots/login.png --viewport-size=1280,800
+npx playwright screenshot https://kpi-dashboard.vercel.app/login docs/screenshots/login.png --viewport-size=1280,800
 ```

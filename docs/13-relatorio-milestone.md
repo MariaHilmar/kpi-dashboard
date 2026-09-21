@@ -1,6 +1,6 @@
 # Relatório Milestone (sprint)
 
-> **Oculto no produto MGI.** As rotas `/milestone`, `/milestone/roadmap` e `/sprint` não entram no menu e o acesso direto redireciona para a home. Motivo: **não seriam utilizadas na MGI**. O código permanece neste repositório.
+> **Oculto no produto.** As rotas `/milestone`, `/milestone/roadmap` e `/sprint` não entram no menu e o acesso direto redireciona para a home. Motivo: **não seriam utilizadas neste produto**. O código permanece neste repositório.
 
 Página `/milestone` - relatório operacional por milestone GitLab (Sprint 89, 90, 91…).
 

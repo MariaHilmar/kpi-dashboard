@@ -1,4 +1,4 @@
--- MGI Dashboard Web — schema inicial (aba Dados + agregações)
+-- KPI Dashboard Web — schema inicial (aba Dados + agregações)
 
 create extension if not exists "pgcrypto";
 

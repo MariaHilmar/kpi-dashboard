@@ -1,6 +1,6 @@
 # Contribuindo
 
-Obrigado pelo interesse no **MGI KPI Dashboard**. Este guia resume o fluxo para propor mudanças no repositório.
+Obrigado pelo interesse no **KPI Dashboard**. Este guia resume o fluxo para propor mudanças no repositório.
 
 ## Antes de começar
 

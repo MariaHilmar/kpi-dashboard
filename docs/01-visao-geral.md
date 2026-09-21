@@ -8,7 +8,7 @@ O sistema é **predominantemente somente leitura** em relação ao GitLab: o pip
 
 ## Problema que resolve
 
-Antes do dashboard web, os KPIs viviam em planilhas Excel (`MGI_Dashboard.xlsx` / `Dashboard_Contratos_v2.xlsx`), geradas diariamente pelo pipeline GitLab → Excel descrito em `docs/README_PIPELINE.md` do workspace. Isso funcionava para análise local, mas limitava:
+Antes do dashboard web, os KPIs viviam em planilhas Excel (`KPI_Dashboard.xlsx` / `Dashboard_Contratos_v2.xlsx`), geradas diariamente pelo pipeline GitLab → Excel descrito em `docs/README_PIPELINE.md` do workspace. Isso funcionava para análise local, mas limitava:
 
 - compartilhamento e acesso remoto;
 - filtros interativos entre múltiplas visões;
@@ -63,10 +63,10 @@ Filtros adicionais na web (não presentes no Excel original): módulo, área, ti
 ## Público-alvo
 
 - **Gestão / executivo:** visão consolidada de KPIs e evolução mensal (`/`).
-- **Coordenação de sprint / Planning Poker:** importação de story points (`/importar-dados`). As páginas `/sprint`, `/milestone` e `/milestone/roadmap` existem no código, mas **estão ocultas** (não utilizadas na MGI).
+- **Coordenação de sprint / Planning Poker:** importação de story points (`/importar-dados`). As páginas `/sprint`, `/milestone` e `/milestone/roadmap` existem no código, mas **estão ocultas** (não utilizadas neste produto).
 - **Qualidade de dados:** conformidade de preenchimento e backlog sem tipo (`/qualidade`).
 - **Operação:** alertas de issues sem épico/parceria, faixa de idade, lead times (`/alertas`).
-- **Fluxo Kanban (`/fluxo`) e Equipes (`/equipes`):** implementados, mas **ocultos** porque não seriam utilizados na MGI.
+- **Fluxo Kanban (`/fluxo`) e Equipes (`/equipes`):** implementados, mas **ocultos** porque não seriam utilizados neste produto.
 - **Parcerias:** relatório mensal de demandas com label `Parceria::` (`/parcerias`).
 - **Analistas:** detalhamento por dimensão, busca paginada de issues (`/detalhamento`, `/issues`).
 
@@ -77,7 +77,7 @@ Itens registrados na documentação do workspace e no código:
 | Item | Status |
 |------|--------|
 | Supabase Auth (restringir leitura) | **implementado** — ver [08-autenticacao.md](./08-autenticacao.md) |
-| Relatório de fluxo Kanban (`/fluxo`) | **implementado e oculto** (não utilizado na MGI) - [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) |
+| Relatório de fluxo Kanban (`/fluxo`) | **implementado e oculto** (não utilizado neste produto) - [11-relatorio-fluxo.md](./11-relatorio-fluxo.md) |
 | Relatório de parcerias (`/parcerias`) | **implementado** |
 | Importação Planning Poker (`/importar-dados`) | **implementado** — ver [12-importar-dados.md](./12-importar-dados.md) |
 | Integrar sync ao agendador automático (Vercel Cron ou Task Scheduler) | parcial — pipeline já orquestra sync |
