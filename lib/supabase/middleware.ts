@@ -9,7 +9,14 @@ import {
   isSupabaseConfigured,
 } from "@/lib/supabase/env";
 
-const PUBLIC_PREFIXES = ["/login", "/cadastro", "/recuperar-senha", "/redefinir-senha", "/auth"];
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/cadastro",
+  "/recuperar-senha",
+  "/redefinir-senha",
+  "/auth",
+  "/api/revalidate",
+];
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PREFIXES.some(

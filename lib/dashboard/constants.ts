@@ -9,6 +9,12 @@ export const TODOS = "Todos";
 /** Rótulo padrão para valores ausentes em agregações. */
 export const NAO_INFORMADO = "Não informado";
 
+/**
+ * Módulo virtual do filtro global. Não vem da coluna `modulo`:
+ * selecioná-lo restringe às issues cujo título começa com `[Conta Vinculada]`.
+ */
+export const MODULO_CONTA_VINCULADA = "Conta Vinculada";
+
 /** Rótulo de fallback para agrupamentos residuais. */
 export const OUTROS = "Outros";
 
