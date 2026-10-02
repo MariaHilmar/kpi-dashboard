@@ -5,7 +5,13 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 
 import { PeriodFilterField } from "@/components/layout/PeriodFilterField";
 import { MultiSelectField } from "@/components/ui/MultiSelectField";
-import { DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
+import {
+  DEFAULT_PERIODO_TIPO,
+  MODULO_CONTA_VINCULADA,
+  PERIODO_TIPOS,
+  TODOS,
+  type PeriodoTipo,
+} from "@/lib/dashboard/constants";
 import {
   ensureFilterOption,
   parseFilters,
@@ -125,6 +131,9 @@ export function GlobalFilters({ options }: Readonly<Props>) {
       list = sortFilterOptions(
         resolveModulosForArea(options.areasPorModulo, options.moduloAreaPairs, selectedArea),
       );
+    }
+    if (!list.includes(MODULO_CONTA_VINCULADA)) {
+      list = sortFilterOptions([...list, MODULO_CONTA_VINCULADA]);
     }
     return ensureFilterOption(list, selectedModulo);
   }, [options.modulos, options.areasPorModulo, options.moduloAreaPairs, selectedArea, selectedModulo]);
