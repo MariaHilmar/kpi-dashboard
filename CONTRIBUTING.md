@@ -50,7 +50,7 @@ O GitHub Actions (`.github/workflows/ci.yml`) executa em cada PR para `main`:
 1. ESLint (`npm run lint`)
 2. Type check (`npx tsc --noEmit`)
 3. Testes com cobertura (`npm run test:coverage`) — artefato `coverage-report`
-4. Auditoria de dependências (`npm audit --audit-level=high`)
+4. Auditoria de dependências de produção (`npm audit --audit-level=high --omit=dev`)
 
 **SonarCloud:** análise automática via `.sonarcloud.properties` ([projeto no SonarCloud](https://sonarcloud.io/project/overview?id=MariaHilmar_kpi-dashboard)).
 

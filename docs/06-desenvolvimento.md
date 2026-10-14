@@ -162,7 +162,7 @@ Dispara em push/PR para `main`:
 2. ESLint (`npm run lint`)
 3. Type check (`npx tsc --noEmit`)
 4. Unit tests com cobertura (`npm run test:coverage`) — artefato `coverage-report`
-5. Auditoria de dependências (`npm audit --audit-level=high`)
+5. Auditoria de dependências de produção (`npm audit --audit-level=high --omit=dev`)
 
 Badge no README aponta para este workflow. Guia de contribuição: [CONTRIBUTING.md](../CONTRIBUTING.md).
 

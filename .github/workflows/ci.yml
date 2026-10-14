@@ -42,4 +42,5 @@ jobs:
           retention-days: 14
 
       - name: Dependency audit
-        run: npm audit --audit-level=high
+        # Dev-only: eslint-config-next -> fast-glob -> micromatch -> braces (sem patch no npm; GHSA-vfj7-8cjw-p6xm).
+        run: npm audit --audit-level=high --omit=dev
