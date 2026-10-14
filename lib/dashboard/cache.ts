@@ -6,8 +6,8 @@ import { unstable_cache } from "next/cache";
  */
 export const CACHE_TAG_KPIS = "kpis";
 
-/** TTL padrão: 24 h (dados só mudam após sync do pipeline). */
-const CACHE_TTL_SECONDS = 86_400;
+/** TTL padrão: 12 h (dados só mudam após sync do pipeline). */
+const CACHE_TTL_SECONDS = 43_200;
 
 /**
  * Envolve uma função assíncrona com Next.js Data Cache.
