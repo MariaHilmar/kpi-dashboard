@@ -323,6 +323,8 @@ describe("fetchers", () => {
 
     expect(options.modulos[0]).toBe("Todos");
     expect(options.modulos).toContain("PNCP");
+    expect(options.modulos).toContain("Conta Vinculada");
+    expect(options.modulos).toContain("Terceirizados");
     expect(options.sprints).toEqual(["Todos", "Sprint 10", "Sprint 2"]);
     expect(options.moduloAreaPairs).toEqual([{ modulo: "PNCP", area: "PNCP" }]);
     expect(options.areasPorModulo).toEqual({ PNCP: ["PNCP"] });

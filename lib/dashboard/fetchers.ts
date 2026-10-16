@@ -11,13 +11,13 @@ import {
   parseAreasPorModulo,
   sortFilterOptions,
   sortSprintOptions,
+  withFixedModuloOptions,
 } from "@/lib/dashboard/filters";
 import {
   type AggregateDimension,
   type AlertaDimensao,
   type MergeadasAggregateDimension,
   GITLAB_SYNC_SOURCES,
-  MODULO_CONTA_VINCULADA,
   NAO_INFORMADO,
   OUTROS,
   TODOS,
@@ -464,7 +464,7 @@ async function fetchAllModuloAreaPairs(client: DbClient): Promise<ModuloAreaPair
 }
 
 export const fetchFilterOptions = cachedFetch(
-  "filter-options-v3",
+  "filter-options-v4",
   async (): Promise<FilterOptions> => {
     const empty: FilterOptions = {
       modulos: [TODOS],
@@ -513,11 +513,7 @@ export const fetchFilterOptions = cachedFetch(
     }
 
     return {
-      modulos: sortFilterOptions(
-        arr("modulos").includes(MODULO_CONTA_VINCULADA)
-          ? arr("modulos")
-          : [...arr("modulos"), MODULO_CONTA_VINCULADA],
-      ),
+      modulos: withFixedModuloOptions(arr("modulos")),
       areas: sortFilterOptions(arr("areas")),
       tipos: sortFilterOptions(arr("tipos")),
       prioridades: sortFilterOptions(arr("prioridades")),
