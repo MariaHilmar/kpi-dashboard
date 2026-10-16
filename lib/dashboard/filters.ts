@@ -413,7 +413,7 @@ export function sortFilterOptions(values: string[]): string[] {
 
 /** Inclui módulos virtuais do filtro global (Conta Vinculada, Terceirizados, etc.). */
 export function withFixedModuloOptions(modulos: string[]): string[] {
-  let list = [...modulos];
+  const list = [...modulos];
   for (const fixed of MODULOS_FILTRO_FIXOS) {
     if (!list.includes(fixed)) list.push(fixed);
   }
