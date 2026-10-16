@@ -15,6 +15,15 @@ export const NAO_INFORMADO = "Não informado";
  */
 export const MODULO_CONTA_VINCULADA = "Conta Vinculada";
 
+/**
+ * Módulo virtual do filtro global. Casa issues com prefixo `[Terceirizados]` ou
+ * `[Terceirizado]` no título, ou coluna modulo Terceirizados/Terceirizado.
+ */
+export const MODULO_TERCEIRIZADOS = "Terceirizados";
+
+/** Opções sempre presentes no select Módulo (além dos distinct em issues). */
+export const MODULOS_FILTRO_FIXOS = [MODULO_CONTA_VINCULADA, MODULO_TERCEIRIZADOS] as const;
+
 /** Rótulo de fallback para agrupamentos residuais. */
 export const OUTROS = "Outros";
 

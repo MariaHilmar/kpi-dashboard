@@ -7,7 +7,7 @@ import { PeriodFilterField } from "@/components/layout/PeriodFilterField";
 import { MultiSelectField } from "@/components/ui/MultiSelectField";
 import {
   DEFAULT_PERIODO_TIPO,
-  MODULO_CONTA_VINCULADA,
+  MODULO_TERCEIRIZADOS,
   PERIODO_TIPOS,
   TODOS,
   type PeriodoTipo,
@@ -18,6 +18,7 @@ import {
   resolveAreasForModulo,
   resolveModulosForArea,
   sortFilterOptions,
+  withFixedModuloOptions,
 } from "@/lib/dashboard/filters";
 import {
   defaultPeriodRange,
@@ -39,6 +40,16 @@ type Props = {
 function epicoModulo(epico: string): string | null {
   const match = /^\s*\[([^\]]+)\]/.exec(epico);
   return match ? match[1].trim() : null;
+}
+
+function epicMatchesSelectedModulo(epico: string, selectedModulo: string): boolean {
+  if (selectedModulo === TODOS) return true;
+  if (selectedModulo === MODULO_TERCEIRIZADOS) {
+    const prefix = epicoModulo(epico);
+    if (prefix === "Terceirizados" || prefix === "Terceirizado") return true;
+    return /terceirizad/i.test(epico);
+  }
+  return epicoModulo(epico) === selectedModulo;
 }
 
 function SelectField({
@@ -132,9 +143,7 @@ export function GlobalFilters({ options }: Readonly<Props>) {
         resolveModulosForArea(options.areasPorModulo, options.moduloAreaPairs, selectedArea),
       );
     }
-    if (!list.includes(MODULO_CONTA_VINCULADA)) {
-      list = sortFilterOptions([...list, MODULO_CONTA_VINCULADA]);
-    }
+    list = withFixedModuloOptions(list);
     return ensureFilterOption(list, selectedModulo);
   }, [options.modulos, options.areasPorModulo, options.moduloAreaPairs, selectedArea, selectedModulo]);
 
@@ -142,7 +151,7 @@ export function GlobalFilters({ options }: Readonly<Props>) {
     if (selectedModulo === TODOS) {
       return ensureFilterOption(options.epicos, selectedEpico);
     }
-    const filtered = options.epicos.filter((e) => epicoModulo(e) === selectedModulo);
+    const filtered = options.epicos.filter((e) => epicMatchesSelectedModulo(e, selectedModulo));
     return ensureFilterOption(sortFilterOptions(filtered), selectedEpico);
   }, [options.epicos, selectedModulo, selectedEpico]);
 
@@ -184,7 +193,7 @@ export function GlobalFilters({ options }: Readonly<Props>) {
           params.delete("area");
         }
         const epico = params.get("epico");
-        if (value !== TODOS && epico && epicoModulo(epico) !== value) {
+        if (value !== TODOS && epico && !epicMatchesSelectedModulo(epico, value)) {
           params.delete("epico");
         }
       }

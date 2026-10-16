@@ -1,4 +1,11 @@
-import { NAO_INFORMADO, DEFAULT_PERIODO_TIPO, PERIODO_TIPOS, TODOS, type PeriodoTipo } from "@/lib/dashboard/constants";
+import {
+  MODULOS_FILTRO_FIXOS,
+  NAO_INFORMADO,
+  DEFAULT_PERIODO_TIPO,
+  PERIODO_TIPOS,
+  TODOS,
+  type PeriodoTipo,
+} from "@/lib/dashboard/constants";
 import type { DashboardFilters, ModuloAreaPair } from "@/types/database";
 import {
   defaultPeriodRange,
@@ -402,6 +409,15 @@ export function sortFilterOptions(values: string[]): string[] {
   const result = [TODOS];
   if (hasNaoInformado) result.push(NAO_INFORMADO);
   return [...result, ...rest];
+}
+
+/** Inclui módulos virtuais do filtro global (Conta Vinculada, Terceirizados, etc.). */
+export function withFixedModuloOptions(modulos: string[]): string[] {
+  const list = [...modulos];
+  for (const fixed of MODULOS_FILTRO_FIXOS) {
+    if (!list.includes(fixed)) list.push(fixed);
+  }
+  return sortFilterOptions(list);
 }
 
 /** Sprints: Todos → Não informado → Sprint N (decrescente). */

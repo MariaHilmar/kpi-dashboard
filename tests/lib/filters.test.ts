@@ -15,6 +15,7 @@ import {
   rpcFilterArgsIgnoringSprintAndPeriod,
   sortFilterOptions,
   sortSprintOptions,
+  withFixedModuloOptions,
 } from "@/lib/dashboard/filters";
 import {
   defaultPeriodRange,
@@ -250,6 +251,14 @@ describe("sortFilterOptions", () => {
   it("ordena com Todos primeiro e Não informado em seguida", () => {
     const sorted = sortFilterOptions(["Todos", "Zebra", "Não informado", "Alpha"]);
     expect(sorted).toEqual(["Todos", "Não informado", "Alpha", "Zebra"]);
+  });
+});
+
+describe("withFixedModuloOptions", () => {
+  it("inclui Conta Vinculada e Terceirizados", () => {
+    const sorted = withFixedModuloOptions(["Todos", "PNCP"]);
+    expect(sorted).toContain("Conta Vinculada");
+    expect(sorted).toContain("Terceirizados");
   });
 });
 
